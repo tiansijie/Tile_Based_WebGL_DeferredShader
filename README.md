@@ -2,7 +2,7 @@ Tile_Based_WebGL_DeferredShader
 ----------------------------------------
 CIS 565 FINAL PROJECT
 
-Yuqin & Sijie
+[Yuqin](https://github.com/yuqinshao) & [Sijie](https://github.com/tiansijie)
 
 
 Information
