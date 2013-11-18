@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Deferred Shader</title>
+ <style>
+      canvas { 
+        width: 100%; 
+        height: 100% 
+      }
+    </style> 
+</head>
+
+<body>
+<script src="js/three.min.js"></script>
+<script src="js/OBJLoader.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/TrackballControls.js"></script>
+<script>
+
+	var camera, scene, renderer;
+	var geometry, material, mesh;
+
+	init();
+	animate();
+
+ 	function init() {
+
+		//Camera initialization and control
+        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera.position.z = 1000;
+		controls = new THREE.TrackballControls( camera );
+		controls.rotateSpeed = 5.0;
+		controls.zoomSpeed = 5;
+		controls.panSpeed = 2;
+		controls.noZoom = false;
+		controls.noPan = false;
+		controls.staticMoving = true;
+		controls.dynamicDampingFactor = 0.3;
+		
+        scene = new THREE.Scene();
+
+		//light init
+		var ambient = new THREE.AmbientLight( 0xffffff );	
+		ambient.position.set(10,100,50);	
+		scene.add(ambient);
+		
+		//model initialization
+		//obj loader
+		var manager = new THREE.LoadingManager();
+		manager.onProgress = function(item, loaded,total){
+			console.log(item,loaded,total);
+		}
+		var material = new THREE.MeshPhongMaterial({color:0xff0000});
+		var loader = new THREE.OBJLoader(manager);
+      	loader.load('obj/cube.obj',function(event){
+			console.log("abc");
+			var object = event;	
+			object.traverse(function(child){
+				if ( child instanceof THREE.Mesh ) 
+				{
+					child.material= material;
+				}
+			});
+			
+			object.scale.set(114,114,114);
+			scene.add(object);					
+		});
+
+		
+	  
+	  
+		//renderer setup
+		//append a canvas to html page
+        renderer = new THREE.CanvasRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+    }
+
+    function animate() {
+
+        // note: three.js includes requestAnimationFrame shim
+		requestAnimationFrame( animate );
+		controls.update();
+  		camera.lookAt(scene.position);
+        renderer.render( scene, camera );
+
+    }
+
+</script>
+</body>
