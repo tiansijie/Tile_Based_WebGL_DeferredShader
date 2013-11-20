@@ -16,77 +16,46 @@
 <script src="js/OBJLoader.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/TrackballControls.js"></script>
-<script>
-
-	var camera, scene, renderer;
-	var geometry, material, mesh;
-
-	init();
-	animate();
-
- 	function init() {
-
-		//Camera initialization and control
-        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-        camera.position.z = 1000;
-		controls = new THREE.TrackballControls( camera );
-		controls.rotateSpeed = 5.0;
-		controls.zoomSpeed = 5;
-		controls.panSpeed = 2;
-		controls.noZoom = false;
-		controls.noPan = false;
-		controls.staticMoving = true;
-		controls.dynamicDampingFactor = 0.3;
-		
-        scene = new THREE.Scene();
-
-		//light init
-		var ambient = new THREE.AmbientLight( 0xffffff );	
-		ambient.position.set(10,100,50);	
-		scene.add(ambient);
-		
-		//model initialization
-		//obj loader
-		var manager = new THREE.LoadingManager();
-		manager.onProgress = function(item, loaded,total){
-			console.log(item,loaded,total);
-		}
-		var material = new THREE.MeshPhongMaterial({color:0xff0000});
-		var loader = new THREE.OBJLoader(manager);
-      	loader.load('obj/cube.obj',function(event){
-			console.log("abc");
-			var object = event;	
-			object.traverse(function(child){
-				if ( child instanceof THREE.Mesh ) 
-				{
-					child.material= material;
-				}
-			});
-			
-			object.scale.set(114,114,114);
-			scene.add(object);					
-		});
-
-		
-	  
-	  
-		//renderer setup
-		//append a canvas to html page
-        renderer = new THREE.CanvasRenderer();
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        document.body.appendChild( renderer.domElement );
-
-    }
-
-    function animate() {
-
-        // note: three.js includes requestAnimationFrame shim
-		requestAnimationFrame( animate );
-		controls.update();
-  		camera.lookAt(scene.position);
-        renderer.render( scene, camera );
-
-    }
-
+<script src ="gl-matrix.js" type ="text/javascript"></script>
+<script src="js/index.js"></script>
+<script type="x-shader/x-vertex" id = "vs">
+	uniform mat4x4 u_Model;
+	uniform mat4x4 u_View;
+	uniform mat4x4 u_Persp;
+	uniform mat4x4 u_InvTrans;
+	
+	in  vec3 Position;
+	in  vec3 Normal;
+	in  vec2 Texcoord;
+	
+	out vec3 fs_Normal;
+	out vec4 fs_Position;
+	
+	void main(void) {
+		fs_Normal = (u_InvTrans*vec4(Normal,0.0f)).xyz;
+		vec4 world = u_Model * vec4(Position, 1.0);
+		vec4 camera = u_View * world;
+		fs_Position = camera;
+		gl_Position = u_Persp * camera;
+	}
+</script>
+<script type="x-shader/x-fragment" id="fs">
+	uniform vec3 u_Color;
+	
+	in vec3 fs_Normal;
+	in vec4 fs_Position;
+	in vec2 fs_Texcoord;
+	
+	out vec4 out_Normal;
+	out vec4 out_Position;
+	out vec4 out_Color;
+	
+	void main(void)
+	{
+		out_Normal = vec4(normalize(fs_Normal),0.0f);
+		out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
+		out_Color = vec4(u_Color,1.0f);		
+	}
 </script>
 </body>
+
