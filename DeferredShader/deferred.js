@@ -25,8 +25,15 @@
 
     console.log(canvas.width + " " + canvas.height);
 
+    var near = 0.1;
+    var far = 100.0;
+
     var persp = mat4.create();
-    mat4.perspective(45.0, canvas.width/canvas.height, 0.1, 100.0, persp);
+    mat4.perspective(45.0, canvas.width/canvas.height, near, far, persp);
+
+    var model;
+    var mv;
+    var invTrans;
 
     var radius = 5.0;
     var azimuth = Math.PI;
@@ -37,7 +44,6 @@
     var up = [0.0, 1.0, 0.0];
     var view = mat4.create();
     mat4.lookAt(eye, center, up, view);
-
 
 
     var positionLocation = 0;
@@ -118,7 +124,7 @@
     	gl.bindAttribLocation(pass_prog, texCoordLocation, "Texcoord");
 
     	if (!gl.getProgramParameter(pass_prog, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders1");
+            alert("Could not initialise pass_fs");
         }
     	
         //Second shaders
@@ -130,7 +136,7 @@
     	gl.bindAttribLocation(diagnostic_prog, quad_texCoordLocation, "Texcoord");
     	
     	if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders2");
+            alert("Could not initialise diagnostic_fs");
         }
 
     	vs = getShaderSource(document.getElementById("shade_vs"));
@@ -141,7 +147,7 @@
     	gl.bindAttribLocation(ambient_prog, quad_texCoordLocation, "Texcoord");
     	
     	if (!gl.getProgramParameter(ambient_prog, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders3");
+            alert("Could not initialise ambient_fs");
         }
 
         //Third shader
@@ -153,7 +159,7 @@
     	gl.bindAttribLocation(post_prog, quad_texCoordLocation, "Texcoord");
 
     	if (!gl.getProgramParameter(post_prog, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders4");
+            alert("Could not initialise post_fs");
         }
 
 
@@ -240,15 +246,11 @@
   		bufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
     	bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
-    	bufs[3] = ext.COLOR_ATTACHMENT3_WEBGL;
-    	//ext.drawBuffersWEBGL(bufs);
+    	ext.drawBuffersWEBGL(bufs);
 
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
-
-        // gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-        // gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[3], gl.TEXTURE_2D, depthTexture, 0);
     	gl.bindTexture(gl.TEXTURE_2D, normalTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[0], gl.TEXTURE_2D, normalTexture, 0);
     	gl.bindTexture(gl.TEXTURE_2D, positionTexture);
@@ -420,24 +422,15 @@
 
 	function drawmesh()
     {
-    	gl.useProgram(pass_prog);
-
-    	var model = mat4.create();
-        mat4.identity(model);
-        mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
-        mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
-        mat4.rotate(model, -time, [0.0, 1.0, 0.0]);
-        var mv = mat4.create();
-        mat4.multiply(view, model, mv);
-
-        var invTrans = mat4.create();
-        mat4.inverse(mv, invTrans);
-        mat4.transpose(invTrans);
+    	gl.useProgram(pass_prog);    	
 
         gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_Model"),false,model);
     	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_View"),false,view);
     	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_Persp"),false,persp);
     	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_InvTrans"),false,invTrans);
+
+        var colors = vec3.create([0.2,1.0,1.0]);
+        gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
     	gl.enableVertexAttribArray(positionLocation);
         gl.enableVertexAttribArray(normalLocation);
@@ -463,11 +456,17 @@
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
+    var display_type = 0;
 
     function setupQuad(program)
     {
     	gl.useProgram(program);
         //gl.enable(gl.BLEND);
+
+        gl.uniform1i(gl.getUniformLocation(program, "u_DisplayType"), display_type);
+
+        gl.uniform1f(gl.getUniformLocation(program, "u_Near"), near);
+        gl.uniform1f(gl.getUniformLocation(program, "u_Far"), far);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, depthTexture);
@@ -524,9 +523,46 @@
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-     function animate() {
 
-     	console.log("animating");
+    function keyPress(e){
+        var keynum;
+        
+        if(window.event){ // IE                 
+            keynum = e.keyCode;
+        }else
+            if(e.which){ // Netscape/Firefox/Opera                  
+                keynum = e.which;
+        }
+        //console.log(String.fromCharCode(keynum));
+        display_type = keynum - 49;
+    }
+   
+   document.onkeypress = keyPress
+
+     function animate() {
+     	//console.log("animating");
+        model = mat4.create();
+        mat4.identity(model);
+        mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
+        mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
+        mat4.rotate(model, -time, [0.0, 1.0, 0.0]);
+        
+        mv = mat4.create();
+        mat4.multiply(view, model, mv);
+
+        invTrans = mat4.create();
+        mat4.inverse(mv, invTrans);
+        mat4.transpose(invTrans);
+
+
+        var lightdir = vec3.create([1.0, 0.0, 1.0]);
+        var lightdest = vec4.create();
+        vec3.normalize(lightdir);
+        mat4.multiplyVec4(view, [lightdir[0], lightdir[1], lightdir[2], 0.0], lightdest);
+        lightdir = vec3.createFrom(lightdest[0],lightdest[1],lightdest[2]);
+        vec3.normalize(lightdir);
+
+
      	//1
      	bindFBO(0);
      	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -538,11 +574,20 @@
      	gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
      	gl.blendFunc(gl.ONE, gl.ONE);
-     	gl.clear(gl.COLOR_BUFFER_BIT);
+     	gl.clear(gl.COLOR_BUFFER_BIT);        
+
      	setupQuad(diagnostic_prog);
+        
+        var lightPos = vec4.create([10.0, 10.0, 10.0, 0.0]);
+        lightPos = mat4.multiplyVec4(view, lightPos);
+        lightPos.z = 20.0;
+        gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
+
      	drawQuad();
      	setupQuad(ambient_prog);
      	drawQuad();
+        gl.disable(gl.BLEND);
+
 
      	//3
      	setTextures();
@@ -557,9 +602,13 @@
     	drawQuad();
 
     	gl.enable(gl.DEPTH_TEST);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D,null);
 
     	time += 0.001;
-        //window.requestAnimFrame(animate); 
+        
+        window.requestAnimFrame(animate); 
      	//window.requestAnimFrame(animate);
      }
 
