@@ -58,16 +58,17 @@
 
 	varying vec2 vTexcoord;
 	varying vec3 vNormal;
+	varying vec3 vPosition;
 	void main(void) {
 		gl_Position = u_Persp * u_View * u_Model * vec4(Position,1.0);
 		vTexcoord = Texcood;
-		vNormal = (u_Inverse * vec4(Normal,0.0)).xyz;		 
+		vNormal = (u_Inverse * vec4(Normal,0.0)).xyz;
+		vPosition = gl_Position.xyz;		 
 	}
 </script>
 <script type="x-shader/x-fragment" id = "fs">
 	precision mediump float; // have to add this, dont' exactly know why
 
-	uniform sampler2D u_NormalSampler;
 	uniform sampler2D u_ColorSampler;
 	
 	uniform int u_Displaymode;
@@ -75,6 +76,7 @@
 
 	varying vec2 vTexcoord;
 	varying vec3 vNormal;
+	varying vec3 vPosition;
 	void main(void) {
 		if(u_Displaymode == 0)
 		{
@@ -87,6 +89,11 @@
 			//diaplay normal
 			gl_FragColor = vec4(abs(vNormal),1.0);
 			return;			
+		}
+		else if(u_Displaymode == 2)
+		{
+			//display screen space position
+			gl_FragColor = vec4(abs(vPosition),1.0);
 		}
 	}
 </script>

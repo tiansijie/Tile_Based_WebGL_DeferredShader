@@ -116,7 +116,7 @@
 		shaderProgram[0].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Inverse");
 		shaderProgram[0].displaymode = gl.getUniformLocation(shaderProgram[0],"u_Displaymode");
 		shaderProgram[0].colorsampler = gl.getUniformLocation(shaderProgram[0],"u_ColorSampler");
-		shaderProgram[0].normalsampler = gl.getUniformLocation(shaderProgram[0],"u_NormalSampler");
+		
 
 		if(shaderProgram[0].modelMatrixUniform == null || shaderProgram[0].viewMatrixUniform == null
 		 || shaderProgram[0].perspMatrixUniform == null || shaderProgram[0].inverseMatrixUniform == null
@@ -179,6 +179,10 @@
 
 	var rttFramebuffer;
 	var rttNormalTexture;
+    var rttColorTexture;
+    var rttDiffuseTexture;
+    var rttPositionTexture;
+    var rttDepthTexture;
 	function initTextureFramebuffer(){
 		//setting up framebuffer
 		rttFramebuffer = gl.createFramebuffer();
@@ -524,7 +528,8 @@
         gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
         gl.vertexAttribPointer(shaderProgram[1].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
         gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
 
         gl.uniform1i(shaderProgram[1].displaymode,mode);
@@ -573,9 +578,9 @@
 	}
 	function drawScene(){
 		gl.useProgram(shaderProgram[0]);		
-		//gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
 		drawMesh();
-        return;
+        //return;
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
         setupQuad(shaderProgram[1]);
