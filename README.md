@@ -28,6 +28,11 @@ Details
 * We use webgl [WEBGL_depth_texture](http://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) exension, and here is a very good [example](http://blog.tojicode.com/2012/07/using-webgldepthtexture.html) to show how to use this extension 
 * We also use [OES_texture_float](http://www.khronos.org/registry/webgl/extensions/OES_texture_float/) which suports floating type texture in WebGL.
 
+Useful links
+----------------------------
+* [Mesh resources](http://graphics.cs.williams.edu/data/meshes.xml)
+* 
+
 References
 ---------------------------------------------------------------
 * [A demo of webgl deferred shading](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/#!)
