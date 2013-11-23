@@ -155,12 +155,17 @@
 		
         shaderProgram[1].normalsampler = gl.getUniformLocation(shaderProgram[1],"u_NormalSampler");
         shaderProgram[1].colorsampler = gl.getUniformLocation(shaderProgram[1],"u_ColorSampler");
+        shaderProgram[1].positionsampler = gl.getUniformLocation(shaderProgram[1],"u_PositionSampler");
+        shaderProgram[1].depthsampler = gl.getUniformLocation(shaderProgram[1],"u_DepthSampler");
+
         shaderProgram[1].displaymode = gl.getUniformLocation(shaderProgram[1],"u_Displaymode");
+
         if(shaderProgram[1].normalsampler == null || shaderProgram[1].colorsampler == null
-             || shaderProgram[1].displaymode == null)
+             || shaderProgram[1].displaymode == null || shaderProgram[1].positionsampler == null || shaderProgram[1].depthsampler == null)
         {
             console.log(shaderProgram[1].normalsampler + 
-                " , "+ shaderProgram[1].colorsampler + " , " + shaderProgram[1].displaymode);
+                " , "+ shaderProgram[1].colorsampler + " , " + shaderProgram[1].displaymode
+                + ", "+shaderProgram[1].positionsampler + ", "+ shaderProgram[1].depthsampler);
         }
 
 	}
@@ -177,42 +182,64 @@
         gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
-	var rttFramebuffer;
-	var rttNormalTexture;
-    var rttColorTexture;
-    var rttDiffuseTexture;
-    var rttPositionTexture;
-    var rttDepthTexture;
-	function initTextureFramebuffer(){
-		//setting up framebuffer
-		rttFramebuffer = gl.createFramebuffer();
-		gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffer);
-		rttFramebuffer.width = gl.viewportWidth;
-		rttFramebuffer.height = gl.viewportHeight;
+	var rttFramebuffers= [];
+    var rttTextures = []; // 0: normal, 1: color, 2: position, 3: depth
 
-		rttNormalTexture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, rttNormalTexture);
+    function createAndSetupTexture(gl,i){
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // if(i == 3)
+        // {
+        //     //depth componenet
+        //     gl.texParameteri(gl.TEXTURE_2D,gl.DEPTH_TEXTURE_MODE,gl.INTENSITY);
+        // }
+        return texture;
+    }
 
-	    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, rttFramebuffer.width, rttFramebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-	    //just tell we don't have any image data and just like to allocate a particular amount of empty space on graphics card
+	function initTextureFramebuffer(){
+		//setting up framebuffer
+        //setting up normal texture
+        for(var i = 0; i<4; ++i)
+        {
+            var fbo = gl.createFramebuffer();
+            rttFramebuffers.push(fbo);
+            gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+            fbo.width = gl.viewportWidth;
+            fbo.height = gl.viewportHeight;
 
-	    var renderbuffer = gl.createRenderbuffer();
-        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 
-        	rttFramebuffer.width, rttFramebuffer.height);
+            var texture = createAndSetupTexture(gl,i);
+            rttTextures.push(texture);
+            // if(i == 3)
+            // {
+            //     //depth compoenent
+            //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, fbo.width, fbo.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            // }
+            // else
+            // {
+                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fbo.width, fbo.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+                 //just tell we don't have any image data and just like to allocate a particular amount of empty space on graphics card
+            // }
+           
 
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttNormalTexture, 0);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+            var renderbuffer = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 
+                fbo.width, fbo.height);
 
-        //set texture, renderbuffer, and framebuffer back to their defaults
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
 
+            //set texture, renderbuffer, and framebuffer back to their defaults
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }	
+        console.log("framebuffer length: " + rttFramebuffers.length);
+        console.log("texture buffer length: " + rttTextures.length);
 	}
 
 	var colorTexture;
@@ -222,8 +249,7 @@
 		colorTexture.image.onload = function(){
 			handleLoadedTexture(colorTexture);
 		}
-
-		colorTexture.image.src = "moon.gif";
+		colorTexture.image.src = "moon.gif";        
 	}
 
 
@@ -511,16 +537,24 @@
         mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,qpersp);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, rttNormalTexture);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
         gl.uniform1i(shaderProgram[1].normalsampler,0);
 
         gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D,colorTexture);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[1]);
         gl.uniform1i(shaderProgram[1].colorsampler,1);
+
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[2]);
+        gl.uniform1i(shaderProgram[1].positionsampler,2);
+
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[3]);
+        gl.uniform1i(shaderProgram[1].depthsampler,3);
+
     }
 
     function drawQuad(mode){
-
         
         gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
         gl.vertexAttribPointer(shaderProgram[1].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
@@ -535,7 +569,7 @@
         gl.uniform1i(shaderProgram[1].displaymode,mode);
     }   
 
-	function drawMesh(){	
+	function drawMesh(displaytype){	
         //console.log("time: " + time);	
         gl.useProgram(shaderProgram[0]);
 		gl.viewport(0,0,gl.viewportWidth,gl.viewportHeight);
@@ -553,7 +587,7 @@
         mat4.inverse(mv, inverse);
         mat4.transpose(inverse);
 
-		gl.uniform1i(shaderProgram[0].displaymode,1);
+		gl.uniform1i(shaderProgram[0].displaymode,displaytype);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
         gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshvbo.itemSize, gl.FLOAT, false, 0, 0);
@@ -572,18 +606,24 @@
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, meshibo.numItems, gl.UNSIGNED_SHORT, 0);
 
-        gl.bindTexture(gl.TEXTURE_2D,rttNormalTexture);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[displaytype]);
         //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
 	function drawScene(){
 		gl.useProgram(shaderProgram[0]);		
-		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
-		drawMesh();
-        //return;
+		
+        for(var i = 0; i<4; ++i)
+        {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
+            drawMesh(i);
+        }
+       
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
         setupQuad(shaderProgram[1]);
+        // todo: change the draw mode here
+        //0: normal //1: color // 2: screen space position // 3: depth // 4: diffuse
         drawQuad(1);
 	}
 
@@ -657,6 +697,8 @@
 		initMeshBuffers();
         initQuadBuffers();
 		initTexture();
+
+
 		initTextureFramebuffer();
 
 		gl.clearColor(0.0,0.0,0,1.0);
