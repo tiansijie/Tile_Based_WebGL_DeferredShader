@@ -2,7 +2,7 @@
 	
 	var gl;
 	var view,presp,model,inverse;
-
+    var checkboxs =[]; // 0:normal,1:color,2:position,3: depth, 4,diffuse
 
 
     function initGL(canvas) {
@@ -15,6 +15,13 @@
         if (!gl) {
             alert("Could not initialise WebGL, sorry :-(");
         }
+        var depthTextureExtension = gl.getExtension("WEBGL_depth_texture");         
+        //console.log("extension: "+depthTextureExtension);
+        if (!depthTextureExtension) {
+            alert("depth textures not supported");
+        }
+        gl.getExtension("OES_texture_float");
+        gl.getExtension("OES_texture_float_linear");
     }
 	
      function sphericalToCartesian( r, a, e ) {
@@ -114,18 +121,18 @@
 		shaderProgram[0].viewMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_View");	
 		shaderProgram[0].perspMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Persp");
 		shaderProgram[0].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Inverse");
-		shaderProgram[0].displaymode = gl.getUniformLocation(shaderProgram[0],"u_Displaymode");
+		shaderProgram[0].drawmode = gl.getUniformLocation(shaderProgram[0],"u_DrawMode");
 		shaderProgram[0].colorsampler = gl.getUniformLocation(shaderProgram[0],"u_ColorSampler");
 		
 
 		if(shaderProgram[0].modelMatrixUniform == null || shaderProgram[0].viewMatrixUniform == null
 		 || shaderProgram[0].perspMatrixUniform == null || shaderProgram[0].inverseMatrixUniform == null
-		 || shaderProgram[0].displaymode == null || shaderProgram[0].normalsampler == null)
+		 || shaderProgram[0].drawmode == null )
 		{
 			console.log("fail to get uniforms " + shaderProgram[0].modelMatrixUniform + ", "+ 
 				shaderProgram[0].viewMatrixUniform + ", " + shaderProgram[0].perspMatrixUniform
-				+ " , " + shaderProgram[0].inverseMatrixUniform + " , " + shaderProgram[0].displaymode
-				+ ", " + shaderProgram[0].normalsampler);		
+				+ " , " + shaderProgram[0].inverseMatrixUniform + " , " + shaderProgram[0].drawmode
+				);		
 		}
 
         //shader2
@@ -173,7 +180,7 @@
 	function handleLoadedTexture(texture){
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.FLOAT, texture.image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -213,16 +220,17 @@
 
             var texture = createAndSetupTexture(gl,i);
             rttTextures.push(texture);
-            // if(i == 3)
-            // {
-            //     //depth compoenent
-            //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, fbo.width, fbo.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-            // }
-            // else
-            // {
-                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fbo.width, fbo.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            if(i == 3)
+            {
+                //depth compoenent
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, fbo.width, fbo.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+            }
+            else
+            {
+                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fbo.width, fbo.height, 0, gl.RGBA, gl.FLOAT, null);
+                 //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
                  //just tell we don't have any image data and just like to allocate a particular amount of empty space on graphics card
-            // }
+            }
            
 
             var renderbuffer = gl.createRenderbuffer();
@@ -230,7 +238,15 @@
             gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 
                 fbo.width, fbo.height);
 
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            if(i == 3)
+            {
+                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, texture, 0);
+            }
+            else
+            {
+                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            }
+           
             gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
 
             //set texture, renderbuffer, and framebuffer back to their defaults
@@ -569,15 +585,16 @@
         gl.uniform1i(shaderProgram[1].displaymode,mode);
     }   
 
-	function drawMesh(displaytype){	
+	function drawMesh(drawmode){	
         //console.log("time: " + time);	
+        gl.enable(gl.DEPTH_TEST);
         gl.useProgram(shaderProgram[0]);
 		gl.viewport(0,0,gl.viewportWidth,gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
         mat4.identity(model);
-        //mat4.scale(model,[0.5,0.5,0.5]);
+        mat4.scale(model,[0.5,0.5,0.5]);
 
         var mv = mat4.create();
         mat4.multiply(view, model, mv);
@@ -587,7 +604,7 @@
         mat4.inverse(mv, inverse);
         mat4.transpose(inverse);
 
-		gl.uniform1i(shaderProgram[0].displaymode,displaytype);
+		gl.uniform1i(shaderProgram[0].drawmode,drawmode);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
         gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshvbo.itemSize, gl.FLOAT, false, 0, 0);
@@ -606,14 +623,14 @@
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, meshibo.numItems, gl.UNSIGNED_SHORT, 0);
 
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[displaytype]);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode]);
         //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
 	function drawScene(){
 		gl.useProgram(shaderProgram[0]);		
 		
-        for(var i = 0; i<4; ++i)
+        for(var i = 0; i<3; ++i)
         {
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
             drawMesh(i);
@@ -621,10 +638,18 @@
        
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
+        gl.disable(gl.DEPTH_TEST);
         setupQuad(shaderProgram[1]);
         // todo: change the draw mode here
         //0: normal //1: color // 2: screen space position // 3: depth // 4: diffuse
-        drawQuad(1);
+        for(var checkboxidx = 0; checkboxidx < checkboxs.length; ++checkboxidx)
+        {
+            if(checkboxs[checkboxidx].checked == true)
+            {
+                drawQuad(checkboxidx);
+            }
+        }
+        //drawQuad(4);
 	}
 
 	//Mouse events from project5
@@ -690,14 +715,46 @@
         //console.log(time);
     }
 
-	(function loadWebGL(){
+    function initCheckbox(){
+
+        var checkbox = document.getElementById("normal");
+        checkboxs.push(checkbox);        
+        checkbox = document.getElementById("color");
+        checkboxs.push(checkbox);
+        checkbox = document.getElementById("position");
+        checkboxs.push(checkbox);
+        checkbox = document.getElementById("depth");
+        checkboxs.push(checkbox);
+        checkbox = document.getElementById("diffuse");
+        checkboxs.push(checkbox);
+        console.log("checkbox length: "+checkboxs.length);
+
+        checkboxs[3].disabled = true;
+        // for(var i = 0;i<checkboxs.length; ++i)
+        // {
+            
+        //     if(i == 3)
+        //     {
+        //         checkboxs[i].checked = false;
+        //         checkboxs[i].disabled = true;
+        //         continue;
+        //     }
+        //     if(i == 4)
+        //         checkboxs[i].checked = true;
+        //     else
+        //         checkboxs[i].checked = false;
+
+        // }
+    }
+
+	(function loadWebGL(){        
 		var canvas = document.getElementById("canvas");
 		initGL(canvas);
 		initShader();		
 		initMeshBuffers();
         initQuadBuffers();
 		initTexture();
-
+        initCheckbox()
 
 		initTextureFramebuffer();
 
