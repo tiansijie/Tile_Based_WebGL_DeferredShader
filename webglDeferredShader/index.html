@@ -8,7 +8,7 @@
 <body>
 
 <div>
- 	<input type="checkbox" id="diffuse" name = "a" />Display <span style = "color:red">Diffuse</span> Pass	  
+ 	<input type="checkbox" id="diffuse" name = "a" checked/>Display <span style = "color:red">Diffuse</span> Pass	  
     <input type="checkbox" id="normal"  name = "a" />Display <span style = "color:red">Normal </span> 
     <input type="checkbox" id="color"  name = "a" />Display <span style = "color:red">Color Texture</span>	
     <input type="checkbox" id="position" name = "a" />Display Screen Space <span style = "color:red">Position</span>  
@@ -63,8 +63,9 @@
 		vec3 position = texture2D(u_PositionSampler,fs_Texcoord).rgb;
 		vec3 color = texture2D(u_ColorSampler,fs_Texcoord).rgb;
 		vec3 normal = texture2D(u_NormalSampler,fs_Texcoord).rgb;
+		vec3 depthColor = texture2D(u_DepthSampler,fs_Texcoord).rgb;
 		float exp_depth = texture2D(u_DepthSampler,fs_Texcoord).r;
-		float lin_depth = linearizeDepth(exp_depth,0.1,100.0);
+		float lin_depth = linearizeDepth(exp_depth,0.1,10.0);
 
 		if(u_Displaymode == 0){
 			//display normal
@@ -86,6 +87,7 @@
 		{
 			//depth doesn't work !!! TODO
 			gl_FragColor = vec4(vec3(lin_depth),1.0);
+			//gl_FragColor = vec4(depthColor,1.0);
 			//gl_FragColor = vec4(color,1.0);
 			return;
 		}
