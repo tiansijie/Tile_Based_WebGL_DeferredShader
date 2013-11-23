@@ -31,8 +31,7 @@ Details
 References
 ---------------------------------------------------------------
 * [A demo of webgl deferred shading](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/#!)
-* [Tile based deferred shading] (http://visual-computing.intel-research.net/art/publications/deferred_rendering/
-http://bps10.idav.ucdavis.edu/talks/12-lauritzen_DeferredShading_BPS_SIGGRAPH2010_Notes.pd) 
+* [Tile based deferred shading](http://bps10.idav.ucdavis.edu/talks/12-lauritzen_DeferredShading_BPS_SIGGRAPH2010_Notes.pdf) 
 
 
 Third Party
