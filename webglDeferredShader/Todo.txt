@@ -1,0 +1,4 @@
+Todo lits:
+
+1. how to convert obj to JSON file
+2. 
