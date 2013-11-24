@@ -65,47 +65,6 @@
 
     var ext = null;
 
-    var extensionConstants = [
-	  { name: "MAX_COLOR_ATTACHMENTS_WEBGL", enum: 0x8CDF, expectedFn: function(v) { return v > 0; }, passMsg: " should be > 0"},
-	  { name: "MAX_DRAW_BUFFERS_WEBGL",      enum: 0x8824, expectedFn: function(v) { return v > 0; }, passMsg: " should be > 0"},
-
-	  { name: "COLOR_ATTACHMENT0_WEBGL",     enum: 0x8CE0, },
-	  { name: "COLOR_ATTACHMENT1_WEBGL",     enum: 0x8CE1, },
-	  { name: "COLOR_ATTACHMENT2_WEBGL",     enum: 0x8CE2, },
-	  { name: "COLOR_ATTACHMENT3_WEBGL",     enum: 0x8CE3, },
-	  { name: "COLOR_ATTACHMENT4_WEBGL",     enum: 0x8CE4, },
-	  { name: "COLOR_ATTACHMENT5_WEBGL",     enum: 0x8CE5, },
-	  { name: "COLOR_ATTACHMENT6_WEBGL",     enum: 0x8CE6, },
-	  { name: "COLOR_ATTACHMENT7_WEBGL",     enum: 0x8CE7, },
-	  { name: "COLOR_ATTACHMENT8_WEBGL",     enum: 0x8CE8, },
-	  { name: "COLOR_ATTACHMENT9_WEBGL",     enum: 0x8CE9, },
-	  { name: "COLOR_ATTACHMENT10_WEBGL",    enum: 0x8CEA, },
-	  { name: "COLOR_ATTACHMENT11_WEBGL",    enum: 0x8CEB, },
-	  { name: "COLOR_ATTACHMENT12_WEBGL",    enum: 0x8CEC, },
-	  { name: "COLOR_ATTACHMENT13_WEBGL",    enum: 0x8CED, },
-	  { name: "COLOR_ATTACHMENT14_WEBGL",    enum: 0x8CEE, },
-	  { name: "COLOR_ATTACHMENT15_WEBGL",    enum: 0x8CEF, },
-
-	  { name: "DRAW_BUFFER0_WEBGL",          enum: 0x8825, },
-	  { name: "DRAW_BUFFER1_WEBGL",          enum: 0x8826, },
-	  { name: "DRAW_BUFFER2_WEBGL",          enum: 0x8827, },
-	  { name: "DRAW_BUFFER3_WEBGL",          enum: 0x8828, },
-	  { name: "DRAW_BUFFER4_WEBGL",          enum: 0x8829, },
-	  { name: "DRAW_BUFFER5_WEBGL",          enum: 0x882A, },
-	  { name: "DRAW_BUFFER6_WEBGL",          enum: 0x882B, },
-	  { name: "DRAW_BUFFER7_WEBGL",          enum: 0x882C, },
-	  { name: "DRAW_BUFFER8_WEBGL",          enum: 0x882D, },
-	  { name: "DRAW_BUFFER9_WEBGL",          enum: 0x882E, },
-	  { name: "DRAW_BUFFER10_WEBGL",         enum: 0x882F, },
-	  { name: "DRAW_BUFFER11_WEBGL",         enum: 0x8830, },
-	  { name: "DRAW_BUFFER12_WEBGL",         enum: 0x8831, },
-	  { name: "DRAW_BUFFER13_WEBGL",         enum: 0x8832, },
-	  { name: "DRAW_BUFFER14_WEBGL",         enum: 0x8833, },
-	  { name: "DRAW_BUFFER15_WEBGL",         enum: 0x8834, },
-	];
-
-
-
     (function initializeShader() {
     	ext = gl.getExtension("WEBGL_draw_buffers");
         if (!ext) {
@@ -539,29 +498,102 @@
    
    document.onkeypress = keyPress
 
-     function animate() {
-     	//console.log("animating");
-        model = mat4.create();
-        mat4.identity(model);
-        mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
-        mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
-        mat4.rotate(model, -time, [0.0, 1.0, 0.0]);
+
+
+   // var mouseLeftDown = false;
+   // var mouseRightDown = false;
+   // var lastMouseX = null;
+   // var lastMouseY = null;
+
+   //  function handleMouseDown(event) {
+   //      if( event.button == 2 ) {
+   //          mouseLeftDown = false;
+   //          mouseRightDown = true;
+   //      }
+   //      else {
+   //          mouseLeftDown = true;
+   //          mouseRightDown = false;
+   //      }
+   //      lastMouseX = event.clientX;
+   //      lastMouseY = event.clientY;
+   //  }
+
+   //  function handleMouseUp(event) {
+   //      mouseLeftDown = false;
+   //      mouseRightDown = false;
+   //  }
+
+   //  function handleMouseMove(event) {
+   //      if (!(mouseLeftDown || mouseRightDown)) {
+   //          return;
+   //      }
+   //      var newX = event.clientX;
+   //      var newY = event.clientY;
+
+   //      var deltaX = newX - lastMouseX;
+   //      var deltaY = newY - lastMouseY;
         
-        mv = mat4.create();
-        mat4.multiply(view, model, mv);
+   //      if( mouseLeftDown )
+   //      {
+   //          azimuth += 0.01 * deltaX;
+   //          elevation += 0.01 * deltaY;
+   //          elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+   //      }
+   //      else
+   //      {
+   //          radius += 0.01 * deltaY;
+   //          radius = Math.min(Math.max(radius, 2.0), 10.0);
+   //      }
+   //      eye = sphericalToCartesian(radius, azimuth, elevation);
+   //      view = mat4.create();
+   //      mat4.lookAt(eye, center, up, view);
 
-        invTrans = mat4.create();
-        mat4.inverse(mv, invTrans);
-        mat4.transpose(invTrans);
+   //      lastMouseX = newX;
+   //      lastMouseY = newY;
+   //  }
+
+   //  canvas.onmousedown = handleMouseDown;
+   //  //canvas.oncontextmenu = function(ev) {return false;};
+   //  document.onmouseup = handleMouseUp;
+   //  document.onmousemove = handleMouseMove;  
 
 
-        var lightdir = vec3.create([1.0, 0.0, 1.0]);
-        var lightdest = vec4.create();
-        vec3.normalize(lightdir);
-        mat4.multiplyVec4(view, [lightdir[0], lightdir[1], lightdir[2], 0.0], lightdest);
-        lightdir = vec3.createFrom(lightdest[0],lightdest[1],lightdest[2]);
-        vec3.normalize(lightdir);
+    var stats = new Stats();
+    stats.setMode(0); // 0: fps, 1: ms
 
+    // Align top-left
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+
+    document.body.appendChild( stats.domElement );
+
+
+    model = mat4.create();
+    mat4.identity(model);
+    mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
+    mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
+    mat4.rotate(model, 0.0, [0.0, 1.0, 0.0]);
+    
+    mv = mat4.create();
+    mat4.multiply(view, model, mv);
+
+    invTrans = mat4.create();
+    mat4.inverse(mv, invTrans);
+    mat4.transpose(invTrans);
+
+
+    var lightdir = vec3.create([1.0, 0.0, 1.0]);
+    var lightdest = vec4.create();
+    vec3.normalize(lightdir);
+    mat4.multiplyVec4(view, [lightdir[0], lightdir[1], lightdir[2], 0.0], lightdest);
+    lightdir = vec3.createFrom(lightdest[0],lightdest[1],lightdest[2]);
+    vec3.normalize(lightdir);
+
+
+     function animate() {
+        stats.update();
+     	//console.log("animating");
 
      	//1
      	bindFBO(0);
@@ -612,5 +644,12 @@
      	//window.requestAnimFrame(animate);
      }
 
+     // function tick(){
+     //    requestAnimFrame(tick);
+     //    animate();
+     //    stats.update();
+     // }
+
      animate();
+     //tick();
  }());
