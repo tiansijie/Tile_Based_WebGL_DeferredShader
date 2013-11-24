@@ -15,7 +15,7 @@
     <input type="checkbox" id="depth" name = "a"  />Display<span style = "color:red">Depth</span>  Pass
 </div>
 
-<canvas id="canvas" style="border: none;" width="600" height="600" tabindex="1"></canvas>
+<canvas id="canvas" style="border: none;" width="1000" height="1000" tabindex="1"></canvas>
 
 <script type="text/javascript" src ="js/jquery-1.10.2.min.js"></script>
 <script type = "text/javascript" >
@@ -80,7 +80,7 @@
 		else if(u_Displaymode == 2)
 		{
 			//position
-			gl_FragColor = vec4(abs(position),1.0);			
+			gl_FragColor = vec4(abs(position)/10.0,1.0);			
 			return;
 		}
 		else if(u_Displaymode == 3)
