@@ -539,13 +539,84 @@
    
    document.onkeypress = keyPress
 
+
+
+   var mouseLeftDown = false;
+   var mouseRightDown = false;
+   var lastMouseX = null;
+   var lastMouseY = null;
+
+    function handleMouseDown(event) {
+        if( event.button == 2 ) {
+            mouseLeftDown = false;
+            mouseRightDown = true;
+        }
+        else {
+            mouseLeftDown = true;
+            mouseRightDown = false;
+        }
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+    }
+
+    function handleMouseUp(event) {
+        mouseLeftDown = false;
+        mouseRightDown = false;
+    }
+
+    function handleMouseMove(event) {
+        if (!(mouseLeftDown || mouseRightDown)) {
+            return;
+        }
+        var newX = event.clientX;
+        var newY = event.clientY;
+
+        var deltaX = newX - lastMouseX;
+        var deltaY = newY - lastMouseY;
+        
+        if( mouseLeftDown )
+        {
+            azimuth += 0.01 * deltaX;
+            elevation += 0.01 * deltaY;
+            elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+        }
+        else
+        {
+            radius += 0.01 * deltaY;
+            radius = Math.min(Math.max(radius, 2.0), 10.0);
+        }
+        eye = sphericalToCartesian(radius, azimuth, elevation);
+        view = mat4.create();
+        mat4.lookAt(eye, center, up, view);
+
+        lastMouseX = newX;
+        lastMouseY = newY;
+    }
+
+    canvas.onmousedown = handleMouseDown;
+    //canvas.oncontextmenu = function(ev) {return false;};
+    document.onmouseup = handleMouseUp;
+    document.onmousemove = handleMouseMove;  
+
+
+    var stats = new Stats();
+    stats.setMode(1); // 0: fps, 1: ms
+
+    // Align top-left
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+
+    document.body.appendChild( stats.domElement );
+
      function animate() {
+        stats.update();
      	//console.log("animating");
         model = mat4.create();
         mat4.identity(model);
         mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
         mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
-        mat4.rotate(model, -time, [0.0, 1.0, 0.0]);
+        mat4.rotate(model, 0.0, [0.0, 1.0, 0.0]);
         
         mv = mat4.create();
         mat4.multiply(view, model, mv);
@@ -612,5 +683,12 @@
      	//window.requestAnimFrame(animate);
      }
 
-     animate();
+     // function tick(){
+     //    requestAnimFrame(tick);
+     //    animate();
+     //    stats.update();
+     // }
+
+     //animate();
+     //tick();
  }());
