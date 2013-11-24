@@ -85,10 +85,7 @@
 		}
 		else if(u_Displaymode == 3)
 		{
-			//depth doesn't work !!! TODO
 			gl_FragColor = vec4(vec3(lin_depth),1.0);
-			//gl_FragColor = vec4(depthColor,1.0);
-			//gl_FragColor = vec4(color,1.0);
 			return;
 		}
 		else if(u_Displaymode == 4){
@@ -141,10 +138,10 @@
 	
 	uniform int u_DrawMode;
 
-
 	varying vec2 vTexcoord;
 	varying vec3 vNormal;
 	varying vec4 vPosition;
+
 	void main(void) {
 		vec3 color = texture2D(u_ColorSampler,vTexcoord).rgb;
 		
@@ -165,15 +162,12 @@
 			gl_FragColor = vec4(vPosition.xyz,1.0);
 			return;
 		}
-		// else
-		// {
-		// 	gl_FragColor = vec4(0.0,0.0,0.0,1.0);
-		// 	return;
-		// }
+
 	}
 </script>
 
 <script src="js/webGLUtility.js"></script> 
+<script src="js/Stats.js"></script>
 <script type = "text/javascript" src="js/index.js"></script>
 
 </body>
