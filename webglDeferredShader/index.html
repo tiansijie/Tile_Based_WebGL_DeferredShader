@@ -81,6 +81,7 @@
 		{
 			//position
 			gl_FragColor = vec4(abs(position),1.0);			
+			gl_FragColor = vec4(abs(position)/10.0,1.0);			
 			return;
 		}
 		else if(u_Displaymode == 3)

@@ -264,14 +264,29 @@
         console.log("texture buffer length: " + rttTextures.length);
 	}
 
-	var colorTexture;
+	//var colorTexture;
+
+    var colorTexture;
 	function initTexture(){
-		colorTexture = gl.createTexture();
-		colorTexture.image = new Image();
-		colorTexture.image.onload = function(){
-			handleLoadedTexture(colorTexture);
-		}
-		colorTexture.image.src = "moon.gif";        
+		// colorTexture = gl.createTexture();
+		// colorTexture.image = new Image();
+		// colorTexture.image.onload = function(){
+		// 	handleLoadedTexture(colorTexture);
+		// }
+		// colorTexture.image.src = "arroway.de_metal+structure+06_d100_flat.jpg";   
+        earthTexture = gl.createTexture();
+        earthTexture.image = new Image();
+        earthTexture.image.onload = function () {
+            handleLoadedTexture(earthTexture)
+        }
+        earthTexture.image.src = "earth.jpg";
+
+        colorTexture = gl.createTexture();
+        colorTexture.image = new Image();
+        colorTexture.image.onload = function () {
+            handleLoadedTexture(colorTexture)
+        }
+        colorTexture.image.src = "arroway.de_metal+structure+06_d100_flat.jpg";     
 	}
 
 
@@ -302,7 +317,7 @@
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         quadvbo.itemSize = 3;
-        meshvbo.numItems = 4;
+        quadvbo.numItems = 4;
         
         quadtbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, quadtbo);
@@ -326,15 +341,53 @@
 
     }
 
+    var meshvbo;
+    var meshnbo;
+    var meshibo;
+    var meshtbo;
+    function loadTeapot() {
+        var request = new XMLHttpRequest();
+        request.open("GET", "Teapot.json");
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                handleLoadedTeapot(JSON.parse(request.responseText));
+            }
+        }
+        request.send();
+    }
+   
+    function handleLoadedTeapot(teapotData) {
+        meshnbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
+        meshnbo.itemSize = 3;
+        meshnbo.numItems = teapotData.vertexNormals.length / 3;
 
-	var meshvbo;
-	var meshcbo;
-	var meshnbo;
-	var meshibo;
-	var meshtbo;
+        meshtbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
+        meshtbo.itemSize = 2;
+        meshtbo.numItems = teapotData.vertexTextureCoords.length / 2;
+
+        meshvbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
+        meshvbo.itemSize = 3;
+        meshvbo.numItems = teapotData.vertexPositions.length / 3;
+
+        meshibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(teapotData.indices), gl.STATIC_DRAW);
+        meshibo.itemSize = 1;
+        meshibo.numItems = teapotData.indices.length;
+
+        //document.getElementById("loadingtext").textContent = "";
+    }
+
+	
 	function initMeshBuffers()
 	{
-        //cube
+        // cube
         // meshvbo = gl.createBuffer();
         // gl.bindBuffer(gl.ARRAY_BUFFER,meshvbo);
         // vertices = [
@@ -478,80 +531,80 @@
         // meshibo.itemSize = 1;
         // meshibo.numItems = 36;
 
-		var latitudeBands = 30;
-        var longitudeBands = 30;
-        var radius = 1.0;
+		// var latitudeBands = 30;
+  //       var longitudeBands = 30;
+  //       var radius = 1.0;
 
-        var vertexPositionData = [];
-        var normalData = [];
-        var textureCoordData = [];
-        for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
-            var theta = latNumber * Math.PI / latitudeBands;
-            var sinTheta = Math.sin(theta);
-            var cosTheta = Math.cos(theta);
+  //       var vertexPositionData = [];
+  //       var normalData = [];
+  //       var textureCoordData = [];
+  //       for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
+  //           var theta = latNumber * Math.PI / latitudeBands;
+  //           var sinTheta = Math.sin(theta);
+  //           var cosTheta = Math.cos(theta);
 
-            for (var longNumber=0; longNumber <= longitudeBands; longNumber++) {
-                var phi = longNumber * 2 * Math.PI / longitudeBands;
-                var sinPhi = Math.sin(phi);
-                var cosPhi = Math.cos(phi);
+  //           for (var longNumber=0; longNumber <= longitudeBands; longNumber++) {
+  //               var phi = longNumber * 2 * Math.PI / longitudeBands;
+  //               var sinPhi = Math.sin(phi);
+  //               var cosPhi = Math.cos(phi);
 
-                var x = cosPhi * sinTheta;
-                var y = cosTheta;
-                var z = sinPhi * sinTheta;
-                var u = 1 - (longNumber / longitudeBands);
-                var v = 1 - (latNumber / latitudeBands);
+  //               var x = cosPhi * sinTheta;
+  //               var y = cosTheta;
+  //               var z = sinPhi * sinTheta;
+  //               var u = 1 - (longNumber / longitudeBands);
+  //               var v = 1 - (latNumber / latitudeBands);
 
-                normalData.push(x);
-                normalData.push(y);
-                normalData.push(z);
-                textureCoordData.push(u);
-                textureCoordData.push(v);
-                vertexPositionData.push(radius * x);
-                vertexPositionData.push(radius * y);
-                vertexPositionData.push(radius * z);
-            }
-        }
+  //               normalData.push(x);
+  //               normalData.push(y);
+  //               normalData.push(z);
+  //               textureCoordData.push(u);
+  //               textureCoordData.push(v);
+  //               vertexPositionData.push(radius * x);
+  //               vertexPositionData.push(radius * y);
+  //               vertexPositionData.push(radius * z);
+  //           }
+  //       }
 
-        var indexData = [];
-        for (var latNumber=0; latNumber < latitudeBands; latNumber++) {
-            for (var longNumber=0; longNumber < longitudeBands; longNumber++) {
-                var first = (latNumber * (longitudeBands + 1)) + longNumber;
-                var second = first + longitudeBands + 1;
-                indexData.push(first);
-                indexData.push(second);
-                indexData.push(first + 1);
+  //       var indexData = [];
+  //       for (var latNumber=0; latNumber < latitudeBands; latNumber++) {
+  //           for (var longNumber=0; longNumber < longitudeBands; longNumber++) {
+  //               var first = (latNumber * (longitudeBands + 1)) + longNumber;
+  //               var second = first + longitudeBands + 1;
+  //               indexData.push(first);
+  //               indexData.push(second);
+  //               indexData.push(first + 1);
 
-                indexData.push(second);
-                indexData.push(second + 1);
-                indexData.push(first + 1);
-            }
-        }
+  //               indexData.push(second);
+  //               indexData.push(second + 1);
+  //               indexData.push(first + 1);
+  //           }
+  //       }
 
-        meshnbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
-        meshnbo.itemSize = 3;
-        meshnbo.numItems = normalData.length / 3;
+  //       meshnbo = gl.createBuffer();
+  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
+  //       meshnbo.itemSize = 3;
+  //       meshnbo.numItems = normalData.length / 3;
 
-        meshtbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
-        meshtbo.itemSize = 2;
-        meshtbo.numItems = textureCoordData.length / 2;
+  //       meshtbo = gl.createBuffer();
+  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
+  //       meshtbo.itemSize = 2;
+  //       meshtbo.numItems = textureCoordData.length / 2;
 
-        meshvbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
-        meshvbo.itemSize = 3;
-        meshvbo.numItems = vertexPositionData.length / 3;
+  //       meshvbo = gl.createBuffer();
+  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
+  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
+  //       meshvbo.itemSize = 3;
+  //       meshvbo.numItems = vertexPositionData.length / 3;
 
-        meshibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
-        meshibo.itemSize = 1;
-        meshibo.numItems = indexData.length;
+  //       meshibo = gl.createBuffer();
+  //       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+  //       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
+  //       meshibo.itemSize = 1;
+  //       meshibo.numItems = indexData.length;
 	}
-    var time = 0;
+    // var time = 0;
 
     function setupQuad(program){
         gl.useProgram(program);
@@ -600,7 +653,8 @@
         mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
         mat4.identity(model);
-        mat4.scale(model,[0.5,0.5,0.5]);
+        mat4.scale(model,[0.1,0.1,0.1]);
+        mat4.translate(model,[0,10,0]);
 
         var mv = mat4.create();
         mat4.multiply(view, model, mv);
@@ -774,8 +828,10 @@
 		var canvas = document.getElementById("canvas");
 		initGL(canvas);
 		initShader();		
-		initMeshBuffers();
+		//initMeshBuffers();
         initQuadBuffers();
+        loadTeapot();
+        
 		initTexture();
         initCheckbox()
 
