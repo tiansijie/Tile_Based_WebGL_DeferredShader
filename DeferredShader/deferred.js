@@ -9,8 +9,8 @@
     }
 
 
-	var NUM_WIDTH_PTS = 64;
-    var NUM_HEIGHT_PTS = 64;
+	var NUM_WIDTH_PTS = 30;
+    var NUM_HEIGHT_PTS = 30;
 
     var message = document.getElementById("message");
     var canvas = document.getElementById("canvas");
@@ -55,6 +55,14 @@
     var u_PerspLocation;
     var u_CameraSpaceDirLightLocation;
 
+    var u_DisplayTypeLocation;
+    var u_NearLocation;
+    var u_FarLocation;
+    var u_DepthtexLocation;
+    var u_NormaltexLocation;
+    var u_PositiontexLocation;
+    var u_ColortexLocation;
+
     var quad_positionLocation = 0;
     var quad_texCoordLocation = 1;
 
@@ -85,6 +93,11 @@
     	if (!gl.getProgramParameter(pass_prog, gl.LINK_STATUS)) {
             alert("Could not initialise pass_fs");
         }
+
+        u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
+        u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
+        u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
+        u_InvTransLocation = gl.getUniformLocation(pass_prog,"u_InvTrans");
     	
         //Second shaders
     	vs = getShaderSource(document.getElementById("shade_vs"));
@@ -97,6 +110,11 @@
     	if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
             alert("Could not initialise diagnostic_fs");
         }
+       
+       u_DisplayTypeLocation = gl.getUniformLocation(diagnostic_prog, "u_DisplayType");
+       u_NearLocation = gl.getUniformLocation(diagnostic_prog, "u_Near");
+       u_FarLocation = gl.getUniformLocation(diagnostic_prog, "u_Far");
+       u_DepthtexLocation = gl.getUniformLocation(diagnostic_prog, "u_Depthtex");
 
     	vs = getShaderSource(document.getElementById("shade_vs"));
     	fs = getShaderSource(document.getElementById("ambient_fs"));
@@ -120,8 +138,6 @@
     	if (!gl.getProgramParameter(post_prog, gl.LINK_STATUS)) {
             alert("Could not initialise post_fs");
         }
-
-
     	//gl.useProgram(program);	
 	})();
 
@@ -171,7 +187,6 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
-        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
 
 		gl.bindTexture(gl.TEXTURE_2D, normalTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -206,6 +221,7 @@
     	bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
     	ext.drawBuffersWEBGL(bufs);
+        //var bufs = gl.COLOR_ATTACHMENT0;
 
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
@@ -263,22 +279,22 @@
             positionsName = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, positionsName);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-            //gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-            //gl.enableVertexAttribArray(positionLocation);
+            gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(positionLocation);
             
             // Normals
             normalsName = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, normalsName);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-            //gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
-            //gl.enableVertexAttribArray(normalLocation);
+            gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(normalLocation);
             
             // TextureCoords
             texCoordsName = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsName);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
-            //gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-            //gl.enableVertexAttribArray(texCoordLocation);
+            gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(texCoordLocation);
 
             // Indices
             indicesName = gl.createBuffer();
@@ -383,10 +399,10 @@
     {
     	gl.useProgram(pass_prog);    	
 
-        gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_Model"),false,model);
-    	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_View"),false,view);
-    	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_Persp"),false,persp);
-    	gl.uniformMatrix4fv(gl.getUniformLocation(pass_prog,"u_InvTrans"),false,invTrans);
+        gl.uniformMatrix4fv(u_ModelLocation,false,model);
+    	gl.uniformMatrix4fv(u_ViewLocation,false,view);
+    	gl.uniformMatrix4fv(u_PerspLocation,false,persp);
+    	gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);
 
         var colors = vec3.create([0.2,1.0,1.0]);
         gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
@@ -396,13 +412,13 @@
         gl.enableVertexAttribArray(texCoordLocation);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, positionsName);
-        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 12, 0);
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, normalsName);
-        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 12, 0);        
+        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);        
 
         gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsName);
-        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 8, 0);        
+        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);        
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesName); 
         
@@ -449,11 +465,11 @@
     {
     	gl.enableVertexAttribArray(quad_positionLocation);
         gl.bindBuffer(gl.ARRAY_BUFFER, vbo_vertices);
-        gl.vertexAttribPointer(quad_positionLocation, 3, gl.FLOAT, false, 12, 0);
+        gl.vertexAttribPointer(quad_positionLocation, 3, gl.FLOAT, false, 0, 0);
 
         gl.enableVertexAttribArray(quad_texCoordLocation);  
         gl.bindBuffer(gl.ARRAY_BUFFER, vbo_textures);  
-        gl.vertexAttribPointer(quad_texCoordLocation, 2, gl.FLOAT, false, 8, 0); 
+        gl.vertexAttribPointer(quad_texCoordLocation, 2, gl.FLOAT, false, 0, 0); 
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vbo_indices);   
 
@@ -591,10 +607,7 @@
     vec3.normalize(lightdir);
 
 
-     function animate() {
-        stats.update();
-     	//console.log("animating");
-
+     function animate() {   
      	//1
      	bindFBO(0);
      	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -614,8 +627,9 @@
         lightPos = mat4.multiplyVec4(view, lightPos);
         lightPos.z = 20.0;
         gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
-
      	drawQuad();
+
+
      	setupQuad(ambient_prog);
      	drawQuad();
         gl.disable(gl.BLEND);
@@ -632,15 +646,15 @@
     	gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
 
     	drawQuad();
-
-    	gl.enable(gl.DEPTH_TEST);
-        //gl.clear(gl.COLOR_BUFFER_BIT);
+    	
+        //reset
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.bindTexture(gl.TEXTURE_2D,null);
 
-    	time += 0.001;
+    	//time += 0.001;
         
         window.requestAnimFrame(animate); 
+        stats.update();
      	//window.requestAnimFrame(animate);
      }
 
