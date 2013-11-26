@@ -110,11 +110,6 @@
     	if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
             alert("Could not initialise diagnostic_fs");
         }
-       
-       u_DisplayTypeLocation = gl.getUniformLocation(diagnostic_prog, "u_DisplayType");
-       u_NearLocation = gl.getUniformLocation(diagnostic_prog, "u_Near");
-       u_FarLocation = gl.getUniformLocation(diagnostic_prog, "u_Far");
-       u_DepthtexLocation = gl.getUniformLocation(diagnostic_prog, "u_Depthtex");
 
     	vs = getShaderSource(document.getElementById("shade_vs"));
     	fs = getShaderSource(document.getElementById("ambient_fs"));
@@ -222,7 +217,6 @@
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
     	ext.drawBuffersWEBGL(bufs);
         //var bufs = gl.COLOR_ATTACHMENT0;
-
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
@@ -516,62 +510,62 @@
 
 
 
-   // var mouseLeftDown = false;
-   // var mouseRightDown = false;
-   // var lastMouseX = null;
-   // var lastMouseY = null;
+   var mouseLeftDown = false;
+   var mouseRightDown = false;
+   var lastMouseX = null;
+   var lastMouseY = null;
 
-   //  function handleMouseDown(event) {
-   //      if( event.button == 2 ) {
-   //          mouseLeftDown = false;
-   //          mouseRightDown = true;
-   //      }
-   //      else {
-   //          mouseLeftDown = true;
-   //          mouseRightDown = false;
-   //      }
-   //      lastMouseX = event.clientX;
-   //      lastMouseY = event.clientY;
-   //  }
+    function handleMouseDown(event) {
+        if( event.button == 2 ) {
+            mouseLeftDown = false;
+            mouseRightDown = true;
+        }
+        else {
+            mouseLeftDown = true;
+            mouseRightDown = false;
+        }
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+    }
 
-   //  function handleMouseUp(event) {
-   //      mouseLeftDown = false;
-   //      mouseRightDown = false;
-   //  }
+    function handleMouseUp(event) {
+        mouseLeftDown = false;
+        mouseRightDown = false;
+    }
 
-   //  function handleMouseMove(event) {
-   //      if (!(mouseLeftDown || mouseRightDown)) {
-   //          return;
-   //      }
-   //      var newX = event.clientX;
-   //      var newY = event.clientY;
+    function handleMouseMove(event) {
+        if (!(mouseLeftDown || mouseRightDown)) {
+            return;
+        }
+        var newX = event.clientX;
+        var newY = event.clientY;
 
-   //      var deltaX = newX - lastMouseX;
-   //      var deltaY = newY - lastMouseY;
+        var deltaX = newX - lastMouseX;
+        var deltaY = newY - lastMouseY;
         
-   //      if( mouseLeftDown )
-   //      {
-   //          azimuth += 0.01 * deltaX;
-   //          elevation += 0.01 * deltaY;
-   //          elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
-   //      }
-   //      else
-   //      {
-   //          radius += 0.01 * deltaY;
-   //          radius = Math.min(Math.max(radius, 2.0), 10.0);
-   //      }
-   //      eye = sphericalToCartesian(radius, azimuth, elevation);
-   //      view = mat4.create();
-   //      mat4.lookAt(eye, center, up, view);
+        if( mouseLeftDown )
+        {
+            azimuth += 0.01 * deltaX;
+            elevation += 0.01 * deltaY;
+            elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+        }
+        else
+        {
+            radius += 0.01 * deltaY;
+            radius = Math.min(Math.max(radius, 2.0), 10.0);
+        }
+        eye = sphericalToCartesian(radius, azimuth, elevation);
+        view = mat4.create();
+        mat4.lookAt(eye, center, up, view);
 
-   //      lastMouseX = newX;
-   //      lastMouseY = newY;
-   //  }
+        lastMouseX = newX;
+        lastMouseY = newY;
+    }
 
-   //  canvas.onmousedown = handleMouseDown;
-   //  //canvas.oncontextmenu = function(ev) {return false;};
-   //  document.onmouseup = handleMouseUp;
-   //  document.onmousemove = handleMouseMove;  
+    canvas.onmousedown = handleMouseDown;
+    //canvas.oncontextmenu = function(ev) {return false;};
+    document.onmouseup = handleMouseUp;
+    document.onmousemove = handleMouseMove;  
 
 
     var stats = new Stats();
@@ -615,10 +609,10 @@
 
      	//2
      	setTextures();
-     	bindFBO(1);
-     	gl.enable(gl.BLEND);
+     	//bindFBO(1);
+     	//gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
-     	gl.blendFunc(gl.ONE, gl.ONE);
+     	//gl.blendFunc(gl.ONE, gl.ONE);
      	gl.clear(gl.COLOR_BUFFER_BIT);        
 
      	setupQuad(diagnostic_prog);
@@ -630,22 +624,22 @@
      	drawQuad();
 
 
-     	setupQuad(ambient_prog);
-     	drawQuad();
-        gl.disable(gl.BLEND);
+     	//setupQuad(ambient_prog);
+     	//drawQuad();
+        //gl.disable(gl.BLEND);
 
 
      	//3
-     	setTextures();
-     	gl.useProgram(post_prog);
-     	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-     	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     // 	setTextures();
+     // 	gl.useProgram(post_prog);
+     // 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     // 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-     	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, postTexture);
-    	gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
+     // 	gl.activeTexture(gl.TEXTURE0);
+    	// gl.bindTexture(gl.TEXTURE_2D, postTexture);
+    	// gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
 
-    	drawQuad();
+    	// drawQuad();
     	
         //reset
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
