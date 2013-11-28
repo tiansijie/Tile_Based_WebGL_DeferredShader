@@ -41,6 +41,7 @@
 
     var eye = sphericalToCartesian(radius, azimuth, elevation);
     var center = [0.0, 0.0, 0.0];
+    var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
     var up = [0.0, 1.0, 0.0];
     var view = mat4.create();
     mat4.lookAt(eye, center, up, view);
@@ -493,6 +494,173 @@
     }
 
 
+
+    //Light bounding box
+    // function getLightBoundingBox(light_pos, radius, pv, viewport, left, right, top, bottom)
+    // {
+    //     var lx = light_pos[0];
+    //     var ly = light_pos[1];
+    //     var lz = light_pos[2];
+    //     var lx2 = lx*lx;
+    //     var ly2 = ly*ly;
+    //     var lz2 = lz*lz;
+    //     var r = radius;
+    //     var r2 = r*r;
+
+    //     //X direction
+    //     var dz = 4 * (r2*lz2 - (lx2 + lz2)*(r2-lx2));
+
+    //     console.log(dz);
+
+    //     if(dz <= 0)
+    //         return false;
+
+    //     var nz1 = (r*lz + Math.sqrt(dz/4.0)) / (lx2 + lz2);
+    //     var nz2 = (r*lz - Math.sqrt(dz/4.0)) / (lx2 + lz2);
+
+    //     var nx1 = (r-nz1*lz)/lx;
+    //     var nx2 = (r-nz2*lz)/lx;
+
+    //     var pzx1 = (lx2+lz2-r2) / lx-(nx1/nz1)*lz;
+    //     var pzx2 = (lx2+lz2-r2) / lx-(nx2/nz2)*lz;
+
+    //     if(pzx1 > lx || pzx2 > lx)
+    //         return false;
+
+    //     //for the left and right position
+    //     var pz1 = -pzx1*nx1/nz1;
+    //     var pz2 = -pzx2*nx2/nz2;
+
+
+    //     //Y direction
+    //     var dy = r2*ly2 - (ly2+lx2)*(r2-lx2);
+    //     console.log(dy);
+    //     if(dy <= 0)
+    //         return false;
+
+    //     var ny1 = (r*ly + Math.sqrt(dy)) / (ly2 + lx2);
+    //     var ny2 = (r*ly - Math.sqrt(dy)) / (ly2 + lx2);
+
+    //     var nx11 = (r-ny1*ly)/lx;
+    //     var nx22 = (r-ny2*ly)/lx;
+
+    //     var pxy1 = (ly2+lx2-r2)/(lx-(nx1/ny1)*ly);
+    //     var pxy2 = (ly2+lx2-r2)/(lx-(nx2/ny2)*ly);
+
+    //     if(pxy1 < lx || pxy2 < lx)
+    //         return false;
+
+    //     //for the bottom and up position
+    //     var py1 = -pxy1*nx1/ny1;
+    //     var py2 = -pxy2*nx2/ny2;
+
+
+    //     var l = pz1<lz?pz1:pz2;
+    //     var r = pz1>lz?pz1:pz2;
+    //     var t = py1>ly?py1:py2;
+    //     var b = py1<ly?py1:py2;
+
+
+    //     l = (nx1*near/nz1 + 1) / 2.0 * canvas.width;
+    //     r = (nx2*near/nz2 + 1) / 2.0 * canvas.width;
+
+    //     t = (nx11*near/ny1 + 1) / (2.0*canvas.width/canvas.height) * canvas.height;
+    //     b = (nx22*near/ny2 + 1) / (2.0*canvas.width/canvas.height) * canvas.height;
+
+
+
+
+
+    //     // console.log("left "+l);
+    //     // console.log("right "+r);
+    //     // console.log("top "+t);
+    //     // console.log("bottom "+b);
+
+    //     // left = vec4.create([l,0.0,pzx1,1.0]);
+    //     // right = vec4.create([r,0.0,pzx2,1.0]);
+    //     // top = vec4.create([0.0,t,pzy1,1.0]);
+    //     // bottom = vec4.create([0.0,b,pzy2,1.0]);   
+
+        
+    //     // // console.log("right "+right);
+    //     // // console.log("top "+top);
+    //     // // console.log("bottom "+bottom);     
+
+    //     // left = mat4.multiplyVec4(pv,left);
+    //     // right = mat4.multiplyVec4(pv,right);
+    //     // top = mat4.multiplyVec4(pv,top);
+    //     // bottom = mat4.multiplyVec4(pv,bottom);
+        
+    //     // left = vec4.divide(left,vec4.create([left[3],left[3],left[3],left[3]]));
+    //     // right = vec4.divide(right,vec4.create([right[3],right[3],right[3],right[3]]));
+    //     // top = vec4.divide(top,vec4.create([top[3],top[3],top[3],top[3]]));
+    //     // bottom = vec4.divide(bottom,vec4.create([bottom[3],bottom[3],bottom[3],bottom[3]]));
+        
+
+            
+
+    //     // left = mat4.multiplyVec4(viewport, left);
+    //     // right = mat4.multiplyVec4(viewport, right);
+    //     // top = mat4.multiplyVec4(viewport, top);
+    //     // bottom = mat4.multiplyVec4(viewport, bottom);
+
+    //     // console.log("left "+left[0] + " " + left[1] + " " + left[2] + " " + left[3]);   
+    //     //console.log("veiwport" + viewport[0]);
+        
+
+       
+
+    //     return true;
+    // }
+
+
+    function getLightBoundingBox(light_pos, radius, pv, viewport, left, right, top, bottom)
+    {
+        var lx = light_pos[0];
+        var ly = light_pos[1];
+        var lz = light_pos[2];      
+
+        var dir = vec3.create([1.0,0.0,0.0]);
+        var camUp = vec3.create([0.0,1.0,0.0]);
+        var camLeft = vec3.cross(dir, camUp);
+       
+       
+        var leftLight = vec4.create();
+        var upLight = vec4.create();
+        var centerLight = vec4.create();
+
+        leftLight = mat4.multiplyVec4(pv, vec4.create([lx + radius*camLeft[0], ly + radius*camLeft[1], lz + radius*camLeft[2], 1.0]));
+        upLight = mat4.multiplyVec4(pv, vec4.create([lx + radius*camUp[0], ly + radius*camUp[1], lz + radius*camUp[2], 1.0]));
+        centerLight = mat4.multiplyVec4(pv, vec4.create([lx, ly, lz, 1.0]));
+
+        leftLight = vec4.divide(leftLight,vec4.create([leftLight[3],leftLight[3],leftLight[3],leftLight[3]]));
+        upLight = vec4.divide(upLight,vec4.create([upLight[3],upLight[3],upLight[3],upLight[3]]));
+        centerLight = vec4.divide(centerLight,vec4.create([centerLight[3],centerLight[3],centerLight[3],centerLight[3]]));
+
+        leftLight = mat4.multiplyVec4(viewport, leftLight);
+        upLight = mat4.multiplyVec4(viewport, upLight);
+        centerLight = mat4.multiplyVec4(viewport, centerLight);
+
+
+        var dw = vec4.create();
+        dw = vec4.length(vec4.subtract(leftLight, centerLight, dw));
+        var dh = vec4.create();
+        dh = vec4.length(vec4.subtract(upLight, centerLight, dh));       
+
+        var r = dw>dh?dw:dh;
+
+        var cx = centerLight[0] - r;
+        var cy = centerLight[1] - r;
+
+        // console.log("cx is " + cx);
+        // console.log("cy is " + cy);
+        // console.log("r is " + r);
+
+        return true;
+    }
+
+
+
     function keyPress(e){
         var keynum;
         
@@ -617,11 +785,52 @@
 
      	setupQuad(diagnostic_prog);
         
-        var lightPos = vec4.create([10.0, 10.0, 10.0, 0.0]);
-        lightPos = mat4.multiplyVec4(view, lightPos);
-        lightPos.z = 20.0;
+        var lightPos = vec4.create([0.0, 4.0, 0.0, 1.0]);
+        lightPos = mat4.multiplyVec4(view, lightPos);        
         gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
      	drawQuad();
+
+        //var pv = mat4.multiply(persp,view);
+        //var pv = mat4.multiply(view, mat4.create());
+       // //var pv = mat4.create();
+
+        var perspM = mat4.create();
+        mat4.perspective(45.0, canvas.width/canvas.height, near, far, perspM);
+
+        var viewM = mat4.create();
+        mat4.lookAt(eye, center, up, viewM);
+        
+        var pv = mat4.multiply(perspM, viewM);
+
+        var viewport = mat4.createFrom(
+            canvas.width/2.0,0.0,0.0,0.0,
+            0.0,canvas.height/2.0,0.0,0.0,
+            0.0,0.0,1.0/2.0,0.0,
+            canvas.width/2.0, canvas.height/2.0, 1.0/2.0, 1.0
+            );
+        //console.log("hahahaha");
+
+         // var viewport = mat4.multiply(
+         //    mat4.createFrom(
+         //        canvas.width, 0, 0, 0,
+         //        0,canvas.height,0,0,
+         //        0,0,1,0,
+         //        0,0,0,1
+         //        ),
+         //    mat4.createFrom(
+         //        0.5,0,0,0,
+         //        0,0.5,0,0,
+         //        0,0,1,0,
+         //        0.5,0.5,0,1
+         //        )
+         //    );
+
+        var left, right, top, bottom;
+
+        if(getLightBoundingBox(vec4.create([0.0, 0.0, 0.0, 1.0]), 2.0, pv, viewport, left, right, top, bottom))
+        {   
+
+        }
 
 
      	//setupQuad(ambient_prog);

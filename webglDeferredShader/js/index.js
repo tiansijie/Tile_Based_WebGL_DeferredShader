@@ -653,8 +653,8 @@
         mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
         mat4.identity(model);
-        //mat4.scale(model,[0.1,0.1,0.1]);
-        //mat4.translate(model,[0,10,0]);
+        mat4.scale(model,[0.1,0.1,0.1]);
+        mat4.translate(model,[0,10,0]);
 
         var mv = mat4.create();
         mat4.multiply(view, model, mv);
@@ -828,9 +828,9 @@
 		var canvas = document.getElementById("canvas");
 		initGL(canvas);
 		initShader();		
-		initMeshBuffers();
+		//initMeshBuffers();
         initQuadBuffers();
-        //loadTeapot();
+        loadTeapot();
         
 		initTexture();
         initCheckbox()
