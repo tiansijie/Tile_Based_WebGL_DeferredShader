@@ -687,6 +687,8 @@
         //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
+
+    
 	function drawScene(){
 		gl.useProgram(shaderProgram[0]);		
 		

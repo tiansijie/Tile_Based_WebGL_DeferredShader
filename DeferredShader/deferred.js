@@ -47,6 +47,15 @@
     mat4.lookAt(eye, center, up, view);
 
 
+    //For tile base lighting
+    var tileSize = 16;
+    var tileWidth = Math.floor(canvas.width / tileSize);
+    var tileHeight = Math.floor(canvas.height/tileSize);
+    var numTile = tileWidth * tileHeight;
+
+   
+
+
     var positionLocation = 0;
     var normalLocation = 1;
     var texCoordLocation = 2;
@@ -614,7 +623,7 @@
     // }
 
 
-    function getLightBoundingBox(light_pos, radius, pv, viewport, left, right, top, bottom)
+    function getLightBoundingBox(light_pos, radius, pv, viewport, boundary)
     {
         var lx = light_pos[0];
         var ly = light_pos[1];
@@ -645,20 +654,50 @@
         var dw = vec4.create();
         dw = vec4.length(vec4.subtract(leftLight, centerLight, dw));
         var dh = vec4.create();
-        dh = vec4.length(vec4.subtract(upLight, centerLight, dh));       
+        dh = vec4.length(vec4.subtract(upLight, centerLight, dh));        
 
-        var r = dw>dh?dw:dh;
+        var leftx = centerLight[0] - dw;
+        var bottomy = centerLight[1] - dh;
+        var rightx = centerLight[0] + dw;
+        var topy = centerLight[1] + dh;
 
-        var cx = centerLight[0] - r;
-        var cy = centerLight[1] - r;
+        boundary.left = leftx;
+        boundary.right = rightx;
+        boundary.bottom = bottomy;
+        boundary.top = topy;
 
-        // console.log("cx is " + cx);
-        // console.log("cy is " + cy);
-        // console.log("r is " + r);
-
-        return true;
+        //console.log("cx is " + leftx);
+        //console.log("cy is " + bottomy);
+        //console.log("r is " + r);
     }
 
+
+    function setLightOnTile(boundary, lightIndex, tileLightId)
+    {
+        boundary.left;
+        boundary.right;
+        boundary.top;
+        boundary.bottom;
+
+        var leftTile = Math.floor(boundary.left / tileSize);
+        var topTile = Math.floor(boundary.top / tileSize);
+        var rightTile = Math.floor(boundary.right / tileSize);
+        var bottomTile = Math.floor(boundary.bottom / tileSize);
+
+        var beginTile = leftTile + topTile * tileWidth;
+        var endTile = rightTile + bottomTile * tileWidth;
+
+        for(var i = leftTile; i < rightTile; i++)
+        {
+            for(var j = bottomTile; j < topTile; j++)
+            {                
+                var indexId = i + j * tileWidth;
+                tileLightId[indexId].push(lightIndex);             
+            }
+        }
+
+        //console.log("finished");
+    }
 
 
     function keyPress(e){
@@ -749,10 +788,7 @@
 
     model = mat4.create();
     mat4.identity(model);
-    mat4.rotate(model, 23.4/180*Math.PI, [0.0, 0.0, 1.0]);
-    mat4.rotate(model, Math.PI, [1.0, 0.0, 0.0]);
-    mat4.rotate(model, 0.0, [0.0, 1.0, 0.0]);
-    
+   
     mv = mat4.create();
     mat4.multiply(view, model, mv);
 
@@ -790,47 +826,34 @@
         gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
      	drawQuad();
 
-        //var pv = mat4.multiply(persp,view);
-        //var pv = mat4.multiply(view, mat4.create());
-       // //var pv = mat4.create();
-
-        var perspM = mat4.create();
-        mat4.perspective(45.0, canvas.width/canvas.height, near, far, perspM);
-
-        var viewM = mat4.create();
-        mat4.lookAt(eye, center, up, viewM);
         
-        var pv = mat4.multiply(perspM, viewM);
+        //For tile base light setting
+        var pv = mat4.create();
+        mat4.multiply(persp, view, pv);
 
         var viewport = mat4.createFrom(
             canvas.width/2.0,0.0,0.0,0.0,
             0.0,canvas.height/2.0,0.0,0.0,
             0.0,0.0,1.0/2.0,0.0,
             canvas.width/2.0, canvas.height/2.0, 1.0/2.0, 1.0
-            );
-        //console.log("hahahaha");
+            );       
 
-         // var viewport = mat4.multiply(
-         //    mat4.createFrom(
-         //        canvas.width, 0, 0, 0,
-         //        0,canvas.height,0,0,
-         //        0,0,1,0,
-         //        0,0,0,1
-         //        ),
-         //    mat4.createFrom(
-         //        0.5,0,0,0,
-         //        0,0.5,0,0,
-         //        0,0,1,0,
-         //        0.5,0.5,0,1
-         //        )
-         //    );
+        var boundary = {left:0, right:0, top:0, bottom:0};
 
-        var left, right, top, bottom;
+        var tileLightId = new Array(numTile);
+        for(var i = 0; i<numTile; i++)
+            tileLightId[i] = [];   
 
-        if(getLightBoundingBox(vec4.create([0.0, 0.0, 0.0, 1.0]), 2.0, pv, viewport, left, right, top, bottom))
-        {   
-
+        for(var i = 0; i < 500; i++){
+            getLightBoundingBox(vec4.create([0.0, 0.0, 0.0, 1.0]), 1.0, pv, viewport, boundary);
+            setLightOnTile(boundary, i, tileLightId);
         }
+
+        //tileLightId.clear;
+
+        //console.log("here left is " + Math.floor(boundary.top / 16));          
+
+        
 
 
      	//setupQuad(ambient_prog);
