@@ -86,6 +86,13 @@
     #define DISPLAY_TOTAL 4
     #define DISPLAY_LIGHTS 5
 
+
+    struct Light{
+        float radius;
+        vec3 position;
+        vec3 color;
+    };
+
     uniform sampler2D u_Depthtex;
     uniform sampler2D u_Normaltex;
     uniform sampler2D u_Positiontex;
@@ -96,6 +103,8 @@
     uniform float u_Near;
 
     uniform vec4 u_Light;
+
+    uniform Light u_Lights[20];
 
     varying vec2 fs_Texcoord;
 
@@ -114,7 +123,8 @@
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
 
-        vec3 light = u_Light.xyz;
+        vec3 light = u_Lights[19].position.xyz;
+        //u_Light.xyz;
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)

@@ -53,7 +53,11 @@
     var tileHeight = Math.floor(canvas.height/tileSize);
     var numTile = tileWidth * tileHeight;
 
-   
+
+    var lights = [];
+    var lightGrid = [];
+    var lightIndex = [];
+    var lightNum = 20;   
 
 
     var positionLocation = 0;
@@ -145,6 +149,8 @@
         }
     	//gl.useProgram(program);	
 	})();
+
+
 
 
 	var depthTexture = gl.createTexture();
@@ -447,6 +453,17 @@
         gl.uniform1f(gl.getUniformLocation(program, "u_Near"), near);
         gl.uniform1f(gl.getUniformLocation(program, "u_Far"), far);
 
+        for(var i = 0; i < lightNum; i++)
+        {
+            var radiusLoc = gl.getUniformLocation(program, "u_Lights["+i+"].radius");
+            gl.uniform1f(radiusLoc, lights[i].radius);
+            var posLoc = gl.getUniformLocation(program, "u_Lights["+i+"].position");
+            gl.uniform3fv(posLoc, lights[i].position);
+            var colLoc = gl.getUniformLocation(program, "u_Lights["+i+"].color");
+            gl.uniform3fv(colLoc, lights[i].color);
+        }
+
+
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, depthTexture);
         gl.uniform1i(gl.getUniformLocation(program, "u_Depthtex"),0);
@@ -674,11 +691,6 @@
 
     function setLightOnTile(boundary, lightIndex, tileLightId)
     {
-        boundary.left;
-        boundary.right;
-        boundary.top;
-        boundary.bottom;
-
         var leftTile = Math.floor(boundary.left / tileSize);
         var topTile = Math.floor(boundary.top / tileSize);
         var rightTile = Math.floor(boundary.right / tileSize);
@@ -692,12 +704,56 @@
             for(var j = bottomTile; j < topTile; j++)
             {                
                 var indexId = i + j * tileWidth;
-                tileLightId[indexId].push(lightIndex);             
+                if(indexId < numTile)
+                    tileLightId[indexId].push(lightIndex);             
             }
         }
-
-        //console.log("finished");
     }
+
+
+     (function setUpLights(){
+         //For tile base light setting
+        var pv = mat4.create();
+        mat4.multiply(persp, view, pv);
+
+        var viewport = mat4.createFrom(
+            canvas.width/2.0,0.0,0.0,0.0,
+            0.0,canvas.height/2.0,0.0,0.0,
+            0.0,0.0,1.0/2.0,0.0,
+            canvas.width/2.0, canvas.height/2.0, 1.0/2.0, 1.0
+            );       
+
+        var boundary = {left:0, right:0, top:0, bottom:0};
+
+        var tileLightId = new Array(numTile);
+        for(var i = 0; i<numTile; i++)
+            tileLightId[i] = [];           
+
+        for(var i = 0; i < lightNum; i++){
+            lights.push({position:vec3.create([i,i+1,i+2]),color:vec3.create([1,1,1]),radius:1});            
+            getLightBoundingBox(vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]), lights[i].radius, pv, viewport, boundary);
+            setLightOnTile(boundary, i, tileLightId);
+        }
+        
+        var offset = 0;
+             
+        for(var index = 0; index < numTile; index++)
+        {             
+            var size = tileLightId[index].length;
+            offset += size;
+            
+            lightGrid.push({offset:offset, size:size});           
+                         
+            for(var k = 0; k < size; k++)
+            {
+                lightIndex.push(tileLightId[index][k]);                
+            }
+        }
+    })();
+
+
+
+
 
 
     function keyPress(e){
@@ -802,7 +858,8 @@
     vec3.normalize(lightdir);
     mat4.multiplyVec4(view, [lightdir[0], lightdir[1], lightdir[2], 0.0], lightdest);
     lightdir = vec3.createFrom(lightdest[0],lightdest[1],lightdest[2]);
-    vec3.normalize(lightdir);
+    vec3.normalize(lightdir);   
+
 
 
      function animate() {   
@@ -817,37 +874,16 @@
      	//gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
      	//gl.blendFunc(gl.ONE, gl.ONE);
-     	gl.clear(gl.COLOR_BUFFER_BIT);        
+     	gl.clear(gl.COLOR_BUFFER_BIT);       
+       
 
-     	setupQuad(diagnostic_prog);
+        setupQuad(diagnostic_prog);
         
         var lightPos = vec4.create([0.0, 4.0, 0.0, 1.0]);
         lightPos = mat4.multiplyVec4(view, lightPos);        
         gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
-     	drawQuad();
-
         
-        //For tile base light setting
-        var pv = mat4.create();
-        mat4.multiply(persp, view, pv);
-
-        var viewport = mat4.createFrom(
-            canvas.width/2.0,0.0,0.0,0.0,
-            0.0,canvas.height/2.0,0.0,0.0,
-            0.0,0.0,1.0/2.0,0.0,
-            canvas.width/2.0, canvas.height/2.0, 1.0/2.0, 1.0
-            );       
-
-        var boundary = {left:0, right:0, top:0, bottom:0};
-
-        var tileLightId = new Array(numTile);
-        for(var i = 0; i<numTile; i++)
-            tileLightId[i] = [];   
-
-        for(var i = 0; i < 500; i++){
-            getLightBoundingBox(vec4.create([0.0, 0.0, 0.0, 1.0]), 1.0, pv, viewport, boundary);
-            setLightOnTile(boundary, i, tileLightId);
-        }
+        drawQuad();
 
         //tileLightId.clear;
 
