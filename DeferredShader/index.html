@@ -85,7 +85,8 @@
     #define DISPLAY_COLOR 3
     #define DISPLAY_TOTAL 4
     #define DISPLAY_LIGHTS 5
-
+    #define SIZE 16
+    #define TILESIZE (1024/SIZE)*(768/SIZE)
 
     struct Light{
         float radius;
@@ -98,13 +99,19 @@
     uniform sampler2D u_Positiontex;
     uniform sampler2D u_Colortex;
 
+    //for light
+    uniform sampler2D u_LightGridtex;
+    uniform sampler2D u_LightIndextex;
+
     uniform int u_DisplayType;
     uniform float u_Far;
     uniform float u_Near;
 
     uniform vec4 u_Light;
 
+    uniform int u_TileSize;
     uniform Light u_Lights[20];
+    uniform int u_LightIndexImageSize;
 
     varying vec2 fs_Texcoord;
 
@@ -123,6 +130,18 @@
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
 
+        //get the grid data index
+        vec2 gridIndex = vec2(int(fs_Texcoord.x) / u_TileSize, int(fs_Texcoord.y) / u_TileSize);
+        //x for offset, y for count
+        vec2 gridInfo = texture2D(u_LightGridtex, gridIndex).xy;
+        int offset = int(gridInfo.x);
+        int count = int(gridInfo.y);
+
+        //vec2 dataIndex = vec2(int(mod(float(offset), float(u_LightIndexImageSize))), int(offset / u_LightIndexImageSize));
+        vec2 dataIndex = vec2(float(1.0), 1.0);
+        float lightId = texture2D(u_LightIndextex, dataIndex).x;
+
+
         vec3 light = u_Lights[19].position.xyz;
         //u_Light.xyz;
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
@@ -134,7 +153,8 @@
         else if(u_DisplayType == DISPLAY_POSITION)
             gl_FragData[0] = vec4(abs(position)/u_Far, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR)
-            gl_FragData[0] = vec4(color, 1.0);
+            //gl_FragData[0] = vec4(color, 1.0);
+            gl_FragData[0] = vec4(vec3(lightId), 1.0);
         else
             gl_FragData[0] = vec4(diffuse * color, 1.0);
        // else
