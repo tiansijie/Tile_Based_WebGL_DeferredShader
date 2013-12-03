@@ -210,14 +210,14 @@
         if(count > 0){
             for(int i = 0; i < LIGHTNUM; i++){
                 if(i < count){
-                    vec2 dataIndex = vec2(
-                        (mod(float(offset+i), float(u_LightIndexImageSize))) / float(u_LightIndexImageSize-1),
-                        float((offset+i) / (u_LightIndexImageSize))  / float(u_LightIndexImageSize-1)                        
-                        );
+                    // vec2 dataIndex = vec2(
+                    //     (mod(float(offset+i), float(u_LightIndexImageSize))) / float(u_LightIndexImageSize-1),
+                    //     float((offset+i) / (u_LightIndexImageSize))  / float(u_LightIndexImageSize-1)                        
+                    //     );
                     
 
                     int lightId;                    
-                    //vec2 dataIndex = vec2(float(offset+i+1) / float(u_LightIndexImageSize), 1.0);
+                    vec2 dataIndex = vec2(float(offset+i) / float(u_LightIndexImageSize-1), 1.0);
                     lightId = int(texture2D(u_LightIndextex, dataIndex).x);
 
                     // for(int k = 0; k < 629; k++)

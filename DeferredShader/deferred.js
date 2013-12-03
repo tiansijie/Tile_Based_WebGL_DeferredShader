@@ -507,45 +507,45 @@
         gl.uniform1i(gl.getUniformLocation(program, "u_LightGridtex"),4);    
 
 
-        var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
-        //var lightIndexWidth = lightIndex.length;
+        //var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
+        var lightIndexWidth = lightIndex.length;
         //console.log("light Index len " + lightIndex.length);
         gl.uniform1i(gl.getUniformLocation(program, "u_LightIndexImageSize"), lightIndexWidth);
 
-        for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)
-        {
-            lightIndex.push(-1);
-        }    
+        // for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)
+        // {
+        //     lightIndex.push(-1);
+        // }    
 
-        var gridLightIndex = new Array(lightIndexWidth);
-        for(var i = 0; i < lightIndexWidth; i++)
-            gridLightIndex[i] = new Array(lightIndexWidth);
+        // var gridLightIndex = new Array(lightIndexWidth);
+        // for(var i = 0; i < lightIndexWidth; i++)
+        //     gridLightIndex[i] = new Array(lightIndexWidth);
 
-        for(var i = 0; i < lightIndexWidth; i++)
-            for(var j = 0; j < lightIndexWidth; j++)
-            {
-                var index = i  + j * lightIndexWidth;
-                gridLightIndex[i][j] = lightIndex[index];
-                //console.log("grid " + gridLightIndex[i][j])
-            }
+        // for(var i = 0; i < lightIndexWidth; i++)
+        //     for(var j = 0; j < lightIndexWidth; j++)
+        //     {
+        //         var index = i  + j * lightIndexWidth;
+        //         gridLightIndex[i][j] = lightIndex[index];
+        //         //console.log("grid " + gridLightIndex[i][j])
+        //     }
 
-            var uu = 0;
-            var xx = 0;
-        for(var i = 0; i < lightGrid.length; i += 3)
-        {
-            for(var j = 0; j < lightGrid[i+1]; j++)
-            {
-                var offset = lightGrid[i] + j;
-                var ii = lightIndex[offset];
-                var kk = gridLightIndex[Math.floor(offset%lightIndexWidth)][Math.floor(offset/lightIndexWidth)];               
-                if(ii != kk){                    
-                    uu++;
-                }
-                else
-                    xx++;
-            }
-        }
-        console.log("wo cao" + uu);
+        //     var uu = 0;
+        //     var xx = 0;
+        // for(var i = 0; i < lightGrid.length; i += 3)
+        // {
+        //     for(var j = 0; j < lightGrid[i+1]; j++)
+        //     {
+        //         var offset = lightGrid[i] + j;
+        //         var ii = lightIndex[offset];
+        //         var kk = gridLightIndex[Math.floor(offset%lightIndexWidth)][Math.floor(offset/lightIndexWidth)];               
+        //         if(ii != kk){                    
+        //             uu++;
+        //         }
+        //         else
+        //             xx++;
+        //     }
+        // }
+        // console.log("wo cao" + uu);
 
         gl.activeTexture(gl.TEXTURE5);
         gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);
@@ -554,7 +554,7 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, lightIndexWidth, lightIndexWidth, 0, gl.LUMINANCE, gl.FLOAT, new Float32Array(lightIndex));       
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, lightIndexWidth, 1.0, 0, gl.LUMINANCE, gl.FLOAT, new Float32Array(lightIndex));       
         gl.uniform1i(gl.getUniformLocation(program, "u_LightIndextex"),5);
 
 
@@ -816,7 +816,7 @@
             //     lights.push({position:vec3.create([0,0,0]),color:vec3.create([1,0,0]),radius:1.0});            
             // else
             //     lights.push({position:vec3.create([i,i,i]),color:vec3.create([0,0,1]),radius:1.0});            
-            lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:1.7});
+            lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:2.0});
             getLightBoundingBox(vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]), lights[i].radius, pv, viewport, boundary);
             //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
             setLightOnTile(boundary, i, tileLightId);
