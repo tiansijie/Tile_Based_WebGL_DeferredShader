@@ -75,6 +75,71 @@
     }
 </script>
 
+<script id="light_fs" type="x-shader/x-fragment">
+    #extension GL_EXT_draw_buffers : require
+    precision highp float;
+
+    #define DISPLAY_DEPTH 0
+    #define DISPLAY_NORMAL 1
+    #define DISPLAY_POSITION 2
+    #define DISPLAY_COLOR 3
+    #define DISPLAY_TOTAL 4
+    #define DISPLAY_LIGHTS 5
+    #define SIZE 16
+    #define TILESIZE (1024/SIZE)*(768/SIZE)
+
+    struct Light{
+        float radius;
+        vec3 position;
+        vec3 color;
+    };
+
+
+    uniform sampler2D u_Depthtex;
+    uniform sampler2D u_Normaltex;
+    uniform sampler2D u_Positiontex;
+    uniform sampler2D u_Colortex;
+
+    //for light
+    uniform sampler2D u_LightGridtex;
+    uniform sampler2D u_LightIndextex;
+
+    uniform int u_DisplayType;
+    uniform float u_Far;
+    uniform float u_Near;
+
+    uniform vec4 u_Light;
+
+    uniform int u_TileSize;
+    uniform Light u_Lights[20];
+    uniform int u_LightIndexImageSize;
+
+    varying vec2 fs_Texcoord;
+
+    void main(void)
+    {
+
+        vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
+        vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
+        vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
+
+
+         //get the grid data index
+        vec2 gridIndex = vec2(int(fs_Texcoord.x) / u_TileSize, int(fs_Texcoord.y) / u_TileSize);
+        //x for offset, y for count
+        vec2 gridInfo = texture2D(u_LightGridtex, gridIndex).xy;
+        int offset = int(gridInfo.x);
+        int count = int(gridInfo.y);
+
+        //vec2 dataIndex = vec2(int(mod(float(offset), float(u_LightIndexImageSize))), int(offset / u_LightIndexImageSize));
+        vec2 dataIndex = vec2(float(1.0), 1.0);
+        float lightId = texture2D(u_LightIndextex, dataIndex).x;
+
+
+    }
+</script>
+
+
 <script id="diagnostic_fs" type="x-shader/x-fragment">
     #extension GL_EXT_draw_buffers : require
     precision highp float;
@@ -87,6 +152,7 @@
     #define DISPLAY_LIGHTS 5
     #define SIZE 16
     #define TILESIZE (1024/SIZE)*(768/SIZE)
+    #define LIGHTNUM 3
 
     struct Light{
         float radius;
@@ -110,8 +176,10 @@
     uniform vec4 u_Light;
 
     uniform int u_TileSize;
-    uniform Light u_Lights[20];
+    uniform Light u_Lights[LIGHTNUM];
     uniform int u_LightIndexImageSize;
+
+    //uniform int u_LightIndex[629];
 
     varying vec2 fs_Texcoord;
 
@@ -131,18 +199,48 @@
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
 
         //get the grid data index
-        vec2 gridIndex = vec2(int(fs_Texcoord.x) / u_TileSize, int(fs_Texcoord.y) / u_TileSize);
+        vec2 gridIndex = vec2((fs_Texcoord.x*1024.0) / float(u_TileSize) / 64.0, (fs_Texcoord.y*768.0) / float(u_TileSize) / 48.0);
         //x for offset, y for count
-        vec2 gridInfo = texture2D(u_LightGridtex, gridIndex).xy;
+        vec3 gridInfo = texture2D(u_LightGridtex, gridIndex).xyz;
         int offset = int(gridInfo.x);
         int count = int(gridInfo.y);
+        int temp = int(gridInfo.z);
 
-        //vec2 dataIndex = vec2(int(mod(float(offset), float(u_LightIndexImageSize))), int(offset / u_LightIndexImageSize));
-        vec2 dataIndex = vec2(float(1.0), 1.0);
-        float lightId = texture2D(u_LightIndextex, dataIndex).x;
+        vec3 lightColor = vec3(0.0);
+        if(count > 0){
+            for(int i = 0; i < LIGHTNUM; i++){
+                if(i < count){
+                    vec2 dataIndex = vec2(
+                        (mod(float(offset+i), float(u_LightIndexImageSize))) / float(u_LightIndexImageSize-1),
+                        float((offset+i) / (u_LightIndexImageSize))  / float(u_LightIndexImageSize-1)                        
+                        );
+                    
+
+                    int lightId;                    
+                    //vec2 dataIndex = vec2(float(offset+i+1) / float(u_LightIndexImageSize), 1.0);
+                    lightId = int(texture2D(u_LightIndextex, dataIndex).x);
+
+                    // for(int k = 0; k < 629; k++)
+                    // {
+                    //     if(k == (offset+i))
+                    //         lightId = u_LightIndex[k];
+                    // }               
 
 
-        vec3 light = u_Lights[19].position.xyz;
+                    for(int j = 0; j < LIGHTNUM; j++)
+                    {
+                        if(j == lightId){
+                            lightColor += u_Lights[j].color;                           
+                        }
+                    }    
+                }
+            }
+            lightColor /= float(count);    
+        }
+
+        
+
+        vec3 light = u_Lights[0].position.xyz;
         //u_Light.xyz;
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
@@ -154,13 +252,9 @@
             gl_FragData[0] = vec4(abs(position)/u_Far, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR)
             //gl_FragData[0] = vec4(color, 1.0);
-            gl_FragData[0] = vec4(vec3(lightId), 1.0);
+            gl_FragData[0] = vec4(lightColor, 1.0);
         else
-            gl_FragData[0] = vec4(diffuse * color, 1.0);
-       // else
-        //    gl_FragColor[0] = vec4(0.0);
-        //gl_FragColor = vec4(no, 1.0);
-        //gl_FragColor = vec4(vec3(0.7), 1.0);
+            gl_FragData[0] = vec4(diffuse * color, 1.0);      
 
     }
 </script>
