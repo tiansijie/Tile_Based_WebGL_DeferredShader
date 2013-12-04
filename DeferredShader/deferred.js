@@ -59,7 +59,7 @@
     var lightColorRadius = [];
     var lightGrid = [];
     var lightIndex = [];
-    var lightNum = 3;   
+    var lightNum = 10;   
 
 
     var positionLocation = 0;
@@ -802,9 +802,9 @@
 
     function resetLights()
     {
-        lights.length = 0;
-        lightPosition.length = 0;
-        lightColorRadius.length = 0;
+        //lights.length = 0;
+        //lightPosition.length = 0;
+        //lightColorRadius.length = 0;
         lightGrid.length = 0;
         lightIndex.length = 0;
     }
@@ -834,27 +834,15 @@
 
         for(var i = 0; i < lightNum; i++){
             var boundary = {left:0, right:0, top:0, bottom:0};
-            lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:1.0});
-            
-            //light position x y z
-            lightPosition.push(i);
-            lightPosition.push(i);
-            lightPosition.push(i);
 
-            //color r g b and radius
-            lightColorRadius.push(Math.random());
-            lightColorRadius.push(Math.random());
-            lightColorRadius.push(Math.random());
-
-            lightColorRadius.push(10.0);
+            getLightBoundingBox(vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]), lights[i].radius, pv, viewport, boundary);
 
 
-            //getLightBoundingBox(vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]), lights[i].radius, pv, viewport, boundary);
             var lposLen = lightPosition.length;
             var lcolRLen = lightColorRadius.length;
             //console.log(lightPosition[lposLen-3] + " " + lightPosition[lposLen-2] + " " +lightPosition[lposLen-1]);
             //getLightBoundingBox(vec4.create(lightPosition[lposLen-3], lightPosition[lposLen-2], lightPosition[lposLen-1], 1.0), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
-            getLightBoundingBox(vec4.create([i,i,i, 1.0]), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
+            //getLightBoundingBox(vec4.create([i,i,i, 1.0]), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
             //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
             setLightOnTile(boundary, i, tileLightId);
         }
@@ -878,6 +866,35 @@
             offset += size;
         }
     }
+
+
+    (function initLights(){
+
+        for(var i = 0; i < lightNum; i++){
+            var boundary = {left:0, right:0, top:0, bottom:0};
+
+            var radius = 5.0;
+
+            lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+            
+            //light position x y z
+            lightPosition.push(i);
+            lightPosition.push(i);
+            lightPosition.push(i);
+
+            //color r g b and radius
+            // lightColorRadius.push(i/lightNum);
+            // lightColorRadius.push((i+1)/lightNum);
+            // lightColorRadius.push((i+1)/lightNum);
+
+            lightColorRadius.push(Math.random());
+            lightColorRadius.push(Math.random());
+            lightColorRadius.push(Math.random());
+
+            lightColorRadius.push(radius);
+        }
+
+    })();
 
 
     function keyPress(e){
@@ -1014,8 +1031,8 @@
         lightQuad(light_prog);
         drawQuad();
 
-     	setupQuad(ambient_prog);
-     	drawQuad();
+     	// setupQuad(ambient_prog);
+     	// drawQuad();
         gl.disable(gl.BLEND);
 
 
