@@ -72,6 +72,113 @@
     }
 </script>
 
+<script id="light_fs" type="x-shader/x-fragment">
+    precision highp float;
+    #extension GL_EXT_draw_buffers : require
+   
+
+    #define DISPLAY_DEPTH 0
+    #define DISPLAY_NORMAL 1
+    #define DISPLAY_POSITION 2
+    #define DISPLAY_COLOR 3
+    #define DISPLAY_TOTAL 4
+    #define DISPLAY_LIGHTS 5
+    #define TILESIZE 16    
+    #define LIGHTNUM 10
+
+    struct Light{
+        float radius;
+        vec3 position;
+        vec3 color;
+    };
+
+
+    uniform sampler2D u_Depthtex;
+    uniform sampler2D u_Normaltex;
+    uniform sampler2D u_Positiontex;
+    uniform sampler2D u_Colortex;
+
+    //for light
+    uniform sampler2D u_LightGridtex;
+    uniform sampler2D u_LightIndextex;
+    uniform sampler2D u_LightPositiontex;
+    uniform sampler2D u_LightColorRadiustex;
+    uniform int u_LightNum;
+
+    uniform int u_DisplayType;
+    uniform float u_Far;
+    uniform float u_Near;
+    uniform float u_Width;
+    uniform float u_Height;
+
+    uniform int u_TileSize;
+    uniform Light u_Lights[LIGHTNUM];
+    uniform int u_LightIndexImageSize;
+
+    varying vec2 fs_Texcoord;
+
+    void main(void)
+    {
+        vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
+        vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
+        vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
+
+        if(u_DisplayType == DISPLAY_LIGHTS){
+
+            float widthTile = u_Width / float(TILESIZE);
+            float heightTile = u_Height / float(TILESIZE);
+
+            //get the grid data index
+            vec2 gridIndex = vec2((fs_Texcoord.x*u_Width) / float(u_TileSize) / widthTile, (fs_Texcoord.y*u_Height) / float(u_TileSize) / heightTile);
+            //x for offset, y for count
+            vec3 gridInfo = texture2D(u_LightGridtex, gridIndex).xyz;
+            int offset = int(gridInfo.x);
+            int count = int(gridInfo.y);   
+
+            vec3 lightColor = vec3(0.0);
+            int lightCount = 0;
+            if(count > 0){
+                for(int i = 0; i < LIGHTNUM; i++){
+                    if(i < count){
+
+                        int lightId;    
+                        vec2 dataIndex = vec2(
+                            (mod(float(offset+i), float(u_LightIndexImageSize))) / float(u_LightIndexImageSize-1),
+                            floor(float((offset+i) / (u_LightIndexImageSize))) / float(u_LightIndexImageSize-1)
+                            );     
+
+                        //precesion problem
+                        if((mod(float(offset+i), float(u_LightIndexImageSize))) == float(u_LightIndexImageSize))
+                        {
+                            dataIndex.x = 0.0;
+                        }
+
+                        //vec2 dataIndex = vec2(float(offset+i) / float(u_LightIndexImageSize-1), 1.0);
+                        lightId = int((texture2D(u_LightIndextex, dataIndex).x));    
+
+                      
+                        vec3 lightPos = texture2D(u_LightPositiontex, vec2(float(lightId)/float(u_LightNum-1))).xyz;
+                        vec4 lightColorRadius = texture2D(u_LightColorRadiustex, vec2(float(lightId)/float(u_LightNum-1))).xyzw;
+                        //if(distance(lightPos, position) < lightColorRadius.w){
+                            float diffuse = max(dot(normal, normalize(lightPos - position)),0.0);
+                            lightColor += diffuse * color * lightColorRadius.xyz;
+                            lightColor += lightColorRadius.xyz;
+                            lightCount ++;
+                        //}                         
+                    }
+                    else
+                        break;
+                }
+                lightColor /= float(lightCount*2); 
+            }       
+            gl_FragData[0] = vec4(lightColor, 1.0);
+        }
+        else
+            gl_FragData[0] = vec4(vec3(0.0), 1.0);
+    }
+</script>
+
+
 <script id="diagnostic_fs" type="x-shader/x-fragment">
     #extension GL_EXT_draw_buffers : require
     precision highp float;
@@ -81,18 +188,20 @@
     #define DISPLAY_POSITION 2
     #define DISPLAY_COLOR 3
     #define DISPLAY_TOTAL 4
-    #define DISPLAY_LIGHTS 5
+    #define DISPLAY_LIGHTS 5    
 
     uniform sampler2D u_Depthtex;
     uniform sampler2D u_Normaltex;
     uniform sampler2D u_Positiontex;
-    uniform sampler2D u_Colortex;
+    uniform sampler2D u_Colortex;  
 
     uniform int u_DisplayType;
     uniform float u_Far;
     uniform float u_Near;
+    uniform float u_Width;
+    uniform float u_Height;
 
-    uniform vec4 u_Light;
+    uniform vec4 u_Light;  
 
     varying vec2 fs_Texcoord;
 
@@ -110,8 +219,10 @@
         vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
+        
 
-        vec3 light = u_Light.xyz;
+        vec3 light = u_Light.xyz;//.position.xyz;
+        //u_Light.xyz;
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
@@ -122,13 +233,10 @@
             gl_FragData[0] = vec4(abs(position)/u_Far, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR)
             gl_FragData[0] = vec4(color, 1.0);
+            //gl_FragData[0] = vec4(lightColor, 1.0);
         else
-            gl_FragData[0] = vec4(diffuse * color, 1.0);
-       // else
-        //    gl_FragColor[0] = vec4(0.0);
-        //gl_FragColor = vec4(no, 1.0);
-        //gl_FragColor = vec4(vec3(0.7), 1.0);
-
+            gl_FragData[0] = vec4(vec3(0.0), 1.0);      
+            //gl_FragData[0] = vec4(diffuse * color, 1.0);      
     }
 </script>
 

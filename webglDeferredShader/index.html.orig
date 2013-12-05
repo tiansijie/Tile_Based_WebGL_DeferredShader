@@ -15,7 +15,11 @@
     <input type="checkbox" id="depth" name = "a"  />Display<span style = "color:red">Depth</span>  Pass
 </div>
 
+<<<<<<< HEAD
 <canvas id="canvas" style="border: none;" width="1024" height="768" tabindex="1"></canvas>
+=======
+<canvas id="canvas" style="border: none;" width="1000" height="1000" tabindex="1"></canvas>
+>>>>>>> a43e15949e8e7331126357e05f3fcd311929a4c9
 
 <script type="text/javascript" src ="js/jquery-1.10.2.min.js"></script>
 <script type = "text/javascript" >
@@ -80,7 +84,6 @@
 		else if(u_Displaymode == 2)
 		{
 			//position
-			gl_FragColor = vec4(abs(position),1.0);			
 			gl_FragColor = vec4(abs(position)/10.0,1.0);			
 			return;
 		}
@@ -149,7 +152,6 @@
 		if(u_DrawMode == 0)
 		{
 			gl_FragColor = vec4(normalize(vNormal),0.0);	
-			//gl_FragColor = vec4(1.0,0.0,0.0,1.0);
 			return;
 		}
 		else if(u_DrawMode == 1)
@@ -170,9 +172,8 @@
 
 <script src="js/webGLUtility.js"></script> 
 <script src="js/Stats.js"></script>
-<script type = "text/javascript" src="js/webgl-obj-loader.js"></script>
-
 <script type = "text/javascript" src="js/index.js"></script>
+
 </body>
 
 </html>
