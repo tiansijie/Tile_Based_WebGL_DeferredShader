@@ -35,7 +35,7 @@
         return [x,y,z];
     }
 
-    var radius = 5.0;
+    var radius = 12.0;
     var azimuth = Math.PI;
     var elevation = 0.0001;
 
@@ -274,19 +274,19 @@
 		// 	handleLoadedTexture(colorTexture);
 		// }
 		// colorTexture.image.src = "arroway.de_metal+structure+06_d100_flat.jpg";   
-        earthTexture = gl.createTexture();
-        earthTexture.image = new Image();
-        earthTexture.image.onload = function () {
-            handleLoadedTexture(earthTexture)
-        }
-        earthTexture.image.src = "earth.jpg";
-
         colorTexture = gl.createTexture();
         colorTexture.image = new Image();
         colorTexture.image.onload = function () {
             handleLoadedTexture(colorTexture)
         }
-        colorTexture.image.src = "arroway.de_metal+structure+06_d100_flat.jpg";     
+        colorTexture.image.src = "moon.gif";
+
+        // colorTexture = gl.createTexture();
+        // colorTexture.image = new Image();
+        // colorTexture.image.onload = function () {
+        //     handleLoadedTexture(colorTexture)
+        // }
+        // colorTexture.image.src = "arroway.de_metal+structure+06_d100_flat.jpg";     
 	}
 
 
@@ -295,8 +295,8 @@
 	model = mat4.create();
 	inverse = mat4.create();
 
-	function setMatrixUniforms(){
-		gl.uniformMatrix4fv(shaderProgram[0].modelMatrixUniform,false,model);
+	function setMatrixUniforms(models){
+		gl.uniformMatrix4fv(shaderProgram[0].modelMatrixUniform,false,models);
 		gl.uniformMatrix4fv(shaderProgram[0].viewMatrixUniform,false, view);
 		gl.uniformMatrix4fv(shaderProgram[0].perspMatrixUniform,false,persp);
 		gl.uniformMatrix4fv(shaderProgram[0].inverseMatrixUniform,false,inverse);		
@@ -341,270 +341,364 @@
 
     }
 
-    var meshvbo;
-    var meshnbo;
-    var meshibo;
-    var meshtbo;
-    function loadTeapot() {
-        var request = new XMLHttpRequest();
-        request.open("GET", "Teapot.json");
-        request.onreadystatechange = function () {
-            if (request.readyState == 4) {
-                handleLoadedTeapot(JSON.parse(request.responseText));
-            }
-        }
-        request.send();
-    }
+    // var meshvbo = [];
+    // var meshnbo = [];
+    // var meshibo = [];
+    // var meshtbo = [];
+    var meshes = [];    
+    var models = [];
+    // function loadTeapot() {
+    //     var request = new XMLHttpRequest();
+    //     request.open("GET", "Teapot.json");
+    //     request.onreadystatechange = function () {
+    //         if (request.readyState == 4) {
+    //             handleLoadedTeapot(JSON.parse(request.responseText));
+    //         }
+    //     }
+    //     request.send();
+    // }
    
-    function handleLoadedTeapot(teapotData) {
-        meshnbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
-        meshnbo.itemSize = 3;
-        meshnbo.numItems = teapotData.vertexNormals.length / 3;
+    // function handleLoadedTeapot(teapotData) {
+    //     meshnbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
+    //     meshnbo.itemSize = 3;
+    //     meshnbo.numItems = teapotData.vertexNormals.length / 3;
 
-        meshtbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
-        meshtbo.itemSize = 2;
-        meshtbo.numItems = teapotData.vertexTextureCoords.length / 2;
+    //     meshtbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
+    //     meshtbo.itemSize = 2;
+    //     meshtbo.numItems = teapotData.vertexTextureCoords.length / 2;
 
-        meshvbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
-        meshvbo.itemSize = 3;
-        meshvbo.numItems = teapotData.vertexPositions.length / 3;
+    //     meshvbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
+    //     meshvbo.itemSize = 3;
+    //     meshvbo.numItems = teapotData.vertexPositions.length / 3;
 
-        meshibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(teapotData.indices), gl.STATIC_DRAW);
-        meshibo.itemSize = 1;
-        meshibo.numItems = teapotData.indices.length;
+    //     meshibo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(teapotData.indices), gl.STATIC_DRAW);
+    //     meshibo.itemSize = 1;
+    //     meshibo.numItems = teapotData.indices.length;
 
-        //document.getElementById("loadingtext").textContent = "";
+    //     //document.getElementById("loadingtext").textContent = "";
+    // }
+
+    // function initcube()
+    // {
+    //     // cube
+    //     meshvbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER,meshvbo);
+    //     vertices = [
+    //         // Front face
+    //         -1.0, -1.0,  1.0,
+    //          1.0, -1.0,  1.0,
+    //          1.0,  1.0,  1.0,
+    //         -1.0,  1.0,  1.0,
+
+    //         // Back face
+    //         -1.0, -1.0, -1.0,
+    //         -1.0,  1.0, -1.0,
+    //          1.0,  1.0, -1.0,
+    //          1.0, -1.0, -1.0,
+
+    //         // Top face
+    //         -1.0,  1.0, -1.0,
+    //         -1.0,  1.0,  1.0,
+    //          1.0,  1.0,  1.0,
+    //          1.0,  1.0, -1.0,
+
+    //         // Bottom face
+    //         -1.0, -1.0, -1.0,
+    //          1.0, -1.0, -1.0,
+    //          1.0, -1.0,  1.0,
+    //         -1.0, -1.0,  1.0,
+
+    //         // Right face
+    //          1.0, -1.0, -1.0,
+    //          1.0,  1.0, -1.0,
+    //          1.0,  1.0,  1.0,
+    //          1.0, -1.0,  1.0,
+
+    //         // Left face
+    //         -1.0, -1.0, -1.0,
+    //         -1.0, -1.0,  1.0,
+    //         -1.0,  1.0,  1.0,
+    //         -1.0,  1.0, -1.0,
+    //     ];
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    //     meshvbo.itemSize = 3;
+    //     meshvbo.numItems = 24;
+
+    //     meshnbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+    //     var vertexNormals = [
+    //         // Front face
+    //          0.0,  0.0,  1.0,
+    //          0.0,  0.0,  1.0,
+    //          0.0,  0.0,  1.0,
+    //          0.0,  0.0,  1.0,
+
+    //         // Back face
+    //          0.0,  0.0, -1.0,
+    //          0.0,  0.0, -1.0,
+    //          0.0,  0.0, -1.0,
+    //          0.0,  0.0, -1.0,
+
+    //         // Top face
+    //          0.0,  1.0,  0.0,
+    //          0.0,  1.0,  0.0,
+    //          0.0,  1.0,  0.0,
+    //          0.0,  1.0,  0.0,
+
+    //         // Bottom face
+    //          0.0, -1.0,  0.0,
+    //          0.0, -1.0,  0.0,
+    //          0.0, -1.0,  0.0,
+    //          0.0, -1.0,  0.0,
+
+    //         // Right face
+    //          1.0,  0.0,  0.0,
+    //          1.0,  0.0,  0.0,
+    //          1.0,  0.0,  0.0,
+    //          1.0,  0.0,  0.0,
+
+    //         // Left face
+    //         -1.0,  0.0,  0.0,
+    //         -1.0,  0.0,  0.0,
+    //         -1.0,  0.0,  0.0,
+    //         -1.0,  0.0,  0.0,
+    //     ];
+    //      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
+    //      meshnbo.itemSize = 3;
+    //      meshnbo.numItems = 24;
+
+    //      meshtbo = gl.createBuffer();
+    //      gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+    //      var textureCoords = [
+    //         // Front face
+    //         0.0, 0.0,
+    //         1.0, 0.0,
+    //         1.0, 1.0,
+    //         0.0, 1.0,
+
+    //         // Back face
+    //         1.0, 0.0,
+    //         1.0, 1.0,
+    //         0.0, 1.0,
+    //         0.0, 0.0,
+
+    //         // Top face
+    //         0.0, 1.0,
+    //         0.0, 0.0,
+    //         1.0, 0.0,
+    //         1.0, 1.0,
+
+    //         // Bottom face
+    //         1.0, 1.0,
+    //         0.0, 1.0,
+    //         0.0, 0.0,
+    //         1.0, 0.0,
+
+    //         // Right face
+    //         1.0, 0.0,
+    //         1.0, 1.0,
+    //         0.0, 1.0,
+    //         0.0, 0.0,
+
+    //         // Left face
+    //         0.0, 0.0,
+    //         1.0, 0.0,
+    //         1.0, 1.0,
+    //         0.0, 1.0
+    //     ];
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+    //     meshtbo.itemSize = 2;
+    //     meshtbo.numItems = 24;
+
+    //     meshibo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+    //     var cubeVertexIndices = [
+    //         0, 1, 2,      0, 2, 3,    // Front face
+    //         4, 5, 6,      4, 6, 7,    // Back face
+    //         8, 9, 10,     8, 10, 11,  // Top face
+    //         12, 13, 14,   12, 14, 15, // Bottom face
+    //         16, 17, 18,   16, 18, 19, // Right face
+    //         20, 21, 22,   20, 22, 23  // Left face
+    //     ];
+    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+    //     meshibo.itemSize = 1;
+    //     meshibo.numItems = 36;
+    // }
+	
+    // function initsphere()
+    // {
+    //     var latitudeBands = 30;
+    //     var longitudeBands = 30;
+    //     var radius = 1.0;
+
+    //     var vertexPositionData = [];
+    //     var normalData = [];
+    //     var textureCoordData = [];
+    //     for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
+    //         var theta = latNumber * Math.PI / latitudeBands;
+    //         var sinTheta = Math.sin(theta);
+    //         var cosTheta = Math.cos(theta);
+
+    //         for (var longNumber=0; longNumber <= longitudeBands; longNumber++) {
+    //             var phi = longNumber * 2 * Math.PI / longitudeBands;
+    //             var sinPhi = Math.sin(phi);
+    //             var cosPhi = Math.cos(phi);
+
+    //             var x = cosPhi * sinTheta;
+    //             var y = cosTheta;
+    //             var z = sinPhi * sinTheta;
+    //             var u = 1 - (longNumber / longitudeBands);
+    //             var v = 1 - (latNumber / latitudeBands);
+
+    //             normalData.push(x);
+    //             normalData.push(y);
+    //             normalData.push(z);
+    //             textureCoordData.push(u);
+    //             textureCoordData.push(v);
+    //             vertexPositionData.push(radius * x);
+    //             vertexPositionData.push(radius * y);
+    //             vertexPositionData.push(radius * z);
+    //         }
+    //     }
+
+    //     var indexData = [];
+    //     for (var latNumber=0; latNumber < latitudeBands; latNumber++) {
+    //         for (var longNumber=0; longNumber < longitudeBands; longNumber++) {
+    //             var first = (latNumber * (longitudeBands + 1)) + longNumber;
+    //             var second = first + longitudeBands + 1;
+    //             indexData.push(first);
+    //             indexData.push(second);
+    //             indexData.push(first + 1);
+
+    //             indexData.push(second);
+    //             indexData.push(second + 1);
+    //             indexData.push(first + 1);
+    //         }
+    //     }
+
+    //     meshnbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
+    //     meshnbo.itemSize = 3;
+    //     meshnbo.numItems = normalData.length / 3;
+
+    //     meshtbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
+    //     meshtbo.itemSize = 2;
+    //     meshtbo.numItems = textureCoordData.length / 2;
+
+    //     meshvbo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
+    //     meshvbo.itemSize = 3;
+    //     meshvbo.numItems = vertexPositionData.length / 3;
+
+    //     meshibo = gl.createBuffer();
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
+    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
+    //     meshibo.itemSize = 1;
+    //     meshibo.numItems = indexData.length;
+    // }
+
+    function downloadMesh()
+    {
+        obj_utils.downloadMeshes(
+            {
+                'bottom' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                'back' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                'top' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                'left' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                'right' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                'cow' : 'http://localhost:288/webglDeferredShader/cow.obj',
+
+                 //'cube' : 'http://localhost:288/webglDeferredShader/cube2.obj'
+            },
+            initObj
+        );
     }
 
-	
+    function initObj(meshobjs)
+    {
+        meshes = meshobjs;
+
+        for(mesh in meshes){                     
+            obj_utils.initMeshBuffers(gl, meshes[mesh]);            
+        }
+        
+    }
+    function setmodelMatrix()
+    {
+        var meshNum = meshes.length;
+        console.log("mesh number : "+ meshNum);
+       
+        //cube2 for test
+        // var matrix  = mat4.create();
+        // mat4.identity(matrix);
+        // models.push(matrix);
+
+
+        //bottom
+        var matrix = mat4.create();
+        mat4.identity(matrix);
+        mat4.scale(matrix,[4,.01,4]); 
+        mat4.translate(matrix,[0,-400,0]);       
+        models.push(matrix);     
+
+        //back
+        var matrix2 = mat4.create();
+        mat4.identity(matrix2);
+        mat4.scale(matrix2,[.01,4,4]);
+        mat4.translate(matrix2,[400,0,0]);
+        models.push(matrix2);
+
+        //top
+        var matrix3 = mat4.create();
+        mat4.identity(matrix3);
+        mat4.scale(matrix3,[4,.01,4]);
+        mat4.translate(matrix3,[0,400,0]);
+        models.push(matrix3);
+        
+        //left
+        var matrix4 = mat4.create();
+        mat4.identity(matrix4);
+        mat4.scale(matrix4,[4,4,.01]);
+        mat4.translate(matrix4,[0,0,-400]);
+        models.push(matrix4);
+
+        //right
+        var matrix5 = mat4.create();
+        mat4.identity(matrix5);
+        mat4.scale(matrix5,[4,4,.01]);
+        mat4.translate(matrix5,[0,0,400]);
+        models.push(matrix5);
+
+        //cow
+        var bunnyMatrix = mat4.create();
+        mat4.identity(bunnyMatrix);
+        mat4.scale(bunnyMatrix,[8,8,8]);
+        mat4.rotate(bunnyMatrix,90,[0,1,0]);
+        mat4.translate(bunnyMatrix,[0,-.1,0]);
+        models.push(bunnyMatrix);
+
+    }
+
 	function initMeshBuffers()
 	{
-        // cube
-        // meshvbo = gl.createBuffer();
-        // gl.bindBuffer(gl.ARRAY_BUFFER,meshvbo);
-        // vertices = [
-        //     // Front face
-        //     -1.0, -1.0,  1.0,
-        //      1.0, -1.0,  1.0,
-        //      1.0,  1.0,  1.0,
-        //     -1.0,  1.0,  1.0,
-
-        //     // Back face
-        //     -1.0, -1.0, -1.0,
-        //     -1.0,  1.0, -1.0,
-        //      1.0,  1.0, -1.0,
-        //      1.0, -1.0, -1.0,
-
-        //     // Top face
-        //     -1.0,  1.0, -1.0,
-        //     -1.0,  1.0,  1.0,
-        //      1.0,  1.0,  1.0,
-        //      1.0,  1.0, -1.0,
-
-        //     // Bottom face
-        //     -1.0, -1.0, -1.0,
-        //      1.0, -1.0, -1.0,
-        //      1.0, -1.0,  1.0,
-        //     -1.0, -1.0,  1.0,
-
-        //     // Right face
-        //      1.0, -1.0, -1.0,
-        //      1.0,  1.0, -1.0,
-        //      1.0,  1.0,  1.0,
-        //      1.0, -1.0,  1.0,
-
-        //     // Left face
-        //     -1.0, -1.0, -1.0,
-        //     -1.0, -1.0,  1.0,
-        //     -1.0,  1.0,  1.0,
-        //     -1.0,  1.0, -1.0,
-        // ];
-        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        // meshvbo.itemSize = 3;
-        // meshvbo.numItems = 24;
-
-        // meshnbo = gl.createBuffer();
-        // gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-        // var vertexNormals = [
-        //     // Front face
-        //      0.0,  0.0,  1.0,
-        //      0.0,  0.0,  1.0,
-        //      0.0,  0.0,  1.0,
-        //      0.0,  0.0,  1.0,
-
-        //     // Back face
-        //      0.0,  0.0, -1.0,
-        //      0.0,  0.0, -1.0,
-        //      0.0,  0.0, -1.0,
-        //      0.0,  0.0, -1.0,
-
-        //     // Top face
-        //      0.0,  1.0,  0.0,
-        //      0.0,  1.0,  0.0,
-        //      0.0,  1.0,  0.0,
-        //      0.0,  1.0,  0.0,
-
-        //     // Bottom face
-        //      0.0, -1.0,  0.0,
-        //      0.0, -1.0,  0.0,
-        //      0.0, -1.0,  0.0,
-        //      0.0, -1.0,  0.0,
-
-        //     // Right face
-        //      1.0,  0.0,  0.0,
-        //      1.0,  0.0,  0.0,
-        //      1.0,  0.0,  0.0,
-        //      1.0,  0.0,  0.0,
-
-        //     // Left face
-        //     -1.0,  0.0,  0.0,
-        //     -1.0,  0.0,  0.0,
-        //     -1.0,  0.0,  0.0,
-        //     -1.0,  0.0,  0.0,
-        // ];
-        //  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
-        //  meshnbo.itemSize = 3;
-        //  meshnbo.numItems = 24;
-
-        //  meshtbo = gl.createBuffer();
-        //  gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-        //  var textureCoords = [
-        //     // Front face
-        //     0.0, 0.0,
-        //     1.0, 0.0,
-        //     1.0, 1.0,
-        //     0.0, 1.0,
-
-        //     // Back face
-        //     1.0, 0.0,
-        //     1.0, 1.0,
-        //     0.0, 1.0,
-        //     0.0, 0.0,
-
-        //     // Top face
-        //     0.0, 1.0,
-        //     0.0, 0.0,
-        //     1.0, 0.0,
-        //     1.0, 1.0,
-
-        //     // Bottom face
-        //     1.0, 1.0,
-        //     0.0, 1.0,
-        //     0.0, 0.0,
-        //     1.0, 0.0,
-
-        //     // Right face
-        //     1.0, 0.0,
-        //     1.0, 1.0,
-        //     0.0, 1.0,
-        //     0.0, 0.0,
-
-        //     // Left face
-        //     0.0, 0.0,
-        //     1.0, 0.0,
-        //     1.0, 1.0,
-        //     0.0, 1.0
-        // ];
-        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
-        // meshtbo.itemSize = 2;
-        // meshtbo.numItems = 24;
-
-        // meshibo = gl.createBuffer();
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-        // var cubeVertexIndices = [
-        //     0, 1, 2,      0, 2, 3,    // Front face
-        //     4, 5, 6,      4, 6, 7,    // Back face
-        //     8, 9, 10,     8, 10, 11,  // Top face
-        //     12, 13, 14,   12, 14, 15, // Bottom face
-        //     16, 17, 18,   16, 18, 19, // Right face
-        //     20, 21, 22,   20, 22, 23  // Left face
-        // ];
-        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
-        // meshibo.itemSize = 1;
-        // meshibo.numItems = 36;
-
-		// var latitudeBands = 30;
-  //       var longitudeBands = 30;
-  //       var radius = 1.0;
-
-  //       var vertexPositionData = [];
-  //       var normalData = [];
-  //       var textureCoordData = [];
-  //       for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
-  //           var theta = latNumber * Math.PI / latitudeBands;
-  //           var sinTheta = Math.sin(theta);
-  //           var cosTheta = Math.cos(theta);
-
-  //           for (var longNumber=0; longNumber <= longitudeBands; longNumber++) {
-  //               var phi = longNumber * 2 * Math.PI / longitudeBands;
-  //               var sinPhi = Math.sin(phi);
-  //               var cosPhi = Math.cos(phi);
-
-  //               var x = cosPhi * sinTheta;
-  //               var y = cosTheta;
-  //               var z = sinPhi * sinTheta;
-  //               var u = 1 - (longNumber / longitudeBands);
-  //               var v = 1 - (latNumber / latitudeBands);
-
-  //               normalData.push(x);
-  //               normalData.push(y);
-  //               normalData.push(z);
-  //               textureCoordData.push(u);
-  //               textureCoordData.push(v);
-  //               vertexPositionData.push(radius * x);
-  //               vertexPositionData.push(radius * y);
-  //               vertexPositionData.push(radius * z);
-  //           }
-  //       }
-
-  //       var indexData = [];
-  //       for (var latNumber=0; latNumber < latitudeBands; latNumber++) {
-  //           for (var longNumber=0; longNumber < longitudeBands; longNumber++) {
-  //               var first = (latNumber * (longitudeBands + 1)) + longNumber;
-  //               var second = first + longitudeBands + 1;
-  //               indexData.push(first);
-  //               indexData.push(second);
-  //               indexData.push(first + 1);
-
-  //               indexData.push(second);
-  //               indexData.push(second + 1);
-  //               indexData.push(first + 1);
-  //           }
-  //       }
-
-  //       meshnbo = gl.createBuffer();
-  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
-  //       meshnbo.itemSize = 3;
-  //       meshnbo.numItems = normalData.length / 3;
-
-  //       meshtbo = gl.createBuffer();
-  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
-  //       meshtbo.itemSize = 2;
-  //       meshtbo.numItems = textureCoordData.length / 2;
-
-  //       meshvbo = gl.createBuffer();
-  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-  //       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
-  //       meshvbo.itemSize = 3;
-  //       meshvbo.numItems = vertexPositionData.length / 3;
-
-  //       meshibo = gl.createBuffer();
-  //       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-  //       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
-  //       meshibo.itemSize = 1;
-  //       meshibo.numItems = indexData.length;
+        
+        //initsphere();
+		downloadMesh();
+        setmodelMatrix();
 	}
-    // var time = 0;
+   
 
     function setupQuad(program){
         gl.useProgram(program);
@@ -652,44 +746,82 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
-        mat4.identity(model);
-        mat4.scale(model,[0.1,0.1,0.1]);
-        mat4.translate(model,[0,10,0]);
+        // mat4.identity(model);
+        // mat4.scale(model,[.10,.10,.10]);
+        // // mat4.translate(model,[0,10,0]);
 
-        var mv = mat4.create();
-        mat4.multiply(view, model, mv);
+        // var mv = mat4.create();
+        // mat4.multiply(view, model, mv);
 
-        inverse = mat4.create();
-        mat4.identity(inverse);
-        mat4.inverse(mv, inverse);
-        mat4.transpose(inverse);
+        // inverse = mat4.create();
+        // mat4.identity(inverse);
+        // mat4.inverse(mv, inverse);
+        // mat4.transpose(inverse);
 
 		gl.uniform1i(shaderProgram[0].drawmode,drawmode);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-        gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshvbo.itemSize, gl.FLOAT, false, 0, 0);
+        var idx = 0;
+        for(mesh in meshes){
+            //console.log("idx " + idx);
+            var mv = mat4.create();
+            mat4.multiply(view, models[idx], mv);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-        gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute, meshtbo.itemSize, gl.FLOAT, false, 0, 0);
+            inverse = mat4.create();
+            mat4.identity(inverse);
+            mat4.inverse(mv, inverse);
+            mat4.transpose(inverse);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-        gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute, meshnbo.itemSize, gl.FLOAT, false, 0, 0);
+           // console.log(meshes[mesh].vertexBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
+            gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-        gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);        	
-        setMatrixUniforms();
-        gl.drawElements(gl.TRIANGLES, meshibo.numItems, gl.UNSIGNED_SHORT, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+            gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].normalBuffer);
+            gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute,  meshes[mesh].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+            gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);            
+            setMatrixUniforms(models[idx]);
+            gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+            idx ++;
+        }
+		// gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
+  //       gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshvbo.itemSize, gl.FLOAT, false, 0, 0);
+
+  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
+  //       gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute, meshtbo.itemSize, gl.FLOAT, false, 0, 0);
+
+  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
+  //       gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute, meshnbo.itemSize, gl.FLOAT, false, 0, 0);
+
+  //       gl.activeTexture(gl.TEXTURE0);
+  //       gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+  //       gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
+
+  //       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);        	
+  //       setMatrixUniforms();
+  //       gl.drawElements(gl.TRIANGLES, meshibo.numItems, gl.UNSIGNED_SHORT, 0);
 
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode]);
         //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
 	function drawScene(){
+
+
 		gl.useProgram(shaderProgram[0]);		
 		
+        drawMesh(0);
+        //return;
+
         for(var i = 0; i<4; ++i)
         {
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
@@ -755,8 +887,9 @@
         }
         else
         {
+           
             radius += 0.01 * deltaY;
-            radius = Math.min(Math.max(radius, 2.0), 10.0);
+            radius = Math.min(Math.max(radius, 2.0), 12.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
        // console.log("eye updated " + eye);
@@ -828,9 +961,8 @@
 		var canvas = document.getElementById("canvas");
 		initGL(canvas);
 		initShader();		
-		//initMeshBuffers();
+		initMeshBuffers();
         initQuadBuffers();
-        loadTeapot();
         
 		initTexture();
         initCheckbox()
