@@ -10,6 +10,8 @@
 <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
 <canvas id="canvas" style="border: none;" width="1024" height="768" tabindex="1"></canvas>
 
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+
 <script id="pass_vs" type="x-shader/x-vertex">    
     precision highp float;
 
@@ -39,6 +41,7 @@
     precision highp float;
 
     uniform vec3 u_Color;
+    //uniform sampler2D u_ColorSampler;
 
     //in
     varying vec3 fs_Normal;
@@ -83,7 +86,7 @@
     #define DISPLAY_COLOR 3
     #define DISPLAY_TOTAL 4
     #define DISPLAY_LIGHTS 5
-    #define TILESIZE 16    
+    #define TILESIZE 32    
     #define LIGHTNUM 10
 
     struct Light{
@@ -112,7 +115,7 @@
     uniform float u_Height;
 
     uniform int u_TileSize;
-    uniform Light u_Lights[LIGHTNUM];
+    //uniform Light u_Lights[LIGHTNUM];
     uniform int u_LightIndexImageSize;
 
     varying vec2 fs_Texcoord;
@@ -159,17 +162,21 @@
                       
                         vec3 lightPos = texture2D(u_LightPositiontex, vec2(float(lightId)/float(u_LightNum-1))).xyz;
                         vec4 lightColorRadius = texture2D(u_LightColorRadiustex, vec2(float(lightId)/float(u_LightNum-1))).xyzw;
-                        //if(distance(lightPos, position) < lightColorRadius.w){
+                        if(distance(lightPos, position) < lightColorRadius.w){
                             float diffuse = max(dot(normal, normalize(lightPos - position)),0.0);
                             lightColor += diffuse * color * lightColorRadius.xyz;
-                            lightColor += lightColorRadius.xyz;
+                            //lightColor += lightColorRadius.xyz;
                             lightCount ++;
-                        //}                         
+                        }                         
                     }
                     else
                         break;
                 }
-                lightColor /= float(lightCount*2); 
+                lightColor /= float(lightCount); 
+
+                //lightColor = vec3(float(lightCount)/float(LIGHTNUM));
+                //if(color == vec3(0.0))
+                 //   lightColor = color;
             }       
             gl_FragData[0] = vec4(lightColor, 1.0);
         }
@@ -300,6 +307,7 @@
 <script src ="Stats.js" type ="text/javascript"></script>
 <script src ="gl-matrix.js" type ="text/javascript"></script>
 <script src ="webGLUtility.js" type ="text/javascript"></script>
+<script src="webgl-obj-loader.js" type = "text/javascript"></script>
 <script src ="deferred.js" type ="text/javascript"></script>
 
 </body>

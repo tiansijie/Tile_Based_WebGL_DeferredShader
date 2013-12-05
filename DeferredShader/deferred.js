@@ -35,7 +35,7 @@
     var mv;
     var invTrans;
 
-    var radius = 5.0;
+    var radius = 12.0;
     var azimuth = Math.PI;
     var elevation = 0.0001;
 
@@ -48,7 +48,7 @@
 
 
     //For tile base lighting
-    var tileSize = 16;
+    var tileSize = 32;
     var tileWidth = Math.floor(canvas.width / tileSize);
     var tileHeight = Math.floor(canvas.height/tileSize);
     var numTile = tileWidth * tileHeight;
@@ -70,6 +70,7 @@
     var u_ViewLocation;
     var u_PerspLocation;
     var u_CameraSpaceDirLightLocation;
+    var u_ColorSamplerLocation;
 
     var u_DisplayTypeLocation;
     var u_NearLocation;
@@ -90,7 +91,7 @@
 
     var ext = null;
 
-    (function initializeShader() {
+    function initializeShader() {
     	ext = gl.getExtension("WEBGL_draw_buffers");
         if (!ext) {
             console.log("No WEBGL_draw_buffers support -- this is legal");
@@ -115,6 +116,7 @@
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
         u_InvTransLocation = gl.getUniformLocation(pass_prog,"u_InvTrans");
+        u_ColorSamplerLocation = gl.getUniformLocation(pass_prog,"u_ColorSampler");
     	
         //Second shaders
     	vs = getShaderSource(document.getElementById("shade_vs"));
@@ -162,7 +164,7 @@
             alert("Could not initialise post_fs");
         }
     	//gl.useProgram(program);	
-	})();
+	}
 
 
 
@@ -193,7 +195,7 @@
       return array;
     }
 
-	(function initializeFBO() {
+	function initializeFBO() {
 
 		console.log("initFBO");
 
@@ -287,8 +289,100 @@
     	gl.clear(gl.DEPTH_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.bindTexture(gl.TEXTURE_2D, null);
-	})();
+	}
 
+
+
+    //OBJ
+    var meshes = [];    
+    var models = [];
+
+    function downloadMesh()
+    {
+        obj_utils.downloadMeshes(
+            {
+                'bottom' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                'back' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                'top' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                'left' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                'right' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                'cow' : 'http://sijietian.com/WebGL/OBJ/cow.obj',
+            },
+            initObj
+        );
+    };
+
+    function initObj(meshobjs)
+    {
+        meshes = meshobjs;
+
+        for(mesh in meshes){                     
+            obj_utils.initMeshBuffers(gl, meshes[mesh]);            
+        }
+        
+    }
+
+     function setmodelMatrix()
+    {
+        var meshNum = meshes.length;
+        console.log("mesh number : "+ meshNum);
+       
+        //cube2 for test
+        // var matrix  = mat4.create();
+        // mat4.identity(matrix);
+        // models.push(matrix);
+
+
+        //bottom
+        var matrix = mat4.create();
+        mat4.identity(matrix);
+        mat4.scale(matrix,[4,.01,4]); 
+        mat4.translate(matrix,[0,-400,0]);       
+        models.push(matrix);     
+
+        //back
+        var matrix2 = mat4.create();
+        mat4.identity(matrix2);
+        mat4.scale(matrix2,[.01,4,4]);
+        mat4.translate(matrix2,[400,0,0]);
+        models.push(matrix2);
+
+        //top
+        var matrix3 = mat4.create();
+        mat4.identity(matrix3);
+        mat4.scale(matrix3,[4,.01,4]);
+        mat4.translate(matrix3,[0,400,0]);
+        models.push(matrix3);
+        
+        //left
+        var matrix4 = mat4.create();
+        mat4.identity(matrix4);
+        mat4.scale(matrix4,[4,4,.01]);
+        mat4.translate(matrix4,[0,0,-400]);
+        models.push(matrix4);
+
+        //right
+        var matrix5 = mat4.create();
+        mat4.identity(matrix5);
+        mat4.scale(matrix5,[4,4,.01]);
+        mat4.translate(matrix5,[0,0,400]);
+        models.push(matrix5);
+
+        //cow
+        var bunnyMatrix = mat4.create();
+        mat4.identity(bunnyMatrix);
+        mat4.scale(bunnyMatrix,[8,8,8]);
+        mat4.rotate(bunnyMatrix,90,[0,1,0]);
+        mat4.translate(bunnyMatrix,[0,-.1,0]);
+        models.push(bunnyMatrix);
+
+    }
+
+    function initMeshBuffers()
+    {
+        downloadMesh();
+        setmodelMatrix();
+    }
 
 
 	var numberOfIndices;
@@ -297,7 +391,7 @@
 	var texCoordsName;
 	var indicesName;
 
-	(function initializeSphere() {
+	function initializeSphere() {
         function uploadMesh(positions, texCoords, indices) {
             // Positions
             positionsName = gl.createBuffer();
@@ -370,7 +464,7 @@
 
         uploadMesh(positions, texCoords, indices);
         numberOfIndices = indicesIndex;
-    })();
+    }
 
 
     var device_quad = {num_indices:0};
@@ -379,7 +473,7 @@
     var vbo_indices;
     var vbo_textures;
 
-    (function initializeQuad() {
+    function initializeQuad() {
     	var positions = new Float32Array([
             -1.0, 1.0, 0.0,
             -1.0,-1.0,0.0,
@@ -414,39 +508,96 @@
          vbo_indices = gl.createBuffer();
          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vbo_indices);
          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);       
-    })();
+    }
 
 
     var time = 0;
 
-	function drawmesh()
-    {
-    	gl.useProgram(pass_prog);    	
+    function setMatrixUniforms(models){
+        // gl.uniformMatrix4fv(shaderProgram[0].modelMatrixUniform,false,models);
+        // gl.uniformMatrix4fv(shaderProgram[0].viewMatrixUniform,false, view);
+        // gl.uniformMatrix4fv(shaderProgram[0].perspMatrixUniform,false,persp);
+        // gl.uniformMatrix4fv(shaderProgram[0].inverseMatrixUniform,false,inverse);   
 
         gl.uniformMatrix4fv(u_ModelLocation,false,model);
-    	gl.uniformMatrix4fv(u_ViewLocation,false,view);
-    	gl.uniformMatrix4fv(u_PerspLocation,false,persp);
-    	gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);
+        gl.uniformMatrix4fv(u_ViewLocation,false,view);
+        gl.uniformMatrix4fv(u_PerspLocation,false,persp);
+        gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);    
+    }
 
-        var colors = vec3.create([0.2,1.0,1.0]);
-        gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
-    	gl.enableVertexAttribArray(positionLocation);
-        gl.enableVertexAttribArray(normalLocation);
-        gl.enableVertexAttribArray(texCoordLocation);
+	function drawmesh()
+    {
+    	gl.useProgram(pass_prog);	
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionsName);
-        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+        var idx = 0;
+        for(mesh in meshes){
+            //console.log("idx " + idx);
+            var mv = mat4.create();
+            mat4.multiply(view, models[idx], mv);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalsName);
-        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);        
+            invTrans = mat4.create();
+            mat4.identity(invTrans);
+            mat4.inverse(mv, invTrans);
+            mat4.transpose(invTrans);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsName);
-        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);        
+            gl.enableVertexAttribArray(positionLocation);
+            gl.enableVertexAttribArray(normalLocation);
+            gl.enableVertexAttribArray(texCoordLocation);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesName); 
+
+            var colors = vec3.create([0.2,1.0,1.0]);
+            gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+
+            console.log("meshhhh " + meshes[mesh].vertexBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
+            gl.vertexAttribPointer(positionLocation, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);            
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].normalBuffer);
+            gl.vertexAttribPointer(normalLocation,  meshes[mesh].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+            gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+            // gl.activeTexture(gl.TEXTURE0);
+            // gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+            // gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);            
+            setMatrixUniforms(models[idx]);
+            gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+            idx ++;
+        }
+
+     //    gl.uniformMatrix4fv(u_ModelLocation,false,model);
+    	// gl.uniformMatrix4fv(u_ViewLocation,false,view);
+    	// gl.uniformMatrix4fv(u_PerspLocation,false,persp);
+    	// gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);
+
+     //    var colors = vec3.create([0.2,1.0,1.0]);
+     //    gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+
+    	// gl.enableVertexAttribArray(positionLocation);
+     //    gl.enableVertexAttribArray(normalLocation);
+     //    gl.enableVertexAttribArray(texCoordLocation);
+
+     //    gl.bindBuffer(gl.ARRAY_BUFFER, positionsName);
+     //    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+     //    gl.bindBuffer(gl.ARRAY_BUFFER, normalsName);
+     //    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);        
+
+     //    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsName);
+     //    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);        
+
+     //    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesName); 
         
-        gl.drawElements(gl.TRIANGLES, numberOfIndices, gl.UNSIGNED_SHORT,0);
+     //    gl.drawElements(gl.TRIANGLES, numberOfIndices, gl.UNSIGNED_SHORT,0);
+
+
+
 
         gl.disableVertexAttribArray(positionLocation);
         gl.disableVertexAttribArray(normalLocation);
@@ -466,15 +617,15 @@
 
     function lightQuad(program)
     {
-        for(var i = 0; i < lightNum; i++)
-        {
-            var radiusLoc = gl.getUniformLocation(program, "u_Lights["+i+"].radius");
-            gl.uniform1f(radiusLoc, lights[i].radius);
-            var posLoc = gl.getUniformLocation(program, "u_Lights["+i+"].position");
-            gl.uniform3fv(posLoc, lights[i].position);
-            var colLoc = gl.getUniformLocation(program, "u_Lights["+i+"].color");
-            gl.uniform3fv(colLoc, lights[i].color);
-        }
+        // for(var i = 0; i < lightNum; i++)
+        // {
+        //     var radiusLoc = gl.getUniformLocation(program, "u_Lights["+i+"].radius");
+        //     gl.uniform1f(radiusLoc, lights[i].radius);
+        //     var posLoc = gl.getUniformLocation(program, "u_Lights["+i+"].position");
+        //     gl.uniform3fv(posLoc, lights[i].position);
+        //     var colLoc = gl.getUniformLocation(program, "u_Lights["+i+"].color");
+        //     gl.uniform3fv(colLoc, lights[i].color);
+        // }
 
 
         gl.uniform1i(gl.getUniformLocation(program, "u_LightNum"), lightNum);
@@ -498,11 +649,7 @@
         for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)
         {
             lightIndex.push(-1);
-        }
-
-       
-
-       
+        }       
 
         gl.uniform1i(gl.getUniformLocation(program, "u_LightIndexImageSize"), lightIndexWidth);      
 
@@ -868,12 +1015,12 @@
     }
 
 
-    (function initLights(){
+    function initLights(){
 
         for(var i = 0; i < lightNum; i++){
             var boundary = {left:0, right:0, top:0, bottom:0};
 
-            var radius = 5.0;
+            var radius = 10.0;
 
             lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
             
@@ -894,8 +1041,7 @@
             lightColorRadius.push(radius);
         }
 
-    })();
-
+    }
 
     function keyPress(e){
         var keynum;
@@ -910,8 +1056,7 @@
         display_type = keynum - 49;
     }
    
-   document.onkeypress = keyPress
-
+   document.onkeypress = keyPress;
 
 
    var mouseLeftDown = false;
@@ -1058,6 +1203,29 @@
         stats.update();
      	//window.requestAnimFrame(animate);
      }
-     animate();
+
+
+     
+     (function loadWebGL(){    
+        
+        initializeShader();
+        initializeFBO();
+        
+        initMeshBuffers();        
+        //initializeSphere();
+
+        initializeQuad();
+
+        initLights();
+
+        animate();
+     })();
+
+
+    
+
+
+
+
     
  }());
