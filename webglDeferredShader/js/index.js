@@ -182,8 +182,9 @@
         shaderProgram[1].colorsampler = gl.getUniformLocation(shaderProgram[1],"u_ColorSampler");
         shaderProgram[1].positionsampler = gl.getUniformLocation(shaderProgram[1],"u_PositionSampler");
         shaderProgram[1].depthsampler = gl.getUniformLocation(shaderProgram[1],"u_DepthSampler");
-        shaderProgram[1].depthsamplerfake = gl.getUniformLocation(shaderProgram[1],"u_DepthSamplerFake")
-
+        shaderProgram[1].depthsamplerfake = gl.getUniformLocation(shaderProgram[1],"u_DepthSamplerFake");
+        shaderProgram[1].silcolorsampler = gl.getUniformLocation(shaderProgram[1],"u_SilColorSampler");
+        shaderProgram[1].sildepthsampler = gl.getUniformLocation(shaderProgram[1],"u_SilDepthSampler");
         shaderProgram[1].displaymode = gl.getUniformLocation(shaderProgram[1],"u_Displaymode");
 
         // if(shaderProgram[1].normalsampler == null || shaderProgram[1].colorsampler == null
@@ -221,7 +222,8 @@
         shaderProgram[2].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Inverse");
 
         shaderProgram[2].depthsampler = gl.getUniformLocation(shaderProgram[2],"u_DepthSampler");
-        shaderProgram[2].resolution = gl.getUniformLocation(shaderProgram[2], "u_Reso");
+        shaderProgram[2].drawmode = gl.getUniformLocation(shaderProgram[2],"u_DrawMode");
+        
 	}
 
 	function handleLoadedTexture(texture){
@@ -257,7 +259,9 @@
 	function initTextureFramebuffer(){
 		//setting up framebuffer
         //setting up normal texture
-        for(var i = 0; i<5; ++i)
+        //use programshader[0]  0:normal, 1: color, 2: screen space position, 3: depth pass, 4: manually cal depth , 
+        //use programshader[2]  5: silhouette mesh depth buffer 6: silhouette 
+        for(var i = 0; i<7; ++i)
         {
             var fbo = gl.createFramebuffer();
             rttFramebuffers.push(fbo);
@@ -318,7 +322,8 @@
         colorTexture.image.onload = function () {
             handleLoadedTexture(colorTexture)
         }
-        colorTexture.image.src = "moon.gif";
+        //colorTexture.image.src = "moon.gif";
+        colorTexture.image.src = "Cow.bmp";
         //colorTexture.image.src = "test.gif";
 
         // colorTexture = gl.createTexture();
@@ -418,7 +423,7 @@
         for(mesh in meshes){                     
             obj_utils.initMeshBuffers(gl, meshes[mesh]);
             // updateDepthbuffer(); 
-            // updateFaceInfo(meshes[mesh],models[idx]);
+            updateFaceInfo(meshes[mesh],models[idx]);
             idx ++;
             
         }        
@@ -495,12 +500,15 @@
         setmodelMatrix();       
         
 	}
-    function linearizeDepth(exp_depth, near, far) {
-        return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
-    }
-    function getSilEdges(mesh,mvp,mv)
+
+    // function linearizeDepth(exp_depth, near, far) {
+    //     return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
+    // }
+
+    //function getSilEdges(mesh,mvp,mv)//silhouette culling version
+    function getSilEdges(mesh)
     {
-        console.log("getsil edge");
+        //console.log("getsil edge");
         var edgeVerts = [];
         var edgeindices = [];
         var edgecolor = [];
@@ -531,36 +539,36 @@
                                     mesh.verticesArray[veridx[1]*3+2],
                                     1.0 ]                               
                                     );                
+                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+                // var ver1Clip = vec4.create();
+                // mat4.multiply(mvp,ver1,ver1Clip);
+                // var ver2Clip = vec4.create();
+                // mat4.multiplyVec4(mvp,ver2,ver2Clip);
 
-                var ver1Clip = vec4.create();
-                mat4.multiply(mvp,ver1,ver1Clip);
-                var ver2Clip = vec4.create();
-                mat4.multiplyVec4(mvp,ver2,ver2Clip);
+                // var ver1World = vec4.create();
+                // mat4.multiply(mv,ver1,ver1World);
+                // var ver2World = vec4.create();
+                // mat4.multiply(mv,ver2,ver2World);
 
-                var ver1World = vec4.create();
-                mat4.multiply(mv,ver1,ver1World);
-                var ver2World = vec4.create();
-                mat4.multiply(mv,ver2,ver2World);
-
-                ver1Clip.set([ver1Clip[0]/ver1Clip[3],ver1Clip[1]/ver1Clip[3],ver1Clip[2]/ver1Clip[3],ver1Clip[3]/ver1Clip[3]]);
-                ver2Clip.set([ver2Clip[0]/ver2Clip[3],ver2Clip[1]/ver2Clip[3],ver2Clip[2]/ver2Clip[3],ver2Clip[3]/ver2Clip[3]]);
-                //console.log(ver1Clip[0] + " " + ver1Clip[1]);
-                var pixel1 = [];
-                pixel1.push(Math.round(((ver1Clip[0] + 1.0)/2.0) * gl.viewportWidth));
-                pixel1.push(Math.round(((1.0 - ver1Clip[1])/2.0) * gl.viewportHeight));
+                // ver1Clip.set([ver1Clip[0]/ver1Clip[3],ver1Clip[1]/ver1Clip[3],ver1Clip[2]/ver1Clip[3],ver1Clip[3]/ver1Clip[3]]);
+                // ver2Clip.set([ver2Clip[0]/ver2Clip[3],ver2Clip[1]/ver2Clip[3],ver2Clip[2]/ver2Clip[3],ver2Clip[3]/ver2Clip[3]]);
+                // //console.log(ver1Clip[0] + " " + ver1Clip[1]);
+                // var pixel1 = [];
+                // pixel1.push(Math.round(((ver1Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                // pixel1.push(Math.round(((1.0 - ver1Clip[1])/2.0) * gl.viewportHeight));
                 
-                var pixel2 = [];
-                pixel2.push(Math.round(((ver2Clip[0] + 1.0)/2.0) * gl.viewportWidth));
-                pixel2.push(Math.round(((1.0 - ver2Clip[1])/2.0) * gl.viewportHeight));
+                // var pixel2 = [];
+                // pixel2.push(Math.round(((ver2Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                // pixel2.push(Math.round(((1.0 - ver2Clip[1])/2.0) * gl.viewportHeight));
                 
-                var ver1depth = linearizeDepth(ver1Clip[2], 0.1, 10)*255;
-                var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
+                // var ver1depth = linearizeDepth(ver1Clip[2], 0.1, 10)*255;
+                // var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
 
-                var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
-                var depth1 = depthvalues[pixelIndex*4];
-                //console.log(ver1depth + " " + depth1);
-                var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
-                var depth2 = depthvalues[pixelIndex2 * 4];
+                // var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
+                // var depth1 = depthvalues[pixelIndex*4];
+                // //console.log(ver1depth + " " + depth1);
+                // var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
+                // var depth2 = depthvalues[pixelIndex2 * 4];
                 //console.log(depthvalues[pixelIndex*4]);
 
                 // if((depth1 != 0 && ver1depth > depth1) || (depth2!=0  && ver2depth > depth2))
@@ -575,6 +583,8 @@
 
                 //console.log("z: " + Math.floor(linearizeDepth(ver1Clip[2], 0.1, 10)*255));
                 
+                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+
                 edgeVerts.push(mesh.verticesArray[veridx[0]*3]); 
                 edgeVerts.push(mesh.verticesArray[veridx[0]*3+1]); 
                 edgeVerts.push(mesh.verticesArray[veridx[0]*3+2]);
@@ -610,7 +620,7 @@
         //console.log("edgeindices length: " + edgeindices.length);
         silEdgeMeshesibo.numItems = edgeindices.length;
         //console.log(edgeindices);
-        //updateDepthbuffer();
+
     }
    
     function updateDepthbuffer()
@@ -644,7 +654,7 @@
     function updateFaceInfo(mesh,model)
     {
         // Converting viewVector to object space
-        //console.log("updateFaceInfo ...");
+        console.log("updateFaceInfo ...");
 
         var modelV = mat4.create(model);
         modelV[12] = 0;
@@ -678,15 +688,16 @@
             }
         }
 
-        var mv = mat4.create();
-        mat4.multiply(view, model, mv);
-        var mvp = mat4.create();
-        var persps = mat4.create();        
-        mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,persps);
-        mat4.multiply(persps,mv,mvp);
-
-        //updateDepthbuffer();
-        getSilEdges(mesh,mvp,mv);
+        ///////////////////////////////////for back silhouette culling///////////////////////////////
+        // var mv = mat4.create();
+        // mat4.multiply(view, model, mv);
+        // var mvp = mat4.create();
+        // var persps = mat4.create();        
+        // mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,persps);
+        // mat4.multiply(persps,mv,mvp);
+        //getSilEdges(mesh,mvp,mv); //SILHOUETTE CULLING 
+        ///////////////////////////////////for back silhouette culling///////////////////////////////
+        getSilEdges(mesh);
     }
 
 
@@ -714,6 +725,17 @@
         gl.activeTexture(gl.TEXTURE4);
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[4]);
         gl.uniform1i(shaderProgram[1].depthsamplerfake,4);
+
+        gl.activeTexture(gl.TEXTURE5); //SILCOLOR
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[5]);
+        gl.uniform1i(shaderProgram[1].silcolorsampler,5);
+
+        gl.activeTexture(gl.TEXTURE6); //DEPTH
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[6]);
+        gl.uniform1i(shaderProgram[1].sildepthsampler,6);
+
+
+
     }
 
     function drawQuad(mode){
@@ -783,18 +805,9 @@
 
 
    
-    function drawSilhouette()
+    function drawSilhouette(drawmode)
     {
-       
-        // for(var i = 0; i < depthvalues.length; ++i)
-        // {
-        //     //console.log(depthvalues[i]);
-        //     if(depthvalues[i] != 0 && depthvalues[i] != 255)
-        //     {
-        //         console.log(depthvalues[i]);
-        //     }
-        // }
-
+        
         gl.useProgram(shaderProgram[2]);
         gl.enable(gl.DEPTH_TEST);
 
@@ -813,7 +826,8 @@
         mat4.inverse(mv, inverse);
         mat4.transpose(inverse);
 
-      
+        gl.uniform1i(shaderProgram[2].drawmode,drawmode);
+
         gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);             
         gl.vertexAttribPointer(shaderProgram[2].vertexPositionAttribute, silEdgeMeshesvbo.itemSize,gl.FLOAT, false,0,0);
 
@@ -836,6 +850,8 @@
         
         gl.drawElements(gl.LINES, silEdgeMeshesibo.numItems, gl.UNSIGNED_SHORT,0);
 
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode+4]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
     }
 
     
@@ -848,41 +864,52 @@
         {
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
             drawMesh(i);
-        }
+        }        
         
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
+        for(var j = 0;j<2;++j)
+        {
+            gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[j+5]);
+            drawSilhouette(j);
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+
+
         gl.disable(gl.DEPTH_TEST);       
 
-        if(checkboxs[checkboxs.length-1].checked == true){
-            if(needupdate == true)
-            {
-                updateDepthbuffer();
-                console.log("update once");
-                var idx = 0;
-                for(mesh in meshes)
-                {
-                    updateFaceInfo(meshes[mesh],models[idx]);
-                    idx ++;
-                }
+        // if(checkboxs[checkboxs.length-1].checked == true){
+        //     if(needupdate == true)
+        //     {
+        //         //updateDepthbuffer();
+        //         console.log("update once");
+        //         var idx = 0;
+        //         for(mesh in meshes)
+        //         {
+        //             updateFaceInfo(meshes[mesh],models[idx]);
+        //             idx ++;
+        //         }
 
                 
-                needupdate = false;
-            }
+        //         needupdate = false;
+        //     }
            
-            drawSilhouette();
-            return;
-        }
-        else
-        {            
-            needupdate = true;
-        }
+        //     drawSilhouette();
+        //     return;
+        // }
+        // else
+        // {            
+        //     needupdate = true;
+        // }
 
         setupQuad(shaderProgram[1]);
      
         // todo: change the draw mode here
-        //0: normal //1: color // 2: screen space position // 3: depth // 4: depth fake //5: diffuse
-        for(var checkboxidx = 0; checkboxidx < checkboxs.length -1; ++checkboxidx)
+        //0: normal //1: color // 2: screen space position // 3: depth // 4: depth fake //
+        //5: silhouette //6: diffuse
+
+        for(var checkboxidx = 0; checkboxidx < checkboxs.length; ++checkboxidx)
         {
             if(checkboxs[checkboxidx].checked == true)
             {
@@ -941,13 +968,13 @@
             radius = Math.min(Math.max(radius, 2.0), 20.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
-        if(checkboxs[checkboxs.length-1].checked == true)
+        if(checkboxs[5].checked == true)
         {
             viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
             viewVector = vec3.normalize(viewVector);;
             //console.log(viewVector);
             //update mesh face info
-            updateDepthbuffer();
+           // updateDepthbuffer();
             var idx = 0;
             for(mesh in meshes)
             {
@@ -955,7 +982,6 @@
                 idx ++;
             }
 
-            //updateDepthbuffer();
         }
        
        
@@ -1002,11 +1028,10 @@
         checkboxs.push(checkbox);
         checkbox = document.getElementById("depth2");
         checkboxs.push(checkbox);
-        checkbox = document.getElementById("diffuse");
-        checkboxs.push(checkbox);
         checkbox = document.getElementById("silhouette");
         checkboxs.push(checkbox);
-       
+        checkbox = document.getElementById("diffuse");
+        checkboxs.push(checkbox);
        // console.log("checkbox length: "+checkboxs.length);
 
         //checkboxs[3].disabled = true;

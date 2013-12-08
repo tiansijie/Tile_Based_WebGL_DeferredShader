@@ -14,7 +14,7 @@
     <input type="checkbox" id="color"  name = "a" />Display <span style = "color:red">Color Texture</span>	
     <input type="checkbox" id="position" name = "a" />Display Screen Space <span style = "color:red">Position</span>  
     <input type="checkbox" id="depth" name = "a"  />Display<span style = "color:red">Depth</span>  Pass
-    <input type="checkbox" id="depth2" name = "a"  />Display<span style = "color:red">Fake Depth</span>  Pass
+    <input type="checkbox" id="depth2" name = "a"  />Display<span style = "color:red"> manually calculated Depth</span>  Pass
     
 </div>
 
@@ -53,6 +53,8 @@
 	uniform sampler2D u_PositionSampler;
 	uniform sampler2D u_DepthSampler;	
 	uniform sampler2D u_DepthSamplerFake;
+	uniform sampler2D u_SilColorSampler;
+	uniform sampler2D u_SilDepthSampler;
 
 	uniform vec3 u_LightPos;
 	uniform float u_LightIntensity;
@@ -105,7 +107,28 @@
 			gl_FragColor = vec4(vec3(linDepth),1.0);
 			return;
 		}
-		else if(u_Displaymode == 5){
+		else if(u_Displaymode == 5)
+		{
+			//silhouette
+			float silDepth = texture2D(u_SilDepthSampler,fs_Texcoord).r;
+			vec4 silColor = texture2D(u_SilColorSampler,fs_Texcoord);
+			// gl_FragColor = silColor;
+			// return;
+			// gl_FragColor = vec4(vec3(linDepth),1.0);
+			// return;
+			float originDepth = linDepth;
+			if(silDepth != 0.0 && abs(silDepth - originDepth) < 0.01)
+			{
+				gl_FragColor = vec4(1.0,1.0,0.0,1.0)* silColor;
+				return; 
+			}		
+			else
+			{
+				gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+				return;
+			}
+		}
+		else if(u_Displaymode == 6){
 			//diffise
 			vec3 lightVector = vec3(0,10,0) - position;
 			lightVector = normalize(lightVector);
@@ -207,48 +230,44 @@
 
 	varying vec4 vPosition;
 	varying vec3 vColor;
+	varying float vDepth;
 
 	void main(void) {
 		vec4 world = u_Model * vec4(Position,1.0);
-		// vDepth = world.z;
-		vec4 camera = u_View * world;	
-		//vDepth = camera.z;	
+		vec4 camera = u_View * world;			
 		vPosition = camera;
 		gl_Position = u_Persp * camera;
+		vDepth = gl_Position.z / gl_Position.w;
 		vColor = Color;
 	}
 </script>
 <script type="x-shader/x-fragment" id = "siledgefs">
 	precision mediump float; // have to add this, dont' exactly know why
 
-	uniform sampler2D u_DepthSampler;
-	uniform vec2 u_Reso;
+	uniform int u_DrawMode;
 
 	varying vec4 vPosition;
 	varying vec3 vColor;
-
+	varying float vDepth;
+	
 	float linearizeDepth(float exp_depth, float near, float far) {
     	return	(2.0* near) / (far + near -  exp_depth * (far - near)); 
 	}
 
 	void main(void) {
-		// vec2 poistion2d = vec2(vPosition.r / vPosition.b, vPosition.g / vPosition.b);
-		// vec2 texcoord = vec2(poistion2d.x / u_Reso.x, poistion2d.y / u_Reso.y);
-		// //vec4 depthColor = texture2D(u_DepthSampler,texcoord);
-
-		
-		// float exp_depth = texture2D(u_DepthSampler,texcoord).r;
-		// float lin_depth = linearizeDepth(exp_depth,0.1,10.0);
-
-		// gl_FragColor = vec4(vec3(abs(lin_depth)*10.0),1.0);
-
-		//gl_FragColor = abs(vPosition);
-		//gl_FragColor = vec4(abs(vDepth));
-		// if(vDepth > depth.r)
-		 	gl_FragColor = vec4(vColor,1.0);
-		// else
-		// 	gl_FragColor = vec4(0.0,1.0,1.0,1.0);
-
+		float linDepth = linearizeDepth(vDepth,0.1,10.0);
+		if(u_DrawMode == 0)
+		{
+			//draw color
+			gl_FragColor = vec4(vColor,1.0);
+			return;
+		}
+		else if(u_DrawMode == 1)
+		{
+			//draw depth
+			gl_FragColor = vec4(vec3(linDepth),1.0);
+			return;
+		}
 	}
 </script>
 
