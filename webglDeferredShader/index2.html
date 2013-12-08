@@ -10,7 +10,8 @@
 <div>
  	<input type="checkbox" id="diffuse" name = "a" checked/>Display <span style = "color:red">Diffuse</span> Pass	
  	<input type="checkbox" id="silhouette" name = "a"  />Display<span style = "color:red">Silhouette</span> 
- 	<input type="checkbox" id="ink" name = "a"  />Display<span style = "color:red"> ink</span> 
+ 	<input type="checkbox" id="ink" name = "a"  />Display<span style = "color:red"> ink diffusion</span> 
+ 	<input type="checkbox" id="inkSil" name = "a"  />Display<span style = "color:red"> Silhouette and Interior</span> 
     <input type="checkbox" id="normal"  name = "a" />Display <span style = "color:red">Normal </span> 
     <input type="checkbox" id="color"  name = "a" />Display <span style = "color:red">Color Texture</span>	
     <input type="checkbox" id="position" name = "a" />Display Screen Space <span style = "color:red">Position</span>  
@@ -56,7 +57,7 @@
 		// qua
 		if(color == vec3(0.0))
 		{
-			//gl_FragColor = vec4(vec3(0.0),1.0);
+			gl_FragColor = vec4(0.97,0.94,0.85,1.0);
 			return;
 		}
 		vec3 lightVector = vec3(0,10.0,0) - position;
@@ -94,7 +95,8 @@
 	precision mediump float;
 
 	uniform sampler2D u_QuatColorSampler;
-
+	uniform int u_viewportWidth;
+	uniform int u_viewportHeight;
 	
 	float rand(vec2 n,float radius)
 	{
@@ -104,17 +106,17 @@
 	}
 
 	varying vec2 fs_Texcoord;
-	float radius = 10.0;
+	float radius = 6.0;
 	void main(void)
 	{
 		//vec4 quatilizedColor = texture2D(u_QuatColorSampler,fs_Texcoord);	
-		vec2 pixelIndex = vec2(fs_Texcoord.x * (1024.0-1.0),fs_Texcoord.y * (768.0 - 1.0));	
+		vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0));	
 		float randnum = rand(fs_Texcoord,radius);
 		pixelIndex += vec2(randnum,0.0);
-		vec2 newTexcoord = vec2(pixelIndex.x/(1024.0-1.0),pixelIndex.y / (768.0-1.0));
+		vec2 newTexcoord = vec2(pixelIndex.x/(float(u_viewportWidth)-1.0),pixelIndex.y / (float(u_viewportHeight)-1.0));
 		float randnum2 = rand(newTexcoord,radius);
 		pixelIndex += vec2(0,randnum2);
-		newTexcoord = vec2(pixelIndex.x/(1024.0-1.0),pixelIndex.y / (768.0-1.0));
+		newTexcoord = vec2(pixelIndex.x/(float(u_viewportWidth)-1.0),pixelIndex.y / (float(u_viewportHeight)-1.0));
 		vec4 newColorSample = texture2D(u_QuatColorSampler,newTexcoord);
 		gl_FragColor = newColorSample;
 		return;
@@ -134,9 +136,9 @@
 <script type="x-shader/x-fragment" id = "quadfs">
 	precision mediump float;
 
-	#define s2(a,b)		temp = a; a= min(a,b); b = max(tmp,b);
+	#define s2(a,b)		temp = a; a= min(a,b); b = max(temp,b);
 	#define mn3(a, b, c)			s2(a, b); s2(a, c);
-	define mx3(a, b, c)			s2(b, c); s2(a, c);
+	#define mx3(a, b, c)			s2(b, c); s2(a, c);
 	#define mnmx3(a, b, c)			mx3(a, b, c); s2(a, b);                                   // 3 exchanges
 	#define mnmx4(a, b, c, d)		s2(a, b); s2(c, d); s2(a, c); s2(b, d);                   // 4 exchanges
 	#define mnmx5(a, b, c, d, e)	s2(a, b); s2(c, d); mn3(a, c, e); mx3(b, d, e);           // 6 exchanges
@@ -166,18 +168,29 @@
 	float linearizeDepth(float exp_depth, float near, float far) {
     	return	(2.0* near) / (far + near -  exp_depth * (far - near)); 
 	}
-	float kernelSize = 10.0;
-
-	vec3 MedianFilter(){
+	
+	vec3 MedianFilter()
+	{
+		vec2 imageSize = vec2(float(u_viewportWidth),float(u_viewportHeight));
+		vec2 tex_inv_size = 1.0 / imageSize;
+		vec3 v[9];
 		for(int dx = -1; dx <=1; ++dx)
 		{
 			for(int dy = -1; dy <=1; ++dy)
 			{
 				vec2 offset = vec2(float(dx),float(dy));
-
+				v[(dx+1)*3 + (dy+1)] = texture2D(u_SpatterSampler,fs_Texcoord+offset * tex_inv_size).rgb;
 			}
 		}
+		vec3 temp;
+		// Starting with a subset of size 6, remove the min and max each time
+		mnmx6(v[0], v[1], v[2], v[3], v[4], v[5]);
+		mnmx5(v[1], v[2], v[3], v[4], v[6]);
+		mnmx4(v[2], v[3], v[4], v[7]);
+		mnmx3(v[3], v[4], v[8]);
+		return v[4];
 	}
+
 	void main(void)
 	{
 		vec3 position = texture2D(u_PositionSampler,fs_Texcoord).rgb;
@@ -190,7 +203,7 @@
 		float depthColorfake = texture2D(u_DepthSamplerFake,fs_Texcoord).r;
 
 		float linDepth = linearizeDepth(depthColorfake,0.1, 10.0);
-		//linDepth =linDepth * 255.0;
+
 
 		if(u_Displaymode == 0){
 			//display normal
@@ -225,11 +238,11 @@
 		{
 			//silhouette
 			float silDepth = texture2D(u_SilDepthSampler,fs_Texcoord).r;
-			vec4 silColor = texture2D(u_SilColorSampler,fs_Texcoord);
+			vec4 sil = texture2D(u_SilColorSampler,fs_Texcoord);
 			float originDepth = linDepth;
 			if(silDepth != 0.0 && abs(silDepth - originDepth) < 0.005)
 			{
-				gl_FragColor = vec4(0.0,0.0,0.0,1.0)* silColor;
+				gl_FragColor = vec4(0.0,0.0,0.0,1.0);//vec4(0.0,0.0,0.0,1.0)* sil;
 				return; 
 			}		
 			else
@@ -240,19 +253,38 @@
 		}
 		else if(u_Displaymode == 6)
 		{
-			vec4 spattercolor = texture2D(u_SpatterSampler,fs_Texcoord);
-
-
-			gl_FragColor = inkq;
+			//vec4 spattercolor = texture2D(u_SpatterSampler,fs_Texcoord);
+			vec3 spattercolor = MedianFilter();
+			gl_FragColor = vec4(spattercolor,1.0);		
 			return;
 		}
-		else if(u_Displaymode == 7){
+		else if(u_Displaymode == 7)
+		{
+			vec3 spattercolor = MedianFilter();
+
+			float silDepth = texture2D(u_SilDepthSampler,fs_Texcoord).r;
+			vec4 sil = texture2D(u_SilColorSampler,fs_Texcoord);
+			float originDepth = linDepth;
+			if(silDepth != 0.0 && abs(silDepth - originDepth) < 0.005)
+			{
+				gl_FragColor = vec4(0.0,0.0,0.0,1.0);//vec4(0.0,0.0,0.0,1.0)* sil;
+				return; 
+			}		
+			else
+			{
+				gl_FragColor = vec4(spattercolor,1.0);
+				return;
+			}
+
+		}
+		else if(u_Displaymode == 8){
 			//diffise
 			vec3 lightVector = vec3(0,10,0) - position;
 			lightVector = normalize(lightVector);
 			float diffuse = max(dot(lightVector,normal),0.0);
 			vec3 ambient = vec3(1.0,1.0,1.0);
 			vec3 diffuseColor = diffuse * 1.0 * vec3(1.0,1.0,1.0) * color + 0.2 * ambient * color;
+			
 			gl_FragColor = vec4(diffuseColor,1.0);
 			return;
 		}
