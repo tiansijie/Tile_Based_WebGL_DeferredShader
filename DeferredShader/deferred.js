@@ -31,8 +31,16 @@
     var persp = mat4.create();
     mat4.perspective(45.0, canvas.width/canvas.height, near, far, persp);
 
-    var model;
-    var mv;
+    var display_depth = 0;
+    var display_normal = 1;
+    var display_position = 2;
+    var display_color = 3;
+    var display_total = 4;
+    var display_light = 5;
+    var display_nontilelight = 6;
+
+    //var model;
+    //var mv;
     var invTrans;
 
     var radius = 12.0;
@@ -59,12 +67,12 @@
     var lightColorRadius = [];
     var lightGrid = [];
     var lightIndex = [];
-    var lightNum = 10;   
+    var lightNum = 100;   
 
 
-    var positionLocation = 0;
-    var normalLocation = 1;
-    var texCoordLocation = 2;
+    var positionLocation;
+    var normalLocation;
+    var texCoordLocation;
     var u_InvTransLocation;
     var u_ModelLocation;
     var u_ViewLocation;
@@ -86,6 +94,7 @@
     var pass_prog;
     var diagnostic_prog;
     var light_prog;
+    var nontilelight_prog;
     var ambient_prog;
     var post_prog;
 
@@ -104,19 +113,29 @@
         var fs = getShaderSource(document.getElementById("pass_fs"));
 
         pass_prog = createProgram(gl, vs, fs, message);    
-    	gl.bindAttribLocation(pass_prog, positionLocation, "Position");
-    	gl.bindAttribLocation(pass_prog, normalLocation, "Normal");
-    	gl.bindAttribLocation(pass_prog, texCoordLocation, "Texcoord");
+    	//gl.bindAttribLocation(pass_prog, positionLocation, "Position");
+    	//gl.bindAttribLocation(pass_prog, normalLocation, "Normal");
+    	//gl.bindAttribLocation(pass_prog, texCoordLocation, "Texcoord");
 
-    	if (!gl.getProgramParameter(pass_prog, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(pass_prog, gl.LINK_STATUS)) {
             alert("Could not initialise pass_fs");
         }
+
+        positionLocation = gl.getAttribLocation(pass_prog, "Position");
+        normalLocation = gl.getAttribLocation(pass_prog, "Normal");
+        texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
+
+        console.log("pos loc " + positionLocation);
+        console.log("nor loc " + normalLocation);
+        console.log("tex loc " + texCoordLocation);   	
 
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
         u_InvTransLocation = gl.getUniformLocation(pass_prog,"u_InvTrans");
         u_ColorSamplerLocation = gl.getUniformLocation(pass_prog,"u_ColorSampler");
+
+
     	
         //Second shaders
     	vs = getShaderSource(document.getElementById("shade_vs"));
@@ -150,6 +169,17 @@
         
         if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
             alert("Could not initialise light_fs");
+        }
+
+        vs = getShaderSource(document.getElementById("shade_vs"));
+        fs = getShaderSource(document.getElementById("nontilelight_fs"));
+        
+        nontilelight_prog = createProgram(gl, vs, fs, message);
+        gl.bindAttribLocation(nontilelight_prog, quad_positionLocation, "Position");
+        gl.bindAttribLocation(nontilelight_prog, quad_texCoordLocation, "Texcoord");
+        
+        if (!gl.getProgramParameter(nontilelight_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise nontilelight_fs");
         }
 
         //Third shader
@@ -301,12 +331,19 @@
     {
         obj_utils.downloadMeshes(
             {
-                'bottom' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                'back' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                'top' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                'left' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                'right' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                'cow' : 'http://sijietian.com/WebGL/OBJ/cow.obj',
+                // 'bottom' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                // 'back' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                // 'top' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                // 'left' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                // 'right' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
+                // 'cow' : 'http://sijietian.com/WebGL/OBJ/cow.obj',
+
+                'bottom' : 'http://127.0.0.1:8089/OBJ/cube.obj',
+                'back' : 'http://127.0.0.1:8089/OBJ/cube.obj',
+                'top' : 'http://127.0.0.1:8089/OBJ/cube.obj',
+                'left' : 'http://127.0.0.1:8089/OBJ/cube.obj',
+                'right' : 'http://127.0.0.1:8089/OBJ/cube.obj',
+                'cow' : 'http://127.0.0.1:8089/OBJ/cow.obj',
             },
             initObj
         );
@@ -519,7 +556,7 @@
         // gl.uniformMatrix4fv(shaderProgram[0].perspMatrixUniform,false,persp);
         // gl.uniformMatrix4fv(shaderProgram[0].inverseMatrixUniform,false,inverse);   
 
-        gl.uniformMatrix4fv(u_ModelLocation,false,model);
+        gl.uniformMatrix4fv(u_ModelLocation,false,models);
         gl.uniformMatrix4fv(u_ViewLocation,false,view);
         gl.uniformMatrix4fv(u_PerspLocation,false,persp);
         gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);    
@@ -549,7 +586,7 @@
             var colors = vec3.create([0.2,1.0,1.0]);
             gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
-            console.log("meshhhh " + meshes[mesh].vertexBuffer);
+            //console.log("meshhhh " + meshes[mesh].vertexBuffer);
             gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
             gl.vertexAttribPointer(positionLocation, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);            
 
@@ -617,34 +654,18 @@
 
     function lightQuad(program)
     {
-        // for(var i = 0; i < lightNum; i++)
-        // {
-        //     var radiusLoc = gl.getUniformLocation(program, "u_Lights["+i+"].radius");
-        //     gl.uniform1f(radiusLoc, lights[i].radius);
-        //     var posLoc = gl.getUniformLocation(program, "u_Lights["+i+"].position");
-        //     gl.uniform3fv(posLoc, lights[i].position);
-        //     var colLoc = gl.getUniformLocation(program, "u_Lights["+i+"].color");
-        //     gl.uniform3fv(colLoc, lights[i].color);
-        // }
-
-
+        gl.uniform1i(gl.getUniformLocation(program, "u_TileSize"), tileSize);
         gl.uniform1i(gl.getUniformLocation(program, "u_LightNum"), lightNum);
+        gl.uniform1f(gl.getUniformLocation(program, "u_WithTile"), tileWidth);
+        gl.uniform1f(gl.getUniformLocation(program, "u_HeightTile"), tileHeight);
 
         gl.activeTexture(gl.TEXTURE4);
-        gl.bindTexture(gl.TEXTURE_2D, lightGridTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.bindTexture(gl.TEXTURE_2D, lightGridTex); 
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, tileWidth, tileHeight, 0, gl.RGB, gl.FLOAT, new Float32Array(lightGrid));       
         gl.uniform1i(gl.getUniformLocation(program, "u_LightGridtex"),4);    
 
 
         var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
-
-
-        console.log("light Index len " + lightIndexWidth);
         
         for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)
         {
@@ -652,38 +673,37 @@
         }       
 
         gl.uniform1i(gl.getUniformLocation(program, "u_LightIndexImageSize"), lightIndexWidth);      
+        gl.uniform1f(gl.getUniformLocation(program, "u_FloatLightIndexSize"), lightIndexWidth);    
 
         gl.activeTexture(gl.TEXTURE5);
-        gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);   
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, lightIndexWidth, lightIndexWidth, 0, gl.LUMINANCE, gl.FLOAT, new Float32Array(lightIndex));       
         gl.uniform1i(gl.getUniformLocation(program, "u_LightIndextex"),5);  
 
 
         gl.activeTexture(gl.TEXTURE6);
         gl.bindTexture(gl.TEXTURE_2D, lightPositionTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, lightPosition.length/3, 1.0, 0, gl.RGB, gl.FLOAT, new Float32Array(lightPosition));       
         gl.uniform1i(gl.getUniformLocation(program, "u_LightPositiontex"),6);
 
 
         gl.activeTexture(gl.TEXTURE7);
         gl.bindTexture(gl.TEXTURE_2D, lightColorRadiusTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lightColorRadius.length/4, 1.0, 0, gl.RGBA, gl.FLOAT, new Float32Array(lightColorRadius));
         gl.uniform1i(gl.getUniformLocation(program, "u_LightColorRadiustex"),7);
+    }
+
+
+    function setNonTileLight(boundary, light_pos, radius)
+    {
+        //gl.useProgram(nontilelight_prog);
+        gl.enable(gl.SCISSOR_TEST)
+        var nontilelight = vec4.create([light_pos[0], light_pos[1], light_pos[2], radius]);
+
+        gl.uniform4fv(gl.getUniformLocation(nontilelight_prog, "u_Light"), nontilelight);
+        var lwidth = boundary.right - boundary.left;
+        var lheight = boundary.top - boundary.bottom;
+        gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
+        drawQuad();
     }
 
     function setupQuad(program)
@@ -695,8 +715,7 @@
 
         gl.uniform1f(gl.getUniformLocation(program, "u_Near"), near);
         gl.uniform1f(gl.getUniformLocation(program, "u_Far"), far);
-
-        gl.uniform1i(gl.getUniformLocation(program, "u_TileSize"), tileSize);
+        
 
         gl.uniform1f(gl.getUniformLocation(program, "u_Width"), canvas.width);
         gl.uniform1f(gl.getUniformLocation(program, "u_Height"), canvas.height); 
@@ -759,135 +778,18 @@
     }
 
 
-
-    //Light bounding box
-    // function getLightBoundingBox(light_pos, radius, pv, viewport, left, right, top, bottom)
-    // {
-    //     var lx = light_pos[0];
-    //     var ly = light_pos[1];
-    //     var lz = light_pos[2];
-    //     var lx2 = lx*lx;
-    //     var ly2 = ly*ly;
-    //     var lz2 = lz*lz;
-    //     var r = radius;
-    //     var r2 = r*r;
-
-    //     //X direction
-    //     var dz = 4 * (r2*lz2 - (lx2 + lz2)*(r2-lx2));
-
-    //     console.log(dz);
-
-    //     if(dz <= 0)
-    //         return false;
-
-    //     var nz1 = (r*lz + Math.sqrt(dz/4.0)) / (lx2 + lz2);
-    //     var nz2 = (r*lz - Math.sqrt(dz/4.0)) / (lx2 + lz2);
-
-    //     var nx1 = (r-nz1*lz)/lx;
-    //     var nx2 = (r-nz2*lz)/lx;
-
-    //     var pzx1 = (lx2+lz2-r2) / lx-(nx1/nz1)*lz;
-    //     var pzx2 = (lx2+lz2-r2) / lx-(nx2/nz2)*lz;
-
-    //     if(pzx1 > lx || pzx2 > lx)
-    //         return false;
-
-    //     //for the left and right position
-    //     var pz1 = -pzx1*nx1/nz1;
-    //     var pz2 = -pzx2*nx2/nz2;
-
-
-    //     //Y direction
-    //     var dy = r2*ly2 - (ly2+lx2)*(r2-lx2);
-    //     console.log(dy);
-    //     if(dy <= 0)
-    //         return false;
-
-    //     var ny1 = (r*ly + Math.sqrt(dy)) / (ly2 + lx2);
-    //     var ny2 = (r*ly - Math.sqrt(dy)) / (ly2 + lx2);
-
-    //     var nx11 = (r-ny1*ly)/lx;
-    //     var nx22 = (r-ny2*ly)/lx;
-
-    //     var pxy1 = (ly2+lx2-r2)/(lx-(nx1/ny1)*ly);
-    //     var pxy2 = (ly2+lx2-r2)/(lx-(nx2/ny2)*ly);
-
-    //     if(pxy1 < lx || pxy2 < lx)
-    //         return false;
-
-    //     //for the bottom and up position
-    //     var py1 = -pxy1*nx1/ny1;
-    //     var py2 = -pxy2*nx2/ny2;
-
-
-    //     var l = pz1<lz?pz1:pz2;
-    //     var r = pz1>lz?pz1:pz2;
-    //     var t = py1>ly?py1:py2;
-    //     var b = py1<ly?py1:py2;
-
-
-    //     l = (nx1*near/nz1 + 1) / 2.0 * canvas.width;
-    //     r = (nx2*near/nz2 + 1) / 2.0 * canvas.width;
-
-    //     t = (nx11*near/ny1 + 1) / (2.0*canvas.width/canvas.height) * canvas.height;
-    //     b = (nx22*near/ny2 + 1) / (2.0*canvas.width/canvas.height) * canvas.height;
-
-
-
-
-
-    //     // console.log("left "+l);
-    //     // console.log("right "+r);
-    //     // console.log("top "+t);
-    //     // console.log("bottom "+b);
-
-    //     // left = vec4.create([l,0.0,pzx1,1.0]);
-    //     // right = vec4.create([r,0.0,pzx2,1.0]);
-    //     // top = vec4.create([0.0,t,pzy1,1.0]);
-    //     // bottom = vec4.create([0.0,b,pzy2,1.0]);   
-
-        
-    //     // // console.log("right "+right);
-    //     // // console.log("top "+top);
-    //     // // console.log("bottom "+bottom);     
-
-    //     // left = mat4.multiplyVec4(pv,left);
-    //     // right = mat4.multiplyVec4(pv,right);
-    //     // top = mat4.multiplyVec4(pv,top);
-    //     // bottom = mat4.multiplyVec4(pv,bottom);
-        
-    //     // left = vec4.divide(left,vec4.create([left[3],left[3],left[3],left[3]]));
-    //     // right = vec4.divide(right,vec4.create([right[3],right[3],right[3],right[3]]));
-    //     // top = vec4.divide(top,vec4.create([top[3],top[3],top[3],top[3]]));
-    //     // bottom = vec4.divide(bottom,vec4.create([bottom[3],bottom[3],bottom[3],bottom[3]]));
-        
-
-            
-
-    //     // left = mat4.multiplyVec4(viewport, left);
-    //     // right = mat4.multiplyVec4(viewport, right);
-    //     // top = mat4.multiplyVec4(viewport, top);
-    //     // bottom = mat4.multiplyVec4(viewport, bottom);
-
-    //     // console.log("left "+left[0] + " " + left[1] + " " + left[2] + " " + left[3]);   
-    //     //console.log("veiwport" + viewport[0]);
-        
-
-       
-
-    //     return true;
-    // }
-
-
     function getLightBoundingBox(light_pos, radius, pv, viewport, boundary)
     {
         var lx = light_pos[0];
         var ly = light_pos[1];
         var lz = light_pos[2];      
 
-        var dir = vec3.create([1.0,0.0,0.0]);
+        //var dir = vec3.create([1.0,0.0,0.0]);
+        var dir = cam_dir;
         var camUp = vec3.create([0.0,1.0,0.0]);
         var camLeft = vec3.cross(dir, camUp);
+
+        //var camLeft = vec3.create([1.0,0.0,0.0]);
        
        
         var leftLight = vec4.create();
@@ -930,10 +832,10 @@
 
     function setLightOnTile(boundary, lightNum, tileLightId)
     {
-        var leftTile = Math.floor(boundary.left / tileSize);
+        var leftTile = Math.max(Math.floor(boundary.left / tileSize), 0);
         var topTile = Math.min(Math.floor(boundary.top / tileSize), canvas.height/tileSize);
         var rightTile = Math.min(Math.floor(boundary.right / tileSize), canvas.width/tileSize);
-        var bottomTile = Math.floor(boundary.bottom / tileSize);
+        var bottomTile = Math.max(Math.floor(boundary.bottom / tileSize),0);
 
         for(var i = leftTile; i < rightTile; i++)
         {
@@ -959,10 +861,9 @@
 
     function setUpLights(){
 
-        resetLights();
-        //console.log("set up lights");
+        resetLights();   
 
-         //For tile base light setting
+        //For tile base light setting
         var pv = mat4.create();
         mat4.multiply(persp, view, pv);
 
@@ -977,40 +878,50 @@
         for(var i = 0; i<numTile; i++)
             tileLightId[i] = [];
 
-      
 
         for(var i = 0; i < lightNum; i++){
             var boundary = {left:0, right:0, top:0, bottom:0};
 
-            getLightBoundingBox(vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]), lights[i].radius, pv, viewport, boundary);
+            var lightViewPos = vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]);
+            lightViewPos = mat4.multiplyVec4(view, lightViewPos);    
+           
+            lightPosition[i*3] = lightViewPos[0];
+            lightPosition[i*3+1] = lightViewPos[1];
+            lightPosition[i*3+2] = lightViewPos[2];
 
+            getLightBoundingBox(lightViewPos, lights[i].radius, pv, viewport, boundary);
 
-            var lposLen = lightPosition.length;
-            var lcolRLen = lightColorRadius.length;
+            //console.log("Number Lights " + i);
+            //var lposLen = lightPosition.length;
+            //var lcolRLen = lightColorRadius.length;
             //console.log(lightPosition[lposLen-3] + " " + lightPosition[lposLen-2] + " " +lightPosition[lposLen-1]);
             //getLightBoundingBox(vec4.create(lightPosition[lposLen-3], lightPosition[lposLen-2], lightPosition[lposLen-1], 1.0), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
             //getLightBoundingBox(vec4.create([i,i,i, 1.0]), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
             //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
-            setLightOnTile(boundary, i, tileLightId);
+            if(display_type == display_light || display_type == 0)
+                setLightOnTile(boundary, i, tileLightId);
+            else if(display_type == display_nontilelight)
+                setNonTileLight(boundary, lightViewPos, lights[i].radius);
         }
         
-        var offset = 0;
-       
+        if(display_type == display_light || display_type == 0){
+            var offset = 0;           
 
-        for(var index = 0; index < numTile; index++)
-        {             
-            var size = tileLightId[index].length;                     
+            for(var index = 0; index < numTile; index++)
+            {             
+                var size = tileLightId[index].length;                     
 
-            for(var k = 0; k < size; k++)
-            {
-                lightIndex.push(tileLightId[index][k]); 
+                for(var k = 0; k < size; k++)
+                {
+                    lightIndex.push(tileLightId[index][k]); 
+                }
+              
+                lightGrid.push(offset);           
+                lightGrid.push(size);
+                lightGrid.push(0);
+                
+                offset += size;
             }
-          
-            lightGrid.push(offset);           
-            lightGrid.push(size);
-            lightGrid.push(0);
-            
-            offset += size;
         }
     }
 
@@ -1022,12 +933,14 @@
 
             var radius = 10.0;
 
-            lights.push({position:vec3.create([i,i,i]),color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+            lights.push({position:vec3.create([-10+20 * Math.random(),2 * Math.random(),-10*Math.random()]),
+             //lights.push({position:vec3.create([6, 2 ,-10]),
+                color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
             
             //light position x y z
-            lightPosition.push(i);
-            lightPosition.push(i);
-            lightPosition.push(i);
+            lightPosition.push(lights[i].position[0]);
+            lightPosition.push(lights[i].position[1]);
+            lightPosition.push(lights[i].position[2]);
 
             //color r g b and radius
             // lightColorRadius.push(i/lightNum);
@@ -1038,9 +951,67 @@
             lightColorRadius.push(Math.random());
             lightColorRadius.push(Math.random());
 
+            // lightColorRadius.push(1.0);
+            // lightColorRadius.push(1.0);
+            // lightColorRadius.push(1.0);
+
             lightColorRadius.push(radius);
         }
 
+    }
+
+
+    function initLightsFBO()
+    {
+        
+        //gl.useProgram(light_prog);
+         var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
+         for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)
+        {
+            lightIndex.push(-1);
+        }   
+
+        //gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D, lightGridTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, tileWidth, tileHeight, 0, gl.RGB, gl.FLOAT, new Float32Array(lightGrid));       
+       // gl.uniform1i(gl.getUniformLocation(program, "u_LightGridtex"),4);  
+
+        //gl.activeTexture(gl.TEXTURE5);
+        gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, lightIndexWidth, lightIndexWidth, 0, gl.LUMINANCE, gl.FLOAT, new Float32Array(lightIndex));       
+        //gl.uniform1i(gl.getUniformLocation(program, "u_LightIndextex"),5);  
+
+
+        //gl.activeTexture(gl.TEXTURE6);
+        gl.bindTexture(gl.TEXTURE_2D, lightPositionTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, lightPosition.length/3, 1.0, 0, gl.RGB, gl.FLOAT, new Float32Array(lightPosition));       
+       //gl.uniform1i(gl.getUniformLocation(program, "u_LightPositiontex"),6);
+
+
+        //gl.activeTexture(gl.TEXTURE7);
+        gl.bindTexture(gl.TEXTURE_2D, lightColorRadiusTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lightColorRadius.length/4, 1.0, 0, gl.RGBA, gl.FLOAT, new Float32Array(lightColorRadius));
+        //gl.uniform1i(gl.getUniformLocation(program, "u_LightColorRadiustex"),7);
     }
 
     function keyPress(e){
@@ -1101,10 +1072,11 @@
         else
         {
             radius += 0.01 * deltaY;
-            radius = Math.min(Math.max(radius, 2.0), 10.0);
+            radius = Math.min(Math.max(radius, 2.0), 15.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
-        view = mat4.create();
+        cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+        //view = mat4.create();
         mat4.lookAt(eye, center, up, view);
 
         lastMouseX = newX;
@@ -1128,15 +1100,15 @@
     document.body.appendChild( stats.domElement );
 
 
-    model = mat4.create();
-    mat4.identity(model);
+    // model = mat4.create();
+    // mat4.identity(model);
    
-    mv = mat4.create();
-    mat4.multiply(view, model, mv);
+    // mv = mat4.create();
+    // mat4.multiply(view, model, mv);
 
-    invTrans = mat4.create();
-    mat4.inverse(mv, invTrans);
-    mat4.transpose(invTrans);
+    // invTrans = mat4.create();
+    // mat4.inverse(mv, invTrans);
+    // mat4.transpose(invTrans);
 
 
     var lightdir = vec3.create([1.0, 0.0, 1.0]);
@@ -1156,42 +1128,54 @@
 
      	//2
      	setTextures();
-     	bindFBO(1);
-     	gl.enable(gl.BLEND);
+     	//bindFBO(1);
+     	//gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
-     	gl.blendFunc(gl.ONE, gl.ONE);
+     	//gl.blendFunc(gl.ONE, gl.ONE);
      	gl.clear(gl.COLOR_BUFFER_BIT);       
        
 
-        setupQuad(diagnostic_prog);
-        
-        var lightPos = vec4.create([0.0, 4.0, 0.0, 1.0]);
-        lightPos = mat4.multiplyVec4(view, lightPos);        
-        gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);
-        
-        drawQuad();
 
-        setUpLights();
-        setupQuad(light_prog);
-        lightQuad(light_prog);
-        drawQuad();
+        if(display_type == display_light){
+            setUpLights();
+            setupQuad(light_prog);
+            lightQuad(light_prog);
+            drawQuad();
+        }  
+        else if(display_type == display_nontilelight){
+            setupQuad(nontilelight_prog);
+            setUpLights();
+            gl.disable(gl.SCISSOR_TEST);
+        }
+        else
+        {
+            setupQuad(diagnostic_prog);            
+            var lightPos = vec4.create([0.0, 0.0, 0.0, 1.0]);
+            //lightPos = mat4.multiplyVec4(view, lightPos);        
+            gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightPos);            
+            drawQuad();       
+        }
 
      	// setupQuad(ambient_prog);
      	// drawQuad();
-        gl.disable(gl.BLEND);
+        
+
+        //gl.disable(gl.BLEND);
 
 
      	//3
-     	setTextures();
-     	gl.useProgram(post_prog);
-     	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-     	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+     // 	setTextures();
+     // 	gl.useProgram(post_prog);
+     // 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+     // 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-     	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, postTexture);
-    	gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
+     // 	gl.activeTexture(gl.TEXTURE0);
+    	// gl.bindTexture(gl.TEXTURE_2D, postTexture);
+    	// gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
 
-    	drawQuad();
+    	// drawQuad();
+
+
     	
         //reset
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -1210,6 +1194,9 @@
         
         initializeShader();
         initializeFBO();
+
+        
+       
         
         initMeshBuffers();        
         //initializeSphere();
@@ -1217,6 +1204,9 @@
         initializeQuad();
 
         initLights();
+        setUpLights();
+        initLightsFBO();
+       
 
         animate();
      })();
