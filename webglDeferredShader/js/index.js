@@ -36,6 +36,10 @@
         var x = r * Math.cos(e) * Math.cos(a);
         var y = r * Math.sin(e);
         var z = r * Math.cos(e) * Math.sin(a);
+        // //Should be like this
+        // var x = r * Math.sin(e) * Math.cos(a);
+        // var y = r * Math.sin(e) * Math.sin(a);
+        // var z = r * Math.cos(e);
 
         return [x,y,z];
     }
@@ -1005,6 +1009,25 @@
             if(checkboxs[checkboxidx].checked == true)
             {
                 //console.log("checkboxid: " + checkboxidx);
+                if(checkboxidx == 5 && needupdate == true)
+                {
+                    viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
+                    viewVector = vec3.normalize(viewVector);;
+                    //console.log(viewVector);
+                    //update mesh face info
+                   // updateDepthbuffer();
+                    var idx = 0;
+                    for(mesh in meshes)
+                    {
+                        updateFaceInfo(meshes[mesh],models[idx]);
+                        idx ++;
+                    }
+                    needupdate = false;
+                }
+                else
+                {
+                    needupdate = true;
+                }
                 drawQuad(checkboxidx);
             }
         }
@@ -1048,6 +1071,11 @@
         
         if( mouseLeftDown )
         {
+            
+            // azimuth -= 0.01 * deltaY;
+            // elevation += 0.01 * deltaX;
+            // //elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+
             azimuth += 0.01 * deltaX;
             elevation += 0.01 * deltaY;
             elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
