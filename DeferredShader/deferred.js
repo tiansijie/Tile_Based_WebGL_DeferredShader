@@ -5,7 +5,7 @@
         var y = r * Math.sin(e);
         var z = r * Math.cos(e) * Math.sin(a);
 
-        return [x,y,z];
+        return [z,y,x];
     }
 
 
@@ -583,7 +583,7 @@
             gl.enableVertexAttribArray(texCoordLocation);
 
 
-            var colors = vec3.create([0.2,1.0,1.0]);
+            var colors = vec3.create([1.0,1.0,1.0]);
             gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
             //console.log("meshhhh " + meshes[mesh].vertexBuffer);
@@ -656,7 +656,7 @@
     {
         gl.uniform1i(gl.getUniformLocation(program, "u_TileSize"), tileSize);
         gl.uniform1i(gl.getUniformLocation(program, "u_LightNum"), lightNum);
-        gl.uniform1f(gl.getUniformLocation(program, "u_WithTile"), tileWidth);
+        gl.uniform1f(gl.getUniformLocation(program, "u_WidthTile"), tileWidth);
         gl.uniform1f(gl.getUniformLocation(program, "u_HeightTile"), tileHeight);
 
         gl.activeTexture(gl.TEXTURE4);
@@ -689,6 +689,7 @@
 
         gl.activeTexture(gl.TEXTURE7);
         gl.bindTexture(gl.TEXTURE_2D, lightColorRadiusTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lightColorRadius.length/4, 1.0, 0, gl.RGBA, gl.FLOAT, new Float32Array(lightColorRadius));
         gl.uniform1i(gl.getUniformLocation(program, "u_LightColorRadiustex"),7);
     }
 
@@ -702,7 +703,9 @@
         gl.uniform4fv(gl.getUniformLocation(nontilelight_prog, "u_Light"), nontilelight);
         var lwidth = boundary.right - boundary.left;
         var lheight = boundary.top - boundary.bottom;
-        gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
+        
+
+        //gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
         drawQuad();
     }
 
@@ -777,18 +780,150 @@
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
+    //Light bounding box
+    function getLightBoundingBoxNew(light_pos, radius, boundary)
+    {
+        var lx = light_pos[0];
+        var ly = light_pos[1];
+        var lz = light_pos[2];
+
+        var lx2 = lx*lx;
+        var ly2 = ly*ly;
+        var lz2 = lz*lz;
+
+        var r = radius;
+        var r2 = r*r;
+
+        //X direction
+        var dz = (r2*lx2 - (lx2 + lz2)*(r2-lz2));
+
+        console.log("dz " + dz);
+
+
+        if(dz <= 0){
+            boundary.left = 0;
+            boundary.right = canvas.width;
+            boundary.bottom = 0;
+            boundary.top = canvas.height;            
+            return 0;
+        }
+
+        var nx1 = (r*lx + Math.sqrt(dz)) / (lx2 + lz2);
+        var nx2 = (r*lx - Math.sqrt(dz)) / (lx2 + lz2);
+
+        var nz1 = (r-nx1*lx)/lz;
+        var nz2 = (r-nx2*lx)/lz;
+
+        var pzx1 = (lx2+lz2-r2) / (lz-(nz1/nx1)*lx);
+        var pzx2 = (lx2+lz2-r2) / (lz-(nz2/nx2)*lx);
+
+       // console.log("pzx1 " + pzx1);
+        //console.log("pzx2 " + pzx2);    
+
+        var viewX1, viewX2;
+        //viewX1 = viewX2 = canvas.width;
+        if(pzx1 < 0){
+            var px = pzx1 * nz1 / nx1;
+            viewX1 = nz1 * near / nx1;
+            viewX1 = ((viewX1 + 1) / 2.0) * canvas.width;
+           if(px < lx)
+               boundary.left = viewX1;
+           else{
+               boundary.right = viewX1;
+               // console.log("111 RIght");
+            }
+           //console.log("viewX1 " + viewX1);
+        }
+
+        if(pzx2 < 0){
+            var px = pzx2 * nz2 / nx2;
+            viewX2 = nz2 * near / nx2;
+            viewX2 = ((viewX2 + 1) / 2.0) * canvas.width;
+           if(px < lx)
+               boundary.left = viewX2;
+           else{
+               boundary.right = viewX2;
+                //console.log("222 RIght");
+               // console.log("viewX2 " + viewX2); 
+           }
+           //console.log("viewX2 " + viewX2); 
+        }
+
+
+        //boundary.left = viewX1 < viewX2? viewX1 : viewX2;
+        //boundary.right = viewX1 > viewX2? viewX1: viewX2;
+
+        //Y direction
+        var dy = r2*ly2 - (ly2+lz2)*(r2-lz2);
+        console.log("dy " + dy);
+        if(dy < 0){
+            //boundary.left = 0;
+            //boundary.right = canvas.width;
+            boundary.bottom = 0;
+            boundary.top = canvas.height;       
+            return 0;
+        }
+
+        var ny1 = (r*ly + Math.sqrt(dy)) / (ly2 + lz2);
+        var ny2 = (r*ly - Math.sqrt(dy)) / (ly2 + lz2);
+
+        var nz11 = (r-ny1*ly)/lz;
+        var nz22 = (r-ny2*ly)/lz;
+
+        var pzy1 = (ly2+lz2-r2)/(lz-(nz11/ny1)*ly);
+        var pzy2 = (ly2+lz2-r2)/(lz-(nz22/ny2)*ly);
+
+        var viewY1, viewY2;
+        //viewY1 = viewY2 = canvas.height;
+        var as = canvas.height / canvas.width;
+        
+        // if(pzy1 < 0)
+        // {
+        //     var py = -pzy1 * nz11 / ny1;
+        //     viewY1 = nz11 * near / (ny1 * as);
+        //     viewY1 = ((viewY1 + 1) / 2.0) * canvas.height;
+        //     if(py < ly)
+        //         boundary.bottom = viewY1
+        //     else{
+        //         boundary.top = viewY1;
+        //        //console.log("view Y1 " + viewY1);
+        //     }
+        // }
+
+        // if(pzy2 < 0)
+        // {
+        //     var py = -pzy2 * nz22 / ny2;
+        //     viewY2 = nz22 * near / (ny2 * as);
+        //     viewY2 = ((viewY2 + 1) / 2.0) * canvas.height;
+        //      if(py < ly)
+        //         boundary.bottom = viewY2
+        //     else
+        //         boundary.top = viewY2;
+        //     //console.log("view Y2 " + viewY2);
+        // }     
+
+        return true;
+    }
 
     function getLightBoundingBox(light_pos, radius, pv, viewport, boundary)
     {
         var lx = light_pos[0];
         var ly = light_pos[1];
-        var lz = light_pos[2];      
-
+        var lz = light_pos[2];              
         //var dir = vec3.create([1.0,0.0,0.0]);
+        
+        cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
         var dir = cam_dir;
-        var camUp = vec3.create([0.0,1.0,0.0]);
-        var camLeft = vec3.cross(dir, camUp);
+        //var camUp = vec3.create([0.0,1.0,0.0]);
+        var camUp = vec3.normalize(vec3.create([view[4],view[5],view[6]]));
+        //console.log("up vector " + camUp[0] + " " + camUp[1] + " " + camUp[2]);
+        var camLeft = vec3.normalize(vec3.cross(dir, camUp));
+        //var camLeft = vec3.normalize(vec3.create([view[0],view[1],view[2]]));
 
+        //console.log("left vector " + camLeft[0] + " " + camLeft[1] + " " + camLeft[2]);
+
+        //console.log("foward vector " + view[8] + " " + view[9] + " " + view[10]);
         //var camLeft = vec3.create([1.0,0.0,0.0]);
        
        
@@ -803,6 +938,9 @@
         leftLight = vec4.divide(leftLight,vec4.create([leftLight[3],leftLight[3],leftLight[3],leftLight[3]]));
         upLight = vec4.divide(upLight,vec4.create([upLight[3],upLight[3],upLight[3],upLight[3]]));
         centerLight = vec4.divide(centerLight,vec4.create([centerLight[3],centerLight[3],centerLight[3],centerLight[3]]));
+
+
+        //console.log("Left light " + leftLight[0] + ", " + leftLight[1] + ", " + leftLight[2]);
 
         leftLight = mat4.multiplyVec4(viewport, leftLight);
         upLight = mat4.multiplyVec4(viewport, upLight);
@@ -825,7 +963,7 @@
         boundary.top = topy;
 
         //console.log("cx is " + leftx);
-        //console.log("cy is " + bottomy);
+        //console.log("cy is " + rightx);
         //console.log("r is " + r);
     }
 
@@ -867,6 +1005,22 @@
         var pv = mat4.create();
         mat4.multiply(persp, view, pv);
 
+        var v1 = mat4.createFrom(
+            canvas.width, 0, 0, 0,
+            0, canvas.height, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+            );
+
+        var v2 = mat4.createFrom(
+            0.5, 0, 0, 0,
+            0, 0.5, 0, 0,
+            0, 0, 1, 0,
+            0.5, 0.5, 0, 1
+            );
+
+        //var viewport = mat4.multiply(v1, v2);
+
         var viewport = mat4.createFrom(
             canvas.width/2.0,0.0,0.0,0.0,
             0.0,canvas.height/2.0,0.0,0.0,
@@ -889,7 +1043,27 @@
             lightPosition[i*3+1] = lightViewPos[1];
             lightPosition[i*3+2] = lightViewPos[2];
 
-            getLightBoundingBox(lightViewPos, lights[i].radius, pv, viewport, boundary);
+            //getLightBoundingBox(lightViewPos, lights[i].radius, pv, viewport, boundary);
+
+            // boundary.left = 0;
+            // boundary.right = canvas.width;
+            // boundary.bottom = 0;
+            // boundary.top = canvas.height; 
+
+            //console.log("light pos " + lights[i].position[0] + " " + lightViewPos[1] + " " + lightViewPos[2]); 
+
+            //getLightBoundingBoxNew(lightViewPos, lights[i].radius, boundary);
+
+            getLightBoundingBox(lights[i].position, lights[i].radius, pv, viewport, boundary);
+
+
+            //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
+
+            // boundary.left = 0.0
+            // boundary.right = 800;
+            // boundary.bottom = 0;
+            // boundary.top = 600;
+
 
             //console.log("Number Lights " + i);
             //var lposLen = lightPosition.length;
@@ -933,9 +1107,14 @@
 
             var radius = 10.0;
 
-            lights.push({position:vec3.create([-10+20 * Math.random(),2 * Math.random(),-10*Math.random()]),
-             //lights.push({position:vec3.create([6, 2 ,-10]),
+            lights.push({position:vec3.create([5 + -20 * Math.random(), 2 * Math.random(), 5-5*Math.random()]),
                 color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+            // if(i == 0)
+            //     lights.push({position:vec3.create([0, 0, -5]),
+            //     color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+            // else 
+            //     lights.push({position:vec3.create([-10, 4, 7]),
+            //     color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
             
             //light position x y z
             lightPosition.push(lights[i].position[0]);
@@ -1065,7 +1244,7 @@
         
         if( mouseLeftDown )
         {
-            azimuth += 0.01 * deltaX;
+            azimuth -= 0.01 * deltaX;
             elevation += 0.01 * deltaY;
             elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
         }
@@ -1076,6 +1255,7 @@
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
         cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
         //view = mat4.create();
         mat4.lookAt(eye, center, up, view);
 

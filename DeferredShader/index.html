@@ -118,7 +118,7 @@
     //uniform Light u_Lights[LIGHTNUM];
     uniform int u_LightIndexImageSize;
     uniform float u_FloatLightIndexSize;
-    uniform float u_WithTile;
+    uniform float u_WidthTile;
     uniform float u_HeightTile;
 
     varying vec2 fs_Texcoord;
@@ -139,7 +139,7 @@
 
         if(u_DisplayType == DISPLAY_LIGHTS){           
             //get the grid data index
-            vec2 gridIndex = vec2((fs_Texcoord.x*u_Width) / float(u_TileSize) / u_WithTile, (fs_Texcoord.y*u_Height) / float(u_TileSize) / u_HeightTile);
+            vec2 gridIndex = vec2(((fs_Texcoord.x*u_Width) / float(u_TileSize)) / (u_WidthTile), ((fs_Texcoord.y*u_Height) / float(u_TileSize)) / (u_HeightTile));
             //x for offset, y for count
             vec3 gridInfo = texture2D(u_LightGridtex, gridIndex).xyz;
             int offset = int(gridInfo.x);
@@ -174,7 +174,7 @@
                             float diffuse = max(dot(normal, normalize(lightPos - position)),0.0);
                             if(diffuse == 0.0)
                                diffuse = max(dot(-normal, normalize(lightPos - position)),0.0);
-                            lightColor += diffuse * color * lightColorRadius.xyz;
+                            lightColor += diffuse * color * lightColorRadius.xyz;// * ((lightColorRadius.w - distance(lightPos, position)) / lightColorRadius.w);
                             //lightColor += lightColorRadius.xyz;
                             lightCount ++;
                         }                         
@@ -183,8 +183,9 @@
                         break;
                 }
                 lightColor /= float(lightCount);                
+                //lightColor = vec3(float(lightCount) / float(LIGHTNUM));
             }       
-            gl_FragData[0] = vec4(lightColor, 1.0);
+            gl_FragData[0] = vec4(lightColor, 1.0);// + vec4(color * 0.3,1.0);
         }
         else
             gl_FragData[0] = vec4(vec3(0.0), 1.0);
@@ -225,8 +226,12 @@
 
          if( u_DisplayType == DISPLAY_NONTILE_LIGHTS )
         {            
-            float diffuse = max(dot(normal, normalize(light - position)),0.0);
-            gl_FragData[0] = vec4(diffuse * vec3(0.2,0.2,0.8), 0.2);
+            if(distance(light, position) < lightRadius){
+                float diffuse = max(dot(normal, normalize(light - position)),0.0);
+                gl_FragData[0] = vec4(diffuse * vec3(0.2,0.2,0.8) * ((lightRadius- distance(light, position)) / lightRadius), 0.0) ;
+            }
+            else
+                gl_FragData[0] = vec4(0.0,0.0,0.0, 0.0);   
         }
     }
 </script>
