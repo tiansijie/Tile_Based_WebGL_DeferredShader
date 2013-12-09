@@ -1,11 +1,16 @@
 (function() {
 
 	function sphericalToCartesian( r, a, e ) {
-        var x = r * Math.cos(e) * Math.cos(a);
-        var y = r * Math.sin(e);
-        var z = r * Math.cos(e) * Math.sin(a);
+        // var x = r * Math.cos(e) * Math.cos(a);
+        // var y = r * Math.sin(e);
+        // var z = r * Math.cos(e) * Math.sin(a);
 
-        return [z,y,x];
+        //Should be like this
+        var x = r * Math.sin(e) * Math.cos(a);
+        var y = r * Math.sin(e) * Math.sin(a);
+        var z = r * Math.cos(e);
+
+        return [x,y,z];
     }
 
 
@@ -705,7 +710,7 @@
         var lheight = boundary.top - boundary.bottom;
         
 
-        //gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
+        gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
         drawQuad();
     }
 
@@ -918,12 +923,18 @@
         //var camUp = vec3.create([0.0,1.0,0.0]);
         var camUp = vec3.normalize(vec3.create([view[4],view[5],view[6]]));
         //console.log("up vector " + camUp[0] + " " + camUp[1] + " " + camUp[2]);
-        var camLeft = vec3.normalize(vec3.cross(dir, camUp));
+        var forward = vec3.create([view[8], view[9], view[10]]);
+        var camLeft = vec3.normalize(vec3.cross(camUp, cam_dir));
+        //var camLeft = vec3.normalize(vec3.cross(camUp, forward));
         //var camLeft = vec3.normalize(vec3.create([view[0],view[1],view[2]]));
 
-        //console.log("left vector " + camLeft[0] + " " + camLeft[1] + " " + camLeft[2]);
+        //console.log("left vector111 " + camLeft[0] + " " + camLeft[1] + " " + camLeft[2]);
+        //console.log("left vector222 " + view[0] + " " + view[1] + " " + view[2]);
 
         //console.log("foward vector " + view[8] + " " + view[9] + " " + view[10]);
+        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
+
+
         //var camLeft = vec3.create([1.0,0.0,0.0]);
        
        
@@ -1244,13 +1255,13 @@
         
         if( mouseLeftDown )
         {
-            azimuth -= 0.01 * deltaX;
-            elevation += 0.01 * deltaY;
-            elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+            azimuth -= 0.01 * deltaY;
+            elevation += 0.01 * deltaX;
+            //azimuth = Math.min(Math.max(azimuth, -Math.PI/2+0.001), Math.PI/2-0.001);
         }
         else
         {
-            radius += 0.01 * deltaY;
+            radius -= 0.01 * deltaX;
             radius = Math.min(Math.max(radius, 2.0), 15.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
