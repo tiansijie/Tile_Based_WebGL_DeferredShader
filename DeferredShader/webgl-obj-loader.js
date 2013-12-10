@@ -30,31 +30,83 @@ obj_loader.Mesh = function( objectData ){
     
     // array of lines separated by the newline
     var lines = objectData.split( '\n' )
-    //console.log("lines " + lines);
+
+    var vertex_pattern = /v( +[\d|\.|\+|\-|e]+)( +[\d|\.|\+|\-|e]+)( +[\d|\.|\+|\-|e]+)/;
+
+    // vn float float float
+
+    var normal_pattern = /vn( +[\d|\.|\+|\-|e]+)( +[\d|\.|\+|\-|e]+)( +[\d|\.|\+|\-|e]+)/;
+
+    // vt float float
+
+    var uv_pattern = /vt( +[\d|\.|\+|\-|e]+)( +[\d|\.|\+|\-|e]+)/;
+
+    // f vertex vertex vertex ...
+
+    var face_pattern1 = /f( +\d+)( +\d+)( +\d+)( +\d+)?/;
+
+    // f vertex/uv vertex/uv vertex/uv ...
+
+    var face_pattern2 = /f( +(\d+)\/(\d+))( +(\d+)\/(\d+))( +(\d+)\/(\d+))( +(\d+)\/(\d+))?/;
+
+    // f vertex/uv/normal vertex/uv/normal vertex/uv/normal ...
+
+    var face_pattern3 = /f( +(\d+)\/(\d+)\/(\d+))( +(\d+)\/(\d+)\/(\d+))( +(\d+)\/(\d+)\/(\d+))( +(\d+)\/(\d+)\/(\d+))?/;
+
+    // f vertex//normal vertex//normal vertex//normal ... 
+
+    var face_pattern4 = /f( +(\d+)\/\/(\d+))( +(\d+)\/\/(\d+))( +(\d+)\/\/(\d+))( +(\d+)\/\/(\d+))?/
+
+
     for( var i=0; i<lines.length; i++ ){
-      // if this is a vertex
-     // console.log("lines : " + lines[i]);
-      if( lines[ i ].startsWith( 'v ' ) ){
-        line = lines[ i ].slice( 2 ).split( " " )
-        verts.push( line[ 0 ] );
-        verts.push( line[ 1 ] );
-        verts.push( line[ 2 ] );
-        
+     
+
+      var line = lines[ i ];
+      line = line.trim();
+      var result;
+      //lines[i].trim();
+      if ( ( result = vertex_pattern.exec( line ) ) !== null ){
+          verts.push( result[ 1 ] );
+          verts.push( result[ 2 ] );
+          verts.push( result[ 3 ] );
       }
-      // if this is a vertex normal
-      else if( lines[ i ].startsWith( 'vn' ) ){
-        //console.log(line);
-        line = lines[ i ].slice( 3 ).split( " " )
-        vertNormals.push( line[ 0 ] );
-        vertNormals.push( line[ 1 ] );
-        vertNormals.push( line[ 2 ] );
+       // if this is a vertex
+      // if( lines[ i ].startsWith( 'v ' ) ){
+      //   line = lines[ i ].slice( 2 ).split( " " )
+      //   //console.log(line[1]);
+      //   verts.push( line[ 1 ] );
+      //   verts.push( line[ 2 ] );
+      //   verts.push( line[ 3 ] );
+      // }
+      else if ( ( result = normal_pattern.exec( line ) ) !== null ) {
+          vertNormals.push( result[ 1 ] );
+          vertNormals.push( result[ 2 ] );
+          vertNormals.push( result[ 3 ] );
       }
+      // // if this is a vertex normal
+      // else if( lines[ i ].startsWith( 'vn' ) ){
+      //   line = lines[ i ].slice( 3 ).split( " " )
+      //   vertNormals.push( line[ 0 ] );
+      //   vertNormals.push( line[ 1 ] );
+      //   vertNormals.push( line[ 2 ] );
+      // }
       // if this is a texture
       else if( lines[ i ].startsWith( 'vt' ) ){
         line = lines[ i ].slice( 3 ).split( " " )
         textures.push( line[ 0 ] );
         textures.push( line[ 1 ] );
       }
+      // else if ( ( result = face_pattern2.exec( line ) ) !== null ) {
+
+      //   // ["f 1/1 2/2 3/3", " 1/1", "1", "1", " 2/2", "2", "2", " 3/3", "3", "3", undefined, undefined, undefined]
+        
+      //   handle_face_line(
+      //     [ result[ 2 ], result[ 5 ], result[ 8 ], result[ 11 ] ], //faces
+      //     [ result[ 3 ], result[ 6 ], result[ 9 ], result[ 12 ] ] //uv
+      //   );
+
+      // }
+
       // if this is a face
       else if( lines[ i ].startsWith( 'f ' ) ){
         line = lines[ i ].slice( 2 ).split( " " );
@@ -75,9 +127,7 @@ obj_loader.Mesh = function( objectData ){
                 packed.indices.push( packed.hashindices[ line[ j ] ] );
             }
             else{
-
                 face = line[ j ].split( '/' );
-                //console.log(face);
                 // vertex position
                 packed.verts.push( verts[ (face[ 0 ] - 1) * 3 + 0 ] );
                 packed.verts.push( verts[ (face[ 0 ] - 1) * 3 + 1 ] );
@@ -121,17 +171,16 @@ obj_utils = {};
   an object array where the keys will be the unique object name and the value
   will be a Mesh object
 */
-obj_utils.downloadMeshes = function( nameAndURLs, completionCallback){
+obj_utils.downloadMeshes = function( nameAndURLs, completionCallback ){
     var ajaxes = new Array();
     var meshes = new Object();
 
-    $.each( nameAndURLs, function( name, URL){
+    $.each( nameAndURLs, function( name, URL ){
         ajaxes.push($.ajax({
                 url: URL,
                 dataType: 'text',
                 success: function( data ){
-                    //console.log(data);
-                    meshes[name] = new obj_loader.Mesh( data );              
+                    meshes[name] = new obj_loader.Mesh( data );
                 }
             })
         );
@@ -171,7 +220,6 @@ obj_utils.initMeshBuffers = function( gl, mesh ){
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexNormals), gl.STATIC_DRAW);
   mesh.normalBuffer.itemSize = 3;
   mesh.normalBuffer.numItems = mesh.vertexNormals.length / 3;
-  //console.log(mesh.vertexNormals.length);
 
   mesh.textureBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.textureBuffer);
