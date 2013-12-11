@@ -74,7 +74,7 @@
     var lightColorRadius = [];
     var lightGrid = [];
     var lightIndex = [];
-    var lightNum = 300;   
+    var lightNum = 100;   
 
 
     var positionLocation;
@@ -232,6 +232,7 @@
       return array;
     }
 
+
 	function initializeFBO() {
 
 		console.log("initFBO");
@@ -251,6 +252,7 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+
 
 		gl.bindTexture(gl.TEXTURE_2D, normalTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -294,7 +296,8 @@
     	gl.bindTexture(gl.TEXTURE_2D, positionTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[1], gl.TEXTURE_2D, positionTexture, 0);    
     	gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[2], gl.TEXTURE_2D, colorTexture, 0);
+    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[2], gl.TEXTURE_2D, colorTexture, 0);        
+
 
     	var FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     	if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
@@ -1555,7 +1558,35 @@
         mat4.lookAt(eye, center, up, view);
     }
 
+    var pixels;
+    function readDepthBuffer()
+    {
+        var fbDepth = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
+        gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depthTexture, 0);
+        //gl.bindTexture(gl.TEXTURE_2D, positionTexture);
+        //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, positionTexture, 0); 
+        var canRead = (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE);
+        //canRead = true;
+        if(canRead)
+        {
+            pixels = new Uint8Array(canvas.width * canvas.height * 4);
+            gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            console.log("Size of pixels " + pixels.length);
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
     function animate() {   
+
+        //readDepthBuffer();
+        // for(var i = 0;i < pixels.length; i+=4)
+        // {
+            
+        //     if(pixels[i+2]!=0)
+        //         console.log("z is " +pixels[i+2]);
+        // }
 
         camera();
      	//1
