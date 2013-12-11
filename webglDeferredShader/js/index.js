@@ -4,13 +4,13 @@
    
 
 	var gl;
-	var view,presp,model,inverse;
+	var view,persp,model,inverse;
     var checkboxs =[]; // 0:normal,1:color,2:position,3: depth, 4,diffuse
-
-
+    var needupdate = true; // control the update face info times
+    var depthvalues = [];// = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("webgl");
+            gl = canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
         } catch (e) {
@@ -25,17 +25,26 @@
         }
         gl.getExtension("OES_texture_float");
         gl.getExtension("OES_texture_float_linear");
+
+        // gl.ClampColor(gl.CLAMP_READ_COLOR, gl.FALSE);
+        // gl.ClampColor(gl.CLAMP_VERTEX_COLOR, gl.FALSE);
+        // gl.ClampColor(gl.CLAMP_FRAGMENT_COLOR, gl.FALSE);
+       // var context = canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
     }
 	
      function sphericalToCartesian( r, a, e ) {
         var x = r * Math.cos(e) * Math.cos(a);
         var y = r * Math.sin(e);
         var z = r * Math.cos(e) * Math.sin(a);
+        // //Should be like this
+        // var x = r * Math.sin(e) * Math.cos(a);
+        // var y = r * Math.sin(e) * Math.sin(a);
+        // var z = r * Math.cos(e);
 
         return [x,y,z];
     }
 
-    var radius = 12.0;
+    var radius = 20.0;
     var azimuth = Math.PI;
     var elevation = 0.0001;
 
@@ -43,10 +52,21 @@
     //console.log("eye initial " + eye);
     var center = [0.0, 0.0, 0.0];
     var up = [0.0, 1.0, 0.0];
+    var viewVector = [center[0] - eye[0],center[1] - eye[1],center[2]-eye[2]];
+    
+    viewVector = vec3.normalize(viewVector);
+   // console.log("view Vector: " + viewVector);
+
     view = mat4.create();
     mat4.lookAt(eye, center, up, view);
 
-
+    function normalize(vec){
+        var vec2;
+        var length = vec[0]*vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
+        length = Math.sqrt(length);       
+        vec2 = [vec[0] / length, vec[1]/length,vec[2]/length];
+        return vec2;
+    }
 	function getShader(gl,id){
 		
 		var shaderScript = document.getElementById(id);
@@ -106,18 +126,17 @@
 		gl.useProgram(shaderProgram[0]);
 		
 		shaderProgram[0].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[0],"Position");
-		console.log("position " + shaderProgram[0].vertexPositionAttribute);
+		//console.log("position " + shaderProgram[0].vertexPositionAttribute);
 		gl.enableVertexAttribArray(shaderProgram[0].vertexPositionAttribute);
 		
 
 		shaderProgram[0].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[0],"Texcood");
-		console.log("texcoord " + shaderProgram[0].vertexTexcoordAttribute);
+		//console.log("texcoord " + shaderProgram[0].vertexTexcoordAttribute);
 		gl.enableVertexAttribArray(shaderProgram[0].vertexTexcoordAttribute);
 
 		shaderProgram[0].vertexNormalAttribute = gl.getAttribLocation(shaderProgram[0],"Normal");
-		console.log("normal " + shaderProgram[0].vertexNormalAttribute);
-		gl.enableVertexAttribArray(shaderProgram[0].vertexNormalAttribute);
-
+		//console.log("normal " + shaderProgram[0].vertexNormalAttribute);
+		gl.enableVertexAttribArray(shaderProgram[0].vertexNormalAttribute);    
 
 		// get location of uniforms and set them as properties of shaderProgram[0]...
 		shaderProgram[0].modelMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Model");
@@ -155,28 +174,110 @@
         }
         gl.useProgram(shaderProgram[1]);
 
-        shaderProgram[1].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[1],"Position");
-        console.log("quad shader position: " + shaderProgram[1].vertexPositionAttribute);
-        gl.enableVertexAttribArray(shaderProgram[1].vertexAttribPointer);
+        shaderProgram[1].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[1],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[1].vertexPositionAttribute);
 
         shaderProgram[1].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[1],"Texcoord");
-        console.log("quad shader texcoord: " + shaderProgram[1].vertexTexcoordAttribute);
         gl.enableVertexAttribArray(shaderProgram[1].vertexTexcoordAttribute);
 		
         shaderProgram[1].normalsampler = gl.getUniformLocation(shaderProgram[1],"u_NormalSampler");
         shaderProgram[1].colorsampler = gl.getUniformLocation(shaderProgram[1],"u_ColorSampler");
         shaderProgram[1].positionsampler = gl.getUniformLocation(shaderProgram[1],"u_PositionSampler");
         shaderProgram[1].depthsampler = gl.getUniformLocation(shaderProgram[1],"u_DepthSampler");
-
+        shaderProgram[1].depthsamplerfake = gl.getUniformLocation(shaderProgram[1],"u_DepthSamplerFake");
+        shaderProgram[1].silcolorsampler = gl.getUniformLocation(shaderProgram[1],"u_SilColorSampler");
+        shaderProgram[1].sildepthsampler = gl.getUniformLocation(shaderProgram[1],"u_SilDepthSampler");
+        shaderProgram[1].spattersampler = gl.getUniformLocation(shaderProgram[1],"u_SpatterSampler");
         shaderProgram[1].displaymode = gl.getUniformLocation(shaderProgram[1],"u_Displaymode");
+        shaderProgram[1].viewwidth = gl.getUniformLocation(shaderProgram[1],"u_viewportWidth");
+        shaderProgram[1].viewheight = gl.getUniformLocation(shaderProgram[1],"u_viewportHeight");
+        // if(shaderProgram[1].normalsampler == null || shaderProgram[1].colorsampler == null
+        //      || shaderProgram[1].displaymode == null || shaderProgram[1].positionsampler == null || shaderProgram[1].depthsampler == null)
+        // {
+        //     // console.log(shaderProgram[1].normalsampler + 
+        //     //     " , "+ shaderProgram[1].colorsampler + " , " + shaderProgram[1].displaymode
+        //     //     + ", "+shaderProgram[1].positionsampler + ", "+ shaderProgram[1].depthsampler);
+            
+        // }
 
-        if(shaderProgram[1].normalsampler == null || shaderProgram[1].colorsampler == null
-             || shaderProgram[1].displaymode == null || shaderProgram[1].positionsampler == null || shaderProgram[1].depthsampler == null)
+        var frags3 = getShader(gl,"siledgefs");
+        var verts3 = getShader(gl,"siledgevs");
+        if(frags3 == null || verts3 == null)
         {
-            console.log(shaderProgram[1].normalsampler + 
-                " , "+ shaderProgram[1].colorsampler + " , " + shaderProgram[1].displaymode
-                + ", "+shaderProgram[1].positionsampler + ", "+ shaderProgram[1].depthsampler);
+            alert("didn't get silhouette shader");
+        } 
+
+        shaderProgram[2] = gl.createProgram();
+        gl.attachShader(shaderProgram[2],verts3);
+        gl.attachShader(shaderProgram[2],frags3);
+        gl.linkProgram(shaderProgram[2]);
+        if (!gl.getProgramParameter(shaderProgram[2], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
         }
+        gl.useProgram(shaderProgram[2]);
+        shaderProgram[2].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[2],"Position");
+        gl.enableVertexAttribArray(shaderProgram[2].vertexPositionAttribute);
+        shaderProgram[2].vertexColorAttribute = gl.getAttribLocation(shaderProgram[2],"Color");
+        gl.enableVertexAttribArray(shaderProgram[2].vertexColorAttribute);
+
+        shaderProgram[2].modelMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Model");
+        shaderProgram[2].viewMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_View");  
+        shaderProgram[2].perspMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Persp");
+        shaderProgram[2].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Inverse");
+
+        shaderProgram[2].depthsampler = gl.getUniformLocation(shaderProgram[2],"u_DepthSampler");
+        shaderProgram[2].drawmode = gl.getUniformLocation(shaderProgram[2],"u_DrawMode");
+        
+        ////shader4 for ink qua////
+        var frags4 = getShader(gl,"inkquafs");
+        //var verts4 = getShader(gl,"inkquavs");
+        if(frags4 == null)// || verts4 == null)
+        {
+            alert("didn't get inkquafs shader");
+        } 
+
+        shaderProgram[3] = gl.createProgram();
+        gl.attachShader(shaderProgram[3],verts2);
+        gl.attachShader(shaderProgram[3],frags4);
+        gl.linkProgram(shaderProgram[3]);
+        if (!gl.getProgramParameter(shaderProgram[3], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+        gl.useProgram(shaderProgram[3]);
+        shaderProgram[3].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[3],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[3].vertexPositionAttribute);
+
+        shaderProgram[3].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[3],"Texcoord");
+        gl.enableVertexAttribArray(shaderProgram[3].vertexTexcoordAttribute);
+
+        shaderProgram[3].normalsampler = gl.getUniformLocation(shaderProgram[3],"u_NormalSampler");
+        shaderProgram[3].colorsampler = gl.getUniformLocation(shaderProgram[3],"u_ColorSampler");
+        shaderProgram[3].positionsampler = gl.getUniformLocation(shaderProgram[3],"u_PositionSampler");
+
+        ////shader5  for spartter////////////////
+        var frags5 = getShader(gl,"spatterfs");
+       // var verts5 = getShader(gl,"spattervs");
+        if(frags5 == null)// || verts5 == null)
+        {
+            alert("didn't get inkquafs shader");
+        } 
+
+        //shader 5 for sparker
+        shaderProgram[4] = gl.createProgram();
+        gl.attachShader(shaderProgram[4],verts2);
+        gl.attachShader(shaderProgram[4],frags5);
+        gl.linkProgram(shaderProgram[4]);
+        if (!gl.getProgramParameter(shaderProgram[4], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+        gl.useProgram(shaderProgram[4]);
+        shaderProgram[4].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[4],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[4].vertexPositionAttribute);
+        shaderProgram[4].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[4],"Texcoord");
+        gl.enableVertexAttribArray(shaderProgram[4].vertexTexcoordAttribute);
+        shaderProgram[4].quatcolorsampler = gl.getUniformLocation(shaderProgram[4],"u_QuatColorSampler");
+        shaderProgram[4].viewwidth = gl.getUniformLocation(shaderProgram[4],"u_viewportWidth");
+        shaderProgram[4].viewheight = gl.getUniformLocation(shaderProgram[4],"u_viewportHeight");
 
 	}
 
@@ -213,7 +314,10 @@
 	function initTextureFramebuffer(){
 		//setting up framebuffer
         //setting up normal texture
-        for(var i = 0; i<4; ++i)
+        //use programshader[0]  0:normal, 1: color, 2: screen space position, 3: depth pass, 4: manually cal depth , 
+        //use programshader[2]  5: silhouette mesh depth buffer 6: silhouette 
+        //use shaderprogram[1]  7: ink quatilized color     8: spattered color
+        for(var i = 0; i<9; ++i)
         {
             var fbo = gl.createFramebuffer();
             rttFramebuffers.push(fbo);
@@ -223,7 +327,7 @@
 
             var texture = createAndSetupTexture(gl,i);
             rttTextures.push(texture);
-
+ 
             if(i == 3)
             {
                 //depth compoenent
@@ -236,9 +340,6 @@
                  //just tell we don't have any image data and just like to allocate a particular amount of empty space on graphics card
             }
            
-
-            
-
             if(i == 3)
             {
                  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, texture, 0);
@@ -253,15 +354,13 @@
                 gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
             }
            
-            
-
             //set texture, renderbuffer, and framebuffer back to their defaults
             gl.bindTexture(gl.TEXTURE_2D, null);
             gl.bindRenderbuffer(gl.RENDERBUFFER, null);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }	
-        console.log("framebuffer length: " + rttFramebuffers.length);
-        console.log("texture buffer length: " + rttTextures.length);
+       // console.log("framebuffer length: " + rttFramebuffers.length);
+        //console.log("texture buffer length: " + rttTextures.length);
 	}
 
 	//var colorTexture;
@@ -279,7 +378,9 @@
         colorTexture.image.onload = function () {
             handleLoadedTexture(colorTexture)
         }
-        colorTexture.image.src = "moon.gif";
+        //colorTexture.image.src = "moon.gif";
+        colorTexture.image.src = "Cow.bmp";
+        //colorTexture.image.src = "test.gif";
 
         // colorTexture = gl.createTexture();
         // colorTexture.image = new Image();
@@ -308,13 +409,14 @@
     function initQuadBuffers()
     {
         quadvbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);;
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
         var vertices = [
              1.0,  1.0,  0.0,
             -1.0,  1.0,  0.0,
             -1.0, -1.0,  0.0,
              1.0, -1.0,  0.0
         ];
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         quadvbo.itemSize = 3;
         quadvbo.numItems = 4;
@@ -347,280 +449,24 @@
     // var meshtbo = [];
     var meshes = [];    
     var models = [];
-    // function loadTeapot() {
-    //     var request = new XMLHttpRequest();
-    //     request.open("GET", "Teapot.json");
-    //     request.onreadystatechange = function () {
-    //         if (request.readyState == 4) {
-    //             handleLoadedTeapot(JSON.parse(request.responseText));
-    //         }
-    //     }
-    //     request.send();
-    // }
-   
-    // function handleLoadedTeapot(teapotData) {
-    //     meshnbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
-    //     meshnbo.itemSize = 3;
-    //     meshnbo.numItems = teapotData.vertexNormals.length / 3;
-
-    //     meshtbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
-    //     meshtbo.itemSize = 2;
-    //     meshtbo.numItems = teapotData.vertexTextureCoords.length / 2;
-
-    //     meshvbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
-    //     meshvbo.itemSize = 3;
-    //     meshvbo.numItems = teapotData.vertexPositions.length / 3;
-
-    //     meshibo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(teapotData.indices), gl.STATIC_DRAW);
-    //     meshibo.itemSize = 1;
-    //     meshibo.numItems = teapotData.indices.length;
-
-    //     //document.getElementById("loadingtext").textContent = "";
-    // }
-
-    // function initcube()
-    // {
-    //     // cube
-    //     meshvbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER,meshvbo);
-    //     vertices = [
-    //         // Front face
-    //         -1.0, -1.0,  1.0,
-    //          1.0, -1.0,  1.0,
-    //          1.0,  1.0,  1.0,
-    //         -1.0,  1.0,  1.0,
-
-    //         // Back face
-    //         -1.0, -1.0, -1.0,
-    //         -1.0,  1.0, -1.0,
-    //          1.0,  1.0, -1.0,
-    //          1.0, -1.0, -1.0,
-
-    //         // Top face
-    //         -1.0,  1.0, -1.0,
-    //         -1.0,  1.0,  1.0,
-    //          1.0,  1.0,  1.0,
-    //          1.0,  1.0, -1.0,
-
-    //         // Bottom face
-    //         -1.0, -1.0, -1.0,
-    //          1.0, -1.0, -1.0,
-    //          1.0, -1.0,  1.0,
-    //         -1.0, -1.0,  1.0,
-
-    //         // Right face
-    //          1.0, -1.0, -1.0,
-    //          1.0,  1.0, -1.0,
-    //          1.0,  1.0,  1.0,
-    //          1.0, -1.0,  1.0,
-
-    //         // Left face
-    //         -1.0, -1.0, -1.0,
-    //         -1.0, -1.0,  1.0,
-    //         -1.0,  1.0,  1.0,
-    //         -1.0,  1.0, -1.0,
-    //     ];
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    //     meshvbo.itemSize = 3;
-    //     meshvbo.numItems = 24;
-
-    //     meshnbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-    //     var vertexNormals = [
-    //         // Front face
-    //          0.0,  0.0,  1.0,
-    //          0.0,  0.0,  1.0,
-    //          0.0,  0.0,  1.0,
-    //          0.0,  0.0,  1.0,
-
-    //         // Back face
-    //          0.0,  0.0, -1.0,
-    //          0.0,  0.0, -1.0,
-    //          0.0,  0.0, -1.0,
-    //          0.0,  0.0, -1.0,
-
-    //         // Top face
-    //          0.0,  1.0,  0.0,
-    //          0.0,  1.0,  0.0,
-    //          0.0,  1.0,  0.0,
-    //          0.0,  1.0,  0.0,
-
-    //         // Bottom face
-    //          0.0, -1.0,  0.0,
-    //          0.0, -1.0,  0.0,
-    //          0.0, -1.0,  0.0,
-    //          0.0, -1.0,  0.0,
-
-    //         // Right face
-    //          1.0,  0.0,  0.0,
-    //          1.0,  0.0,  0.0,
-    //          1.0,  0.0,  0.0,
-    //          1.0,  0.0,  0.0,
-
-    //         // Left face
-    //         -1.0,  0.0,  0.0,
-    //         -1.0,  0.0,  0.0,
-    //         -1.0,  0.0,  0.0,
-    //         -1.0,  0.0,  0.0,
-    //     ];
-    //      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
-    //      meshnbo.itemSize = 3;
-    //      meshnbo.numItems = 24;
-
-    //      meshtbo = gl.createBuffer();
-    //      gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-    //      var textureCoords = [
-    //         // Front face
-    //         0.0, 0.0,
-    //         1.0, 0.0,
-    //         1.0, 1.0,
-    //         0.0, 1.0,
-
-    //         // Back face
-    //         1.0, 0.0,
-    //         1.0, 1.0,
-    //         0.0, 1.0,
-    //         0.0, 0.0,
-
-    //         // Top face
-    //         0.0, 1.0,
-    //         0.0, 0.0,
-    //         1.0, 0.0,
-    //         1.0, 1.0,
-
-    //         // Bottom face
-    //         1.0, 1.0,
-    //         0.0, 1.0,
-    //         0.0, 0.0,
-    //         1.0, 0.0,
-
-    //         // Right face
-    //         1.0, 0.0,
-    //         1.0, 1.0,
-    //         0.0, 1.0,
-    //         0.0, 0.0,
-
-    //         // Left face
-    //         0.0, 0.0,
-    //         1.0, 0.0,
-    //         1.0, 1.0,
-    //         0.0, 1.0
-    //     ];
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
-    //     meshtbo.itemSize = 2;
-    //     meshtbo.numItems = 24;
-
-    //     meshibo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-    //     var cubeVertexIndices = [
-    //         0, 1, 2,      0, 2, 3,    // Front face
-    //         4, 5, 6,      4, 6, 7,    // Back face
-    //         8, 9, 10,     8, 10, 11,  // Top face
-    //         12, 13, 14,   12, 14, 15, // Bottom face
-    //         16, 17, 18,   16, 18, 19, // Right face
-    //         20, 21, 22,   20, 22, 23  // Left face
-    //     ];
-    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
-    //     meshibo.itemSize = 1;
-    //     meshibo.numItems = 36;
-    // }
-	
-    // function initsphere()
-    // {
-    //     var latitudeBands = 30;
-    //     var longitudeBands = 30;
-    //     var radius = 1.0;
-
-    //     var vertexPositionData = [];
-    //     var normalData = [];
-    //     var textureCoordData = [];
-    //     for (var latNumber=0; latNumber <= latitudeBands; latNumber++) {
-    //         var theta = latNumber * Math.PI / latitudeBands;
-    //         var sinTheta = Math.sin(theta);
-    //         var cosTheta = Math.cos(theta);
-
-    //         for (var longNumber=0; longNumber <= longitudeBands; longNumber++) {
-    //             var phi = longNumber * 2 * Math.PI / longitudeBands;
-    //             var sinPhi = Math.sin(phi);
-    //             var cosPhi = Math.cos(phi);
-
-    //             var x = cosPhi * sinTheta;
-    //             var y = cosTheta;
-    //             var z = sinPhi * sinTheta;
-    //             var u = 1 - (longNumber / longitudeBands);
-    //             var v = 1 - (latNumber / latitudeBands);
-
-    //             normalData.push(x);
-    //             normalData.push(y);
-    //             normalData.push(z);
-    //             textureCoordData.push(u);
-    //             textureCoordData.push(v);
-    //             vertexPositionData.push(radius * x);
-    //             vertexPositionData.push(radius * y);
-    //             vertexPositionData.push(radius * z);
-    //         }
-    //     }
-
-    //     var indexData = [];
-    //     for (var latNumber=0; latNumber < latitudeBands; latNumber++) {
-    //         for (var longNumber=0; longNumber < longitudeBands; longNumber++) {
-    //             var first = (latNumber * (longitudeBands + 1)) + longNumber;
-    //             var second = first + longitudeBands + 1;
-    //             indexData.push(first);
-    //             indexData.push(second);
-    //             indexData.push(first + 1);
-
-    //             indexData.push(second);
-    //             indexData.push(second + 1);
-    //             indexData.push(first + 1);
-    //         }
-    //     }
-
-    //     meshnbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
-    //     meshnbo.itemSize = 3;
-    //     meshnbo.numItems = normalData.length / 3;
-
-    //     meshtbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
-    //     meshtbo.itemSize = 2;
-    //     meshtbo.numItems = textureCoordData.length / 2;
-
-    //     meshvbo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
-    //     meshvbo.itemSize = 3;
-    //     meshvbo.numItems = vertexPositionData.length / 3;
-
-    //     meshibo = gl.createBuffer();
-    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);
-    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
-    //     meshibo.itemSize = 1;
-    //     meshibo.numItems = indexData.length;
-    // }
-
+    var silEdgeMeshes;
+    var silEdgeMeshesvbo = [];
+    var silEdgeMeshesibo = [];
+    var silEdgeMeshescbo = [];
     function downloadMesh()
     {
         obj_utils.downloadMeshes(
             {
-                'bottom' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                'back' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                'top' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                'left' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                'right' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                 //'bottom' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                // 'back' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                // 'top' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                // 'left' : 'http://localhost:288/webglDeferredShader/cube.obj',
+                // 'right' : 'http://localhost:288/webglDeferredShader/cube.obj',
                 'cow' : 'http://localhost:288/webglDeferredShader/cow.obj',
 
-                 //'cube' : 'http://localhost:288/webglDeferredShader/cube2.obj'
+
+                //'bunny' : 'http://localhost:288/webglDeferredShader/bunny.obj',
+                //'cube' : 'http://localhost:288/webglDeferredShader/cube5.obj'
             },
             initObj
         );
@@ -629,65 +475,76 @@
     function initObj(meshobjs)
     {
         meshes = meshobjs;
-
+        var idx = 0;
         for(mesh in meshes){                     
-            obj_utils.initMeshBuffers(gl, meshes[mesh]);            
-        }
+            obj_utils.initMeshBuffers(gl, meshes[mesh]);
+            // updateDepthbuffer(); 
+            updateFaceInfo(meshes[mesh],models[idx]);
+            idx ++;
+            
+        }        
         
     }
     function setmodelMatrix()
     {
-        var meshNum = meshes.length;
-        console.log("mesh number : "+ meshNum);
        
-        //cube2 for test
+        // //cube2 for test
         // var matrix  = mat4.create();
         // mat4.identity(matrix);
+        // mat4.scale(matrix,[2,2,2]);
         // models.push(matrix);
 
 
         //bottom
-        var matrix = mat4.create();
-        mat4.identity(matrix);
-        mat4.scale(matrix,[4,.01,4]); 
-        mat4.translate(matrix,[0,-400,0]);       
-        models.push(matrix);     
+        // var matrix = mat4.create();
+        // mat4.identity(matrix);
+        // mat4.scale(matrix,[4,.01,4]); 
+        // mat4.translate(matrix,[0,-400,0]);       
+        // models.push(matrix);     
 
-        //back
-        var matrix2 = mat4.create();
-        mat4.identity(matrix2);
-        mat4.scale(matrix2,[.01,4,4]);
-        mat4.translate(matrix2,[400,0,0]);
-        models.push(matrix2);
+        // //back
+        // var matrix2 = mat4.create();
+        // mat4.identity(matrix2);
+        // mat4.scale(matrix2,[.01,4,4]);
+        // mat4.translate(matrix2,[400,0,0]);
+        // models.push(matrix2);
 
-        //top
-        var matrix3 = mat4.create();
-        mat4.identity(matrix3);
-        mat4.scale(matrix3,[4,.01,4]);
-        mat4.translate(matrix3,[0,400,0]);
-        models.push(matrix3);
+        // //top
+        // var matrix3 = mat4.create();
+        // mat4.identity(matrix3);
+        // mat4.scale(matrix3,[4,.01,4]);
+        // mat4.translate(matrix3,[0,400,0]);
+        // models.push(matrix3);
         
-        //left
-        var matrix4 = mat4.create();
-        mat4.identity(matrix4);
-        mat4.scale(matrix4,[4,4,.01]);
-        mat4.translate(matrix4,[0,0,-400]);
-        models.push(matrix4);
+        // //left
+        // var matrix4 = mat4.create();
+        // mat4.identity(matrix4);
+        // mat4.scale(matrix4,[4,4,.01]);
+        // mat4.translate(matrix4,[0,0,-400]);
+        // models.push(matrix4);
 
-        //right
-        var matrix5 = mat4.create();
-        mat4.identity(matrix5);
-        mat4.scale(matrix5,[4,4,.01]);
-        mat4.translate(matrix5,[0,0,400]);
-        models.push(matrix5);
+        // //right
+        // var matrix5 = mat4.create();
+        // mat4.identity(matrix5);
+        // mat4.scale(matrix5,[4,4,.01]);
+        // mat4.translate(matrix5,[0,0,400]);
+        // models.push(matrix5);
 
         //cow
-        var bunnyMatrix = mat4.create();
-        mat4.identity(bunnyMatrix);
-        mat4.scale(bunnyMatrix,[8,8,8]);
-        mat4.rotate(bunnyMatrix,90,[0,1,0]);
-        mat4.translate(bunnyMatrix,[0,-.1,0]);
-        models.push(bunnyMatrix);
+        var cowMatrix = mat4.create();
+        mat4.identity(cowMatrix);
+        mat4.scale(cowMatrix,[8,8,8]);
+        mat4.rotate(cowMatrix,90,[0,1,0]);
+        mat4.translate(cowMatrix,[0,-.1,0]);
+        models.push(cowMatrix);
+
+        // //bunny
+        // var bunnyMatrix = mat4.create();
+        // mat4.identity(bunnyMatrix);
+        // mat4.scale(bunnyMatrix,[50,50,50]);
+        // mat4.rotate(bunnyMatrix,90,[0,1,0]);
+        // mat4.translate(bunnyMatrix,[0,-.1,0]);
+        // models.push(bunnyMatrix);
 
     }
 
@@ -696,15 +553,203 @@
         
         //initsphere();
 		downloadMesh();
-        setmodelMatrix();
-
+        setmodelMatrix();       
+        
 	}
+
+    // function linearizeDepth(exp_depth, near, far) {
+    //     return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
+    // }
+
+    //function getSilEdges(mesh,mvp,mv)//silhouette culling version
+    function getSilEdges(mesh)
+    {
+        //console.log("getsil edge");
+        var edgeVerts = [];
+        var edgeindices = [];
+        var edgecolor = [];
+        var verNum = 0;
+        var edgeVerts2D = [];  
+
+        //console.log(mvp);
+
+        for(var idx = 0; idx < mesh.edgeArray.length;++idx){
+            //console.log(mesh.edgeArray[idx]);           
+            var edgefaces = mesh.edgefacesArray[idx];
+           // console.log(edgefaces);
+            if((mesh.isfrontfacesArray[edgefaces[0]] == 0 && mesh.isfrontfacesArray[edgefaces[1]] == 1)
+                ||(mesh.isfrontfacesArray[edgefaces[0]] == 1 && mesh.isfrontfacesArray[edgefaces[1]] == 0))
+            {
+                //console.log("sil edge " + mesh.edgeArray[idx]);
+                var veridx = [mesh.edgeArray[idx][0],mesh.edgeArray[idx][1]];
+                var ver1 = vec4.create(
+                                    [mesh.verticesArray[veridx[0]*3],
+                                    mesh.verticesArray[veridx[0]*3+1],
+                                    mesh.verticesArray[veridx[0]*3+2],
+                                    1.0]
+                                    );
+              
+                var ver2 = vec4.create(
+                                    [mesh.verticesArray[veridx[1]*3],
+                                    mesh.verticesArray[veridx[1]*3+1],
+                                    mesh.verticesArray[veridx[1]*3+2],
+                                    1.0 ]                               
+                                    );                
+                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+                // var ver1Clip = vec4.create();
+                // mat4.multiply(mvp,ver1,ver1Clip);
+                // var ver2Clip = vec4.create();
+                // mat4.multiplyVec4(mvp,ver2,ver2Clip);
+
+                // var ver1World = vec4.create();
+                // mat4.multiply(mv,ver1,ver1World);
+                // var ver2World = vec4.create();
+                // mat4.multiply(mv,ver2,ver2World);
+
+                // ver1Clip.set([ver1Clip[0]/ver1Clip[3],ver1Clip[1]/ver1Clip[3],ver1Clip[2]/ver1Clip[3],ver1Clip[3]/ver1Clip[3]]);
+                // ver2Clip.set([ver2Clip[0]/ver2Clip[3],ver2Clip[1]/ver2Clip[3],ver2Clip[2]/ver2Clip[3],ver2Clip[3]/ver2Clip[3]]);
+                // //console.log(ver1Clip[0] + " " + ver1Clip[1]);
+                // var pixel1 = [];
+                // pixel1.push(Math.round(((ver1Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                // pixel1.push(Math.round(((1.0 - ver1Clip[1])/2.0) * gl.viewportHeight));
+                
+                // var pixel2 = [];
+                // pixel2.push(Math.round(((ver2Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                // pixel2.push(Math.round(((1.0 - ver2Clip[1])/2.0) * gl.viewportHeight));
+                
+                // var ver1depth = linearizeDepth(ver1Clip[2], 0.1, 10)*255;
+                // var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
+
+                // var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
+                // var depth1 = depthvalues[pixelIndex*4];
+                // //console.log(ver1depth + " " + depth1);
+                // var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
+                // var depth2 = depthvalues[pixelIndex2 * 4];
+                //console.log(depthvalues[pixelIndex*4]);
+
+                // if((depth1 != 0 && ver1depth > depth1) || (depth2!=0  && ver2depth > depth2))
+                // {
+                //     console.log("dd")
+                //     continue;
+                // }
+                // else
+                // {
+                //     //console.log("PASS");
+                // }
+
+                //console.log("z: " + Math.floor(linearizeDepth(ver1Clip[2], 0.1, 10)*255));
+                
+                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+
+                edgeVerts.push(mesh.verticesArray[veridx[0]*3]); 
+                edgeVerts.push(mesh.verticesArray[veridx[0]*3+1]); 
+                edgeVerts.push(mesh.verticesArray[veridx[0]*3+2]);
+                edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                edgeindices.push(verNum);
+                verNum ++;
+           
+                edgeVerts.push(mesh.verticesArray[veridx[1]*3]); 
+                edgeVerts.push(mesh.verticesArray[veridx[1]*3+1]); 
+                edgeVerts.push(mesh.verticesArray[veridx[1]*3+2]);
+                edgeindices.push(verNum);
+                verNum ++;              
+                edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+            }
+        }
+        silEdgeMeshesvbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edgeVerts), gl.STATIC_DRAW);
+        silEdgeMeshesvbo.itemSize = 3;
+        silEdgeMeshesvbo.numItems = edgeVerts.length/3;
+       
+        silEdgeMeshescbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(edgecolor),gl.STATIC_DRAW);
+        silEdgeMeshescbo.itemSize = 3;
+        //console.log("edgecolor length: " + edgecolor.length);
+        silEdgeMeshescbo.numItems = edgecolor.length/3;
+
+        silEdgeMeshesibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,silEdgeMeshesibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(edgeindices),gl.STATIC_DRAW);
+        silEdgeMeshesibo.itemSize = 1;
+        //console.log("edgeindices length: " + edgeindices.length);
+        silEdgeMeshesibo.numItems = edgeindices.length;
+        //console.log(edgeindices);
+
+    }
    
+    function updateDepthbuffer()
+    {
+        //console.log("abc");
+
+        gl.useProgram(shaderProgram[1]);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[5]);
+        setupQuad(shaderProgram[1]);
+        drawQuad(4);
+
+        depthvalues = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
+        gl.readPixels(0,0,gl.viewportWidth,gl.viewportHeight,gl.RGBA, gl.UNSIGNED_BYTE,depthvalues);        
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+        gl.disable(gl.DEPTH_TEST);
+
+    }
+
+    function updateFaceInfo(mesh,model)
+    {
+        // Converting viewVector to object space
+        // console.log("updateFaceInfo ...");
+
+        var modelV = mat4.create(model);
+        modelV[12] = 0;
+        modelV[13] = 0;
+        modelV[14] = 0;
+        //console.log(modelV);
+        var viewVector_objecspace = vec4.create();
+        var inverseModelV = mat4.create();
+        mat4.inverse(modelV,inverseModelV);
+        var viewVectorve4 = vec4.create([viewVector[0],viewVector[1],viewVector[2],1.0]);
+        mat4.multiplyVec4(inverseModelV,viewVectorve4,viewVector_objecspace);
+        //console.log(viewVector_objecspace);
+        //console.log(" front face:" + mesh.isfrontfacesArray.length);
+        for(var i = 0; i<mesh.facenormArray.length/3; ++i)
+        {           
+
+            //object face normal in object space   
+            var norm = vec3.create([mesh.facenormArray[i*3],mesh.facenormArray[i*3+1],mesh.facenormArray[i*3+2]]);
+
+            var dots = vec3.dot(vec3.create(viewVector_objecspace),norm);
+            //console.log(dots);
+            if(dots <= 0)
+            {
+                mesh.isfrontfacesArray[i] = 1;
+                //console.log("front")
+            }
+            else
+            {
+                mesh.isfrontfacesArray[i] = 0;
+                //console.log("back");
+            }
+        }
+
+        ///////////////////////////////////for back silhouette culling///////////////////////////////
+        // var mv = mat4.create();
+        // mat4.multiply(view, model, mv);
+        // var mvp = mat4.create();
+        // var persps = mat4.create();        
+        // mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,persps);
+        // mat4.multiply(persps,mv,mvp);
+        //getSilEdges(mesh,mvp,mv); //SILHOUETTE CULLING 
+        ///////////////////////////////////for back silhouette culling///////////////////////////////
+        getSilEdges(mesh);
+    }
+
 
     function setupQuad(program){
         gl.useProgram(program);
-        var qpersp  = mat4.create;
-        mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,qpersp);
+        var persp  = mat4.create;
+        mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
@@ -722,6 +767,25 @@
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[3]);
         gl.uniform1i(shaderProgram[1].depthsampler,3);
 
+        gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[4]);
+        gl.uniform1i(shaderProgram[1].depthsamplerfake,4);
+
+        gl.activeTexture(gl.TEXTURE5); //SILCOLOR
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[5]);
+        gl.uniform1i(shaderProgram[1].silcolorsampler,5);
+
+        gl.activeTexture(gl.TEXTURE6); //DEPTH
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[6]);
+        gl.uniform1i(shaderProgram[1].sildepthsampler,6);
+
+
+        gl.activeTexture(gl.TEXTURE7);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[8]);
+        gl.uniform1i(shaderProgram[1].spattersampler,7);   
+
+        gl.uniform1i(shaderProgram[1].viewwidth,gl.viewportWidth);
+        gl.uniform1i(shaderProgram[1].viewheight,gl.viewportHeight);
     }
 
     function drawQuad(mode){
@@ -739,6 +803,67 @@
         gl.uniform1i(shaderProgram[1].displaymode,mode);
     }   
 
+    function drawInkQuat()
+    {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        //console.log("drawInkQuat...");
+        gl.useProgram(shaderProgram[3]);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
+        gl.uniform1i(shaderProgram[3].normalsampler,0);
+
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[1]);
+        gl.uniform1i(shaderProgram[3].colorsampler,1);
+
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[2]);
+        gl.uniform1i(shaderProgram[3].positionsampler,2);        
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
+        gl.vertexAttribPointer(shaderProgram[3].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
+        gl.vertexAttribPointer(shaderProgram[3].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
+        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[7]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+
+    }
+
+    function drawSpartter()
+    {
+        //console.log("drawSpartter....");
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(shaderProgram[4]);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[7]);
+        gl.uniform1i(shaderProgram[4].quatcolorsampler,0);
+
+        gl.uniform1i(shaderProgram[4].viewwidth,gl.viewportWidth);
+        gl.uniform1i(shaderProgram[4].viewheight,gl.viewportHeight);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
+        gl.vertexAttribPointer(shaderProgram[4].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
+        gl.vertexAttribPointer(shaderProgram[4].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
+        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[8]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+
+    }
+
 	function drawMesh(drawmode){	
         //console.log("time: " + time);	
         gl.enable(gl.DEPTH_TEST);
@@ -747,21 +872,10 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
 
-        // mat4.identity(model);
-        // mat4.scale(model,[.10,.10,.10]);
-        // // mat4.translate(model,[0,10,0]);
-
-        // var mv = mat4.create();
-        // mat4.multiply(view, model, mv);
-
-        // inverse = mat4.create();
-        // mat4.identity(inverse);
-        // mat4.inverse(mv, inverse);
-        // mat4.transpose(inverse);
 
 		gl.uniform1i(shaderProgram[0].drawmode,drawmode);
 
-        var idx = 0;
+        var idx = 0;                
         for(mesh in meshes){
             //console.log("idx " + idx);
             var mv = mat4.create();
@@ -788,59 +902,132 @@
             gl.bindTexture(gl.TEXTURE_2D, colorTexture);
             gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
 
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);            
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);  
             setMatrixUniforms(models[idx]);
             gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
             idx ++;
         }
-		// gl.bindBuffer(gl.ARRAY_BUFFER, meshvbo);
-  //       gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshvbo.itemSize, gl.FLOAT, false, 0, 0);
-
-  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshtbo);
-  //       gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute, meshtbo.itemSize, gl.FLOAT, false, 0, 0);
-
-  //       gl.bindBuffer(gl.ARRAY_BUFFER, meshnbo);
-  //       gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute, meshnbo.itemSize, gl.FLOAT, false, 0, 0);
-
-  //       gl.activeTexture(gl.TEXTURE0);
-  //       gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-  //       gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
-
-  //       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshibo);        	
-  //       setMatrixUniforms();
-  //       gl.drawElements(gl.TRIANGLES, meshibo.numItems, gl.UNSIGNED_SHORT, 0);
 
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode]);
         //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
 
+
+   
+    function drawSilhouette(drawmode)
+    {
+        
+        gl.useProgram(shaderProgram[2]);
+        gl.enable(gl.DEPTH_TEST);
+
+        gl.viewport(0,0,gl.viewportWidth,gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        mat4.perspective(45.0,gl.viewportWidth/gl.viewportHeight,0.1,100.0,persp);
+
+        idx = 0;
+
+        var mv = mat4.create();
+        mat4.multiply(view, models[idx], mv);
+
+
+        inverse = mat4.create();
+        mat4.identity(inverse);
+        mat4.inverse(mv, inverse);
+        mat4.transpose(inverse);
+
+        gl.uniform1i(shaderProgram[2].drawmode,drawmode);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);             
+        gl.vertexAttribPointer(shaderProgram[2].vertexPositionAttribute, silEdgeMeshesvbo.itemSize,gl.FLOAT, false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+        gl.vertexAttribPointer(shaderProgram[2].vertexColorAttribute,silEdgeMeshescbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, silEdgeMeshesibo);        
+
+        gl.uniformMatrix4fv(shaderProgram[2].modelMatrixUniform,false,models[idx]);
+        gl.uniformMatrix4fv(shaderProgram[2].viewMatrixUniform,false, view);
+        gl.uniformMatrix4fv(shaderProgram[2].perspMatrixUniform,false,persp);
+        gl.uniformMatrix4fv(shaderProgram[2].inverseMatrixUniform,false,inverse);       
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
+        gl.uniform1i(shaderProgram[2].depthsampler,0);
+
+        var reso = vec2.create(gl.viewportWidth,gl.viewportHeight);
+        gl.uniform2fv(shaderProgram[2].resolution,reso);
+        
+        gl.drawElements(gl.LINES, silEdgeMeshesibo.numItems, gl.UNSIGNED_SHORT,0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode+4]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+    }
+
+   
     
 	function drawScene(){
+         
+		gl.useProgram(shaderProgram[0]);
 
 
-		gl.useProgram(shaderProgram[0]);		
-		
-        drawMesh(0);
-        //return;
-
-        for(var i = 0; i<4; ++i)
+        for(var i = 0; i<5; ++i)
         {
+            //console.log("drawmesh : "+i);
             gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
             drawMesh(i);
-        }
-       
+        }        
+        
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
-        gl.disable(gl.DEPTH_TEST);
+        for(var j = 0;j<2;++j)
+        {
+            //console.log("draw silhouette stuffs....");
+            gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[j+5]);
+            drawSilhouette(j);
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
+        drawInkQuat();
+        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
+        drawSpartter();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+
+        gl.disable(gl.DEPTH_TEST);       
+
         setupQuad(shaderProgram[1]);
+     
         // todo: change the draw mode here
-        //0: normal //1: color // 2: screen space position // 3: depth // 4: diffuse
+        //0: normal //1: color // 2: screen space position // 3: depth // 4: depth fake //
+        //5: silhouette //6: diffuse
+
         for(var checkboxidx = 0; checkboxidx < checkboxs.length; ++checkboxidx)
         {
             if(checkboxs[checkboxidx].checked == true)
             {
+                //console.log("checkboxid: " + checkboxidx);
+                if(checkboxidx == 5 && needupdate == true)
+                {
+                    viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
+                    viewVector = vec3.normalize(viewVector);;
+                    //console.log(viewVector);
+                    //update mesh face info
+                   // updateDepthbuffer();
+                    var idx = 0;
+                    for(mesh in meshes)
+                    {
+                        updateFaceInfo(meshes[mesh],models[idx]);
+                        idx ++;
+                    }
+                    needupdate = false;
+                }
+                else
+                {
+                    needupdate = true;
+                }
                 drawQuad(checkboxidx);
             }
         }
@@ -884,6 +1071,11 @@
         
         if( mouseLeftDown )
         {
+            
+            // azimuth -= 0.01 * deltaY;
+            // elevation += 0.01 * deltaX;
+            // //elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
+
             azimuth += 0.01 * deltaX;
             elevation += 0.01 * deltaY;
             elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
@@ -892,10 +1084,27 @@
         {
            
             radius += 0.01 * deltaY;
-            radius = Math.min(Math.max(radius, 2.0), 12.0);
+            radius = Math.min(Math.max(radius, 2.0), 20.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
-       // console.log("eye updated " + eye);
+        if(checkboxs[5].checked == true || checkboxs[6].checked == true || checkboxs[7].checked == true)
+        {          
+            viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
+            viewVector = vec3.normalize(viewVector);;
+            //console.log(viewVector);
+            //update mesh face info
+           // updateDepthbuffer();
+            var idx = 0;
+            for(mesh in meshes)
+            {
+                updateFaceInfo(meshes[mesh],models[idx]);
+                idx ++;
+            }
+
+        }
+       
+       
+        //console.log("eye updated " + eye);
         //view = mat4.create();
         mat4.lookAt(eye, center, up, view);
 
@@ -936,9 +1145,17 @@
         checkboxs.push(checkbox);
         checkbox = document.getElementById("depth");
         checkboxs.push(checkbox);
+        checkbox = document.getElementById("depth2");
+        checkboxs.push(checkbox);
+        checkbox = document.getElementById("silhouette");
+        checkboxs.push(checkbox);
+        checkbox = document.getElementById("ink");
+        checkboxs.push(checkbox);        
+        checkbox = document.getElementById("inkSil");
+        checkboxs.push(checkbox);
         checkbox = document.getElementById("diffuse");
         checkboxs.push(checkbox);
-        console.log("checkbox length: "+checkboxs.length);
+       // console.log("checkbox length: "+checkboxs.length);
 
         //checkboxs[3].disabled = true;
         // for(var i = 0;i<checkboxs.length; ++i)

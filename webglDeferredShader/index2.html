@@ -57,7 +57,7 @@
 		// qua
 		if(color == vec3(0.0))
 		{
-			gl_FragColor = vec4(0.0);//vec4(0.97,0.94,0.85,1.0);
+			gl_FragColor = vec4(0.97,0.94,0.85,1.0);
 			return;
 		}
 		vec3 lightVector = vec3(0,10.0,0) - position;
@@ -190,26 +190,7 @@
 		mnmx3(v[3], v[4], v[8]);
 		return v[4];
 	}
-	vec3 colorEnhance(float min,float max,vec3 color)
-	{		
-		if(color.r == 0.0)
-		{
-			return vec3(0.97,0.94,0.85);
-		}
-		if(color.r > max)
-		{
-			color = vec3(1.0);
-		}
-		else if(color.r <= max && color.r >= min)
-		{
-			color = vec3((color.r - min) / (max - min));
-		}
-		else if(color.r < min)
-		{
-			color = vec3(0.0);
-		}
-		return color;
-	}
+
 	void main(void)
 	{
 		vec3 position = texture2D(u_PositionSampler,fs_Texcoord).rgb;
@@ -273,13 +254,7 @@
 		else if(u_Displaymode == 6)
 		{
 			//vec4 spattercolor = texture2D(u_SpatterSampler,fs_Texcoord);
-			// if(texture2D(u_SpatterSampler,fs_Texcoord).r == 0.0)
-			// {
-			// 	gl_FragColor = vec4(0.97,0.94,0.85,1.0);
-			// 	return;
-			// }
 			vec3 spattercolor = MedianFilter();
-			spattercolor = colorEnhance(0.2,0.98,spattercolor);			
 			gl_FragColor = vec4(spattercolor,1.0);		
 			return;
 		}
@@ -297,7 +272,6 @@
 			}		
 			else
 			{
-				spattercolor = colorEnhance(0.2,0.98,spattercolor);	
 				gl_FragColor = vec4(spattercolor,1.0);
 				return;
 			}

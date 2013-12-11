@@ -1,0 +1,70 @@
+structure
+
+
+
+
+[Add]
+face normals:  calculated by vertex normal ? cross product of edges
+isFrontFace:
+
+updateIsFrontFace()
+{
+	//call this each time when mouse moves
+	for each face in face list
+	{
+		if(dot(facenormal, viewVector) < 0)
+		{
+			isFrontFace[i] = true;
+		}
+		else
+		{
+			isFrontFace[i] = false;
+		}
+	}
+}
+
+//viewVector: constant (center - camPosition)
+
+[Add]
+edge
+2d position of endpoints  // to see if endpoints of two different edges are close enough in 2d poistion
+group number // linking stage
+isSilhouette
+face[2] // face index
+int passCounter // weather to remove the edge or cut in the middle
+
+silhouette edges
+
+for(all silhouette edges)
+{
+	if(group number = 0)
+	{
+		while(searchIndex < endofedgeindex)
+		{
+
+		}
+	}
+}
+
+//draw silhouette
+
+//only when draw silhouette is checked, get silhouette drawn and silhouette edges calculated.
+
+
+
+
+
+
+
+
+//datastructure support
+https://github.com/mauriciosantos/buckets
+
+
+
+
+need edges 2d information (which is in Texture)
+
+
+Find silhouette vertex
+
