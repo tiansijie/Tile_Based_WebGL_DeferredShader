@@ -31,7 +31,7 @@
     console.log(canvas.width + " " + canvas.height);
 
     var near = 0.1;
-    var far = 1000.0;
+    var far = 3000.0;
 
     var persp = mat4.create();
     mat4.perspective(45.0, canvas.width/canvas.height, near, far, persp);
@@ -52,8 +52,10 @@
     var azimuth = Math.PI;
     var elevation = 0.0001;
 
+    //camera
     var eye = sphericalToCartesian(radius, azimuth, elevation);
     var center = [0.0, 0.0, 0.0];
+    var eyedis = 1.0;
     var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
     var up = [0.0, 1.0, 0.0];
     var view = mat4.create();
@@ -72,7 +74,7 @@
     var lightColorRadius = [];
     var lightGrid = [];
     var lightIndex = [];
-    var lightNum = 100;   
+    var lightNum = 300;   
 
 
     var positionLocation;
@@ -382,7 +384,7 @@
         mat4.identity(matrix);
         //mat4.scale(matrix,[0.01,0.01,0.01]); 
         //mat4.scale(matrix,[0.1,0.1,0.1]); 
-        //mat4.scale(matrix,[10,10,10]); 
+        //mat4.scale(matrix,[2,2,2]); 
         //mat4.translate(matrix,[0,0,0]);       
         models.push(matrix);
 
@@ -843,20 +845,7 @@
     }
 
 
-    function setNonTileLight(boundary, light_pos, radius)
-    {
-        //gl.useProgram(nontilelight_prog);
-        gl.enable(gl.SCISSOR_TEST)
-        var nontilelight = vec4.create([light_pos[0], light_pos[1], light_pos[2], radius]);
-
-        gl.uniform4fv(gl.getUniformLocation(nontilelight_prog, "u_Light"), nontilelight);
-        var lwidth = boundary.right - boundary.left;
-        var lheight = boundary.top - boundary.bottom;
-        
-
-        gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
-        drawQuad();
-    }
+  
 
     function setupQuad(program)
     {
@@ -1064,10 +1053,18 @@
         cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
         //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
         var dir = cam_dir;
+        // var camUp = vec3.create([0,1,0]);
+        // var camLeft = vec3.create();
+        // vec3.cross(camUp, dir, camLeft);
+        // camLeft = vec3.normalize(camLeft);
+        // vec3.cross(dir, camLeft, camUp);
+        // camUp = vec3.normalize(camUp);
+
+
         //var camUp = vec3.create([0.0,1.0,0.0]);
         var camUp = vec3.normalize(vec3.create([view[4],view[5],view[6]]));
         //console.log("up vector " + camUp[0] + " " + camUp[1] + " " + camUp[2]);
-        var forward = vec3.create([view[8], view[9], view[10]]);
+        //var forward = vec3.create([view[8], view[9], view[10]]);
         var camLeft = vec3.normalize(vec3.cross(camUp, cam_dir));
         //var camLeft = vec3.normalize(vec3.cross(camUp, forward));
         //var camLeft = vec3.normalize(vec3.create([view[0],view[1],view[2]]));
@@ -1122,17 +1119,35 @@
         //console.log("r is " + r);
     }
 
+    function setNonTileLight(boundary, light_pos, radius, color)
+    {        
+        gl.enable(gl.SCISSOR_TEST)
+        var nontilelight = vec4.create([light_pos[0], light_pos[1], light_pos[2], radius]);
 
-    function setLightOnTile(boundary, lightNum, tileLightId)
+        //console.log("Color is " + color[0] + color[1] + color[2]);
+        gl.uniform4fv(gl.getUniformLocation(nontilelight_prog, "u_Light"), nontilelight);
+        gl.uniform3fv(gl.getUniformLocation(nontilelight_prog, "u_LightColor"), color);
+
+        var lwidth = boundary.right - boundary.left;
+        var lheight = boundary.top - boundary.bottom;        
+
+        gl.scissor(boundary.left, boundary.bottom, lwidth, lheight);
+        drawQuad();
+    }
+
+
+    var tileLightId = new Array(numTile);
+
+    function setLightOnTile(boundary, lightNum)
     {
         var leftTile = Math.max(Math.floor(boundary.left / tileSize), 0);
-        var topTile = Math.min(Math.floor(boundary.top / tileSize), canvas.height/tileSize);
-        var rightTile = Math.min(Math.floor(boundary.right / tileSize), canvas.width/tileSize);
+        var topTile = Math.min(Math.ceil(boundary.top / tileSize), canvas.height/tileSize);
+        var rightTile = Math.min(Math.ceil(boundary.right / tileSize), canvas.width/tileSize);
         var bottomTile = Math.max(Math.floor(boundary.bottom / tileSize),0);
 
-        for(var i = leftTile; i < rightTile; i++)
+        for(var i = leftTile; i <= rightTile; i++)
         {
-            for(var j = bottomTile; j < topTile; j++)
+            for(var j = bottomTile; j <= topTile; j++)
             {    
                 var indexId = i + j * tileWidth;
                 if(indexId < numTile && indexId >= 0){
@@ -1183,7 +1198,7 @@
             canvas.width/2.0, canvas.height/2.0, 1.0/2.0, 1.0
             );             
 
-        var tileLightId = new Array(numTile);
+        
         for(var i = 0; i<numTile; i++)
             tileLightId[i] = [];
 
@@ -1198,15 +1213,6 @@
             lightPosition[i*3+1] = lightViewPos[1];
             lightPosition[i*3+2] = lightViewPos[2];
 
-            //getLightBoundingBox(lightViewPos, lights[i].radius, pv, viewport, boundary);
-
-            // boundary.left = 0;
-            // boundary.right = canvas.width;
-            // boundary.bottom = 0;
-            // boundary.top = canvas.height; 
-
-            //console.log("light pos " + lights[i].position[0] + " " + lightViewPos[1] + " " + lightViewPos[2]); 
-
             //getLightBoundingBoxNew(lightViewPos, lights[i].radius, boundary);
 
             getLightBoundingBox(lights[i].position, lights[i].radius, pv, viewport, boundary);
@@ -1218,19 +1224,12 @@
             // boundary.right = 800;
             // boundary.bottom = 0;
             // boundary.top = 600;
-
-
-            //console.log("Number Lights " + i);
-            //var lposLen = lightPosition.length;
-            //var lcolRLen = lightColorRadius.length;
-            //console.log(lightPosition[lposLen-3] + " " + lightPosition[lposLen-2] + " " +lightPosition[lposLen-1]);
-            //getLightBoundingBox(vec4.create(lightPosition[lposLen-3], lightPosition[lposLen-2], lightPosition[lposLen-1], 1.0), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
-            //getLightBoundingBox(vec4.create([i,i,i, 1.0]), lightColorRadius[lcolRLen-1], pv, viewport, boundary);
-            //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
+          
             if(display_type == display_light || display_type == 0)
-                setLightOnTile(boundary, i, tileLightId);
-            else if(display_type == display_nontilelight)
-                setNonTileLight(boundary, lightViewPos, lights[i].radius);
+                setLightOnTile(boundary, i);
+            else if(display_type == display_nontilelight){
+                setNonTileLight(boundary, lightViewPos, lights[i].radius, lights[i].color);                
+            }
         }
         
         if(display_type == display_light || display_type == 0){
@@ -1260,34 +1259,19 @@
         for(var i = 0; i < lightNum; i++){
             var boundary = {left:0, right:0, top:0, bottom:0};
 
-            var radius = 10.0;
+            var radius = 5.0;
 
-            lights.push({position:vec3.create([5 + -20 * Math.random(), 2 * Math.random(), 5-5*Math.random()]),
+            lights.push({position:vec3.create([20 + -40 * Math.random(), -25 + 30 * Math.random(), -5+15*Math.random()]),
                 color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
-            // if(i == 0)
-            //     lights.push({position:vec3.create([0, 0, -5]),
-            //     color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
-            // else 
-            //     lights.push({position:vec3.create([-10, 4, 7]),
-            //     color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
-            
+
             //light position x y z
             lightPosition.push(lights[i].position[0]);
             lightPosition.push(lights[i].position[1]);
             lightPosition.push(lights[i].position[2]);
 
-            //color r g b and radius
-            // lightColorRadius.push(i/lightNum);
-            // lightColorRadius.push((i+1)/lightNum);
-            // lightColorRadius.push((i+1)/lightNum);
-
             lightColorRadius.push(Math.random());
             lightColorRadius.push(Math.random());
             lightColorRadius.push(Math.random());
-
-            // lightColorRadius.push(1.0);
-            // lightColorRadius.push(1.0);
-            // lightColorRadius.push(1.0);
 
             lightColorRadius.push(radius);
         }
@@ -1348,6 +1332,58 @@
         //gl.uniform1i(gl.getUniformLocation(program, "u_LightColorRadiustex"),7);
     }
 
+
+    function keyMove(type)
+    {
+        var dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+        var up = vec3.create([0,1,0]);
+        var right = vec3.create();
+        vec3.normalize(vec3.cross(dir,up, right));
+        vec3.normalize(vec3.cross(right,dir, up));     
+
+        var scale = 0.1;
+
+        if(type == 1){
+            center[0] +=  dir[0] * scale;
+            center[1] +=  dir[1] * scale;
+            center[2] +=  dir[2] * scale;
+        }
+        else if(type == 2)
+        {
+            center[0] -=  dir[0] * scale;
+            center[1] -=  dir[1] * scale;
+            center[2] -=  dir[2] * scale;
+        }
+        else if(type == 3)
+        {
+            center[0] -=  right[0] * scale;
+            center[1] -=  right[1] * scale;
+            center[2] -=  right[2] * scale;
+        }
+        else if(type == 4)
+        {
+            center[0] +=  right[0] * scale;
+            center[1] +=  right[1] * scale;
+            center[2] +=  right[2] * scale;
+        }
+        else if(type == 5)
+        {
+            center[0] +=  0 * scale;
+            center[1] +=  1 * scale;
+            center[2] +=  0 * scale;
+        }
+        else if(type == 6)
+        {
+            center[0] -=  0 * scale;
+            center[1] -=  1 * scale;
+            center[2] -=  0 * scale;
+        }
+
+
+    }
+
+
+
     function keyPress(e){
         var keynum;
         
@@ -1357,8 +1393,34 @@
             if(e.which){ // Netscape/Firefox/Opera                  
                 keynum = e.which;
         }
-        //console.log(String.fromCharCode(keynum));
-        display_type = keynum - 49;
+     
+     
+        if(keynum == 119)//w
+        {
+           keyMove(1);
+        }
+        else if(keynum == 115)//s
+        {
+           keyMove(2);          
+        }
+        else if(keynum == 97)//a
+        {
+            keyMove(3);
+        }
+        else if(keynum == 100)//d
+        {
+            keyMove(4);
+        }
+        else if(keynum == 113){
+            keyMove(5);
+        }
+        else if(keynum == 101){
+            keyMove(6);
+        }
+
+
+        if(keynum-49>=0 && keynum-49 < 10)
+            display_type = keynum - 49;
     }
    
    document.onkeypress = keyPress;
@@ -1366,18 +1428,27 @@
 
    var mouseLeftDown = false;
    var mouseRightDown = false;
+   var mouseMiddleDown = false;
    var lastMouseX = null;
    var lastMouseY = null;
 
     function handleMouseDown(event) {
         if( event.button == 2 ) {
             mouseLeftDown = false;
+            mouseMiddleDown = false;
             mouseRightDown = true;
         }
-        else {
+        else if(event.button == 0){
             mouseLeftDown = true;
             mouseRightDown = false;
+            mouseMiddleDown = false;
         }
+        else if(event.button == 1){
+            mouseLeftDown = false;
+            mouseRightDown = false;
+            mouseMiddleDown = true;
+        }
+
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
     }
@@ -1385,10 +1456,13 @@
     function handleMouseUp(event) {
         mouseLeftDown = false;
         mouseRightDown = false;
+        mouseMiddleDown = false;
     }
 
+    var MouseDowndeltaX = 0;
+    var MouseDowndeltaY = 0;
     function handleMouseMove(event) {
-        if (!(mouseLeftDown || mouseRightDown)) {
+        if (!(mouseLeftDown || mouseRightDown || mouseMiddleDown)) {
             return;
         }
         var newX = event.clientX;
@@ -1396,26 +1470,42 @@
 
         var deltaX = newX - lastMouseX;
         var deltaY = newY - lastMouseY;
+
         
-        if( mouseLeftDown )
+        if(mouseLeftDown)
         {
             azimuth += 0.01 * deltaX;
-            elevation += 0.01 * deltaY;
-            elevation = Math.min(Math.max(elevation, -Math.PI/2+0.001), Math.PI/2-0.001);
-            // azimuth -= 0.01 * deltaY;
-            // elevation += 0.01 * deltaX;
-            //azimuth = Math.min(Math.max(azimuth, -Math.PI/2+0.001), Math.PI/2-0.001);
+            elevation += 0.01 * deltaY; 
+        }
+        else if( mouseMiddleDown )
+        {           
+            MouseDowndeltaY = deltaY;
+            MouseDowndeltaX = deltaX;
+           
+            var dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+            var up = vec3.create([0,1,0]);
+            var right = vec3.create();
+            vec3.normalize(vec3.cross(dir,up, right));
+            vec3.normalize(vec3.cross(right,dir, up));         
+
+            center[0] += 0.01 * (MouseDowndeltaY * up[0] - MouseDowndeltaX * right[0]);
+            center[1] += 0.01 * (MouseDowndeltaY * up[1] - MouseDowndeltaX * right[1]);
+            center[2] += 0.01 * (MouseDowndeltaY * up[2] - MouseDowndeltaX * right[2]);      
         }
         else
         {
             radius -= 0.01 * deltaY;
             radius = Math.min(Math.max(radius, 2.0), 15.0);
         }
-        eye = sphericalToCartesian(radius, azimuth, elevation);
-        cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+
+
+        //eye = sphericalToCartesian(radius, azimuth, elevation);
+        //cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+
+
         //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
         //view = mat4.create();
-        mat4.lookAt(eye, center, up, view);
+        //mat4.lookAt(eye, center, up, view);
 
         lastMouseX = newX;
         lastMouseY = newY;
@@ -1456,9 +1546,18 @@
     lightdir = vec3.createFrom(lightdest[0],lightdest[1],lightdest[2]);
     vec3.normalize(lightdir);   
 
+    function camera()
+    {
+        eye[0] = center[0] + eyedis * Math.cos(azimuth) * Math.cos(elevation);
+        eye[1] = center[1] + eyedis * Math.sin(elevation);
+        eye[2] = center[2] + eyedis * Math.cos(elevation) * Math.sin(azimuth);
 
+        mat4.lookAt(eye, center, up, view);
+    }
 
     function animate() {   
+
+        camera();
      	//1
      	bindFBO(0);
      	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1467,9 +1566,9 @@
      	//2
      	setTextures();
      	//bindFBO(1);
-     	//gl.enable(gl.BLEND);
+     	gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
-     	//gl.blendFunc(gl.ONE, gl.ONE);
+     	gl.blendFunc(gl.ONE, gl.ONE);
      	gl.clear(gl.COLOR_BUFFER_BIT);       
        
 
@@ -1498,7 +1597,7 @@
      	// drawQuad();
         
 
-        //gl.disable(gl.BLEND);
+        gl.disable(gl.BLEND);
 
 
      	//3
@@ -1531,10 +1630,7 @@
      (function loadWebGL(){    
         
         initializeShader();
-        initializeFBO();
-
-        
-       
+        initializeFBO();      
         
         initMeshBuffers();        
         //initializeSphere();
@@ -1543,8 +1639,7 @@
 
         initLights();
         setUpLights();
-        initLightsFBO();
-       
+        initLightsFBO();      
 
         animate();
      })();
