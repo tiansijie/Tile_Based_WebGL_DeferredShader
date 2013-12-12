@@ -395,7 +395,8 @@
 		}
 		else if(u_Displaymode == 6)
 		{
-			
+			// gl_FragColor = texture2D(u_SpatterSampler,fs_Texcoord);
+			// return;
 			vec3 spattercolor = MedianFilter(u_SpatterSampler);
 			spattercolor = colorEnhance(0.2,0.98,spattercolor);			
 			gl_FragColor = vec4(spattercolor,1.0);		

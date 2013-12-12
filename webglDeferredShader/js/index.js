@@ -355,7 +355,6 @@
         shaderProgram[7].viewwidth = gl.getUniformLocation(shaderProgram[7],"u_viewportWidth");
         shaderProgram[7].viewheight = gl.getUniformLocation(shaderProgram[7],"u_viewportHeight");
 
-
 	}
 
 	function handleLoadedTexture(texture){
