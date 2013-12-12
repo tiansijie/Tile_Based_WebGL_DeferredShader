@@ -7,7 +7,7 @@
 	var view,persp,model,inverse;
     var checkboxs =[]; // 0:normal,1:color,2:position,3: depth, 4,diffuse
     var needupdate = true; // control the update face info times
-    var depthvalues = [];// = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
+    var silValues = [];// = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
     function initGL(canvas) {
         try {
             gl = canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
@@ -98,7 +98,7 @@
 		gl.compileShader(shader);
 	
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			console.log("fail");
+			console.log("fail" + id);
 			alert(gl.getShaderInfoLog(shader));
 			return null;
 		}
@@ -185,9 +185,10 @@
         shaderProgram[1].positionsampler = gl.getUniformLocation(shaderProgram[1],"u_PositionSampler");
         shaderProgram[1].depthsampler = gl.getUniformLocation(shaderProgram[1],"u_DepthSampler");
         shaderProgram[1].depthsamplerfake = gl.getUniformLocation(shaderProgram[1],"u_DepthSamplerFake");
-        shaderProgram[1].silcolorsampler = gl.getUniformLocation(shaderProgram[1],"u_SilColorSampler");
-        shaderProgram[1].sildepthsampler = gl.getUniformLocation(shaderProgram[1],"u_SilDepthSampler");
+        shaderProgram[1].strokesampler = gl.getUniformLocation(shaderProgram[1],"u_StrokeSampler");
+        // shaderProgram[1].sildepthsampler = gl.getUniformLocation(shaderProgram[1],"u_SilDepthSampler");
         shaderProgram[1].spattersampler = gl.getUniformLocation(shaderProgram[1],"u_SpatterSampler");
+
         shaderProgram[1].displaymode = gl.getUniformLocation(shaderProgram[1],"u_Displaymode");
         shaderProgram[1].viewwidth = gl.getUniformLocation(shaderProgram[1],"u_viewportWidth");
         shaderProgram[1].viewheight = gl.getUniformLocation(shaderProgram[1],"u_viewportHeight");
@@ -279,6 +280,82 @@
         shaderProgram[4].viewwidth = gl.getUniformLocation(shaderProgram[4],"u_viewportWidth");
         shaderProgram[4].viewheight = gl.getUniformLocation(shaderProgram[4],"u_viewportHeight");
 
+
+        //shader 6 for sil
+        var frags6 = getShader(gl,"silQuafs");
+        if(frags6 == null)// || verts5 == null)
+        {
+            alert("didn't get inkquafs shader");
+        } 
+
+        shaderProgram[5] = gl.createProgram();
+        gl.attachShader(shaderProgram[5],verts2);
+        gl.attachShader(shaderProgram[5],frags6);
+        gl.linkProgram(shaderProgram[5]);
+        if (!gl.getProgramParameter(shaderProgram[5], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        shaderProgram[5].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[5],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[5].vertexPositionAttribute);
+        shaderProgram[5].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[5],"Texcoord");
+        gl.enableVertexAttribArray(shaderProgram[5].vertexTexcoordAttribute);
+
+        shaderProgram[5].depthsampler = gl.getUniformLocation(shaderProgram[5],"u_DepthSampler");
+        shaderProgram[5].silcolorsampler = gl.getUniformLocation(shaderProgram[5],"u_SilColorSampler");
+        shaderProgram[5].sildepthsampler = gl.getUniformLocation(shaderProgram[5],"u_SilDepthSampler");
+        shaderProgram[5].depthsamplerfake = gl.getUniformLocation(shaderProgram[5],"u_DepthSamplerFake");
+
+         //shader 7 for stroke
+        var frags7 = getShader(gl,"strokefs");
+        if(frags7 == null)// || verts5 == null)
+        {
+            alert("didn't get inkquafs shader");
+        } 
+
+        shaderProgram[6] = gl.createProgram();
+        gl.attachShader(shaderProgram[6],verts2);
+        gl.attachShader(shaderProgram[6],frags7);
+        gl.linkProgram(shaderProgram[6]);
+        if (!gl.getProgramParameter(shaderProgram[6], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        shaderProgram[6].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[6],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[6].vertexPositionAttribute);
+        shaderProgram[6].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[6],"Texcoord");
+        gl.enableVertexAttribArray(shaderProgram[6].vertexTexcoordAttribute);
+
+        shaderProgram[6].silcolorsampler = gl.getUniformLocation(shaderProgram[6],"u_SilColorSampler");
+        shaderProgram[6].viewwidth = gl.getUniformLocation(shaderProgram[6],"u_viewportWidth");
+        shaderProgram[6].viewheight = gl.getUniformLocation(shaderProgram[6],"u_viewportHeight");
+
+
+        
+        var frags8 = getShader(gl,"strokeblurfs");
+        if(frags8 == null)// || verts5 == null)
+        {
+            alert("didn't get inkquafs shader");
+        } 
+
+        shaderProgram[7] = gl.createProgram();
+        gl.attachShader(shaderProgram[7],verts2);
+        gl.attachShader(shaderProgram[7],frags8);
+        gl.linkProgram(shaderProgram[7]);
+        if (!gl.getProgramParameter(shaderProgram[7], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        shaderProgram[7].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[7],"Position");      
+        gl.enableVertexAttribArray(shaderProgram[7].vertexPositionAttribute);
+        shaderProgram[7].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[7],"Texcoord");
+        gl.enableVertexAttribArray(shaderProgram[7].vertexTexcoordAttribute);
+
+        shaderProgram[7].strokesampler = gl.getUniformLocation(shaderProgram[7],"u_StrokeSampler");
+        shaderProgram[7].viewwidth = gl.getUniformLocation(shaderProgram[7],"u_viewportWidth");
+        shaderProgram[7].viewheight = gl.getUniformLocation(shaderProgram[7],"u_viewportHeight");
+
+
 	}
 
 	function handleLoadedTexture(texture){
@@ -316,8 +393,10 @@
         //setting up normal texture
         //use programshader[0]  0:normal, 1: color, 2: screen space position, 3: depth pass, 4: manually cal depth , 
         //use programshader[2]  5: silhouette mesh depth buffer 6: silhouette 
-        //use shaderprogram[1]  7: ink quatilized color     8: spattered color
-        for(var i = 0; i<9; ++i)
+        //use shaderprogram[3,4]  7: ink quatilized color     8: spattered color
+        //use shaderprogram[5] 9: silhouette with depth test
+        //use shaderprogram[6] 10: stroke
+        for(var i = 0; i<12; ++i)
         {
             var fbo = gl.createFramebuffer();
             rttFramebuffers.push(fbo);
@@ -339,7 +418,7 @@
                  //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
                  //just tell we don't have any image data and just like to allocate a particular amount of empty space on graphics card
             }
-           
+            
             if(i == 3)
             {
                  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, texture, 0);
@@ -570,7 +649,7 @@
         var edgecolor = [];
         var verNum = 0;
         var edgeVerts2D = [];  
-
+        var edgegroup = [];
         //console.log(mvp);
 
         for(var idx = 0; idx < mesh.edgeArray.length;++idx){
@@ -621,11 +700,11 @@
                 // var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
 
                 // var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
-                // var depth1 = depthvalues[pixelIndex*4];
+                // var depth1 = silValues[pixelIndex*4];
                 // //console.log(ver1depth + " " + depth1);
                 // var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
-                // var depth2 = depthvalues[pixelIndex2 * 4];
-                //console.log(depthvalues[pixelIndex*4]);
+                // var depth2 = silValues[pixelIndex2 * 4];
+                //console.log(silValues[pixelIndex*4]);
 
                 // if((depth1 != 0 && ver1depth > depth1) || (depth2!=0  && ver2depth > depth2))
                 // {
@@ -654,6 +733,9 @@
                 edgeindices.push(verNum);
                 verNum ++;              
                 edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                //group of each edge
+
+                edgegroup.push(0);
             }
         }
         silEdgeMeshesvbo = gl.createBuffer();
@@ -679,27 +761,56 @@
 
     }
    
-    function updateDepthbuffer()
+    function updateSilBuffer()
     {
         //console.log("abc");
 
         gl.useProgram(shaderProgram[1]);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[5]);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[9]);
         setupQuad(shaderProgram[1]);
-        drawQuad(4);
+        drawQuad(5);
 
-        depthvalues = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
-        gl.readPixels(0,0,gl.viewportWidth,gl.viewportHeight,gl.RGBA, gl.UNSIGNED_BYTE,depthvalues);        
+        //return;
+       // gl.bindTexture(gl.TEXTURE_2D,rttTextures[9]);
+       // gl.bindTexture(gl.TEXTURE_2D,null);
 
+        silValues = new Uint8Array(gl.viewportWidth * gl.viewportHeight * 4);
+        gl.readPixels(0,0,gl.viewportWidth,gl.viewportHeight,gl.RGBA, gl.UNSIGNED_BYTE,silValues);        
+
+        var numsblack = 0;
+        var numswhite = 0;
+        var numsother = 0;
+        for(var i = 0; i<silValues.length / 4; ++i)
+        {
+             if(silValues[i*4] == 0 && silValues[i*4+1]  == 0 && silValues[i*4+2] == 0 && silValues[i*4+3] == 255)
+             {
+                numsblack ++;
+                //console.log(silValues[i*4] + " " + silValues[i*4+1] + " " + silValues[i*4+2] + " " + silValues[i*4+3]);
+             }
+             else if(silValues[i*4]== 255&&silValues[i*4+1] == 255 && silValues[i*4+2] == 255 && silValues[i*4+3] == 255)
+             {
+                numswhite ++;
+             }
+             else
+             {
+                numsother ++;
+             }
+
+             // else
+             // {
+             //     console.log("lalala");
+             // }
+        }
+        // console.log(gl.viewportWidth * gl.viewportHeight + "  " + numsblack + " black pixels" + " " + numswhite + " white pixels" 
+        //     + " " + numsother + " other pixels");
         gl.bindFramebuffer(gl.FRAMEBUFFER,null);
         gl.disable(gl.DEPTH_TEST);
-
     }
 
     function updateFaceInfo(mesh,model)
     {
         // Converting viewVector to object space
-        // console.log("updateFaceInfo ...");
+        console.log("updateFaceInfo ...");
 
         var modelV = mat4.create(model);
         modelV[12] = 0;
@@ -771,21 +882,27 @@
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[4]);
         gl.uniform1i(shaderProgram[1].depthsamplerfake,4);
 
-        gl.activeTexture(gl.TEXTURE5); //SILCOLOR
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[5]);
-        gl.uniform1i(shaderProgram[1].silcolorsampler,5);
+        // gl.activeTexture(gl.TEXTURE5); //SILCOLOR
+        // gl.bindTexture(gl.TEXTURE_2D,rttTextures[5]);
+        // gl.uniform1i(shaderProgram[1].silcolorsampler,5);
 
-        gl.activeTexture(gl.TEXTURE6); //DEPTH
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[6]);
-        gl.uniform1i(shaderProgram[1].sildepthsampler,6);
+        // gl.activeTexture(gl.TEXTURE6); //DEPTH
+        // gl.bindTexture(gl.TEXTURE_2D,rttTextures[6]);
+        // gl.uniform1i(shaderProgram[1].sildepthsampler,6);
 
 
-        gl.activeTexture(gl.TEXTURE7);
+        gl.activeTexture(gl.TEXTURE5);
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[8]);
-        gl.uniform1i(shaderProgram[1].spattersampler,7);   
+        gl.uniform1i(shaderProgram[1].spattersampler,5);   
+
+        gl.activeTexture(gl.TEXTURE6);
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[10]);
+        gl.uniform1i(shaderProgram[1].strokesampler,6);
 
         gl.uniform1i(shaderProgram[1].viewwidth,gl.viewportWidth);
         gl.uniform1i(shaderProgram[1].viewheight,gl.viewportHeight);
+
+
     }
 
     function drawQuad(mode){
@@ -801,6 +918,7 @@
         gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
 
         gl.uniform1i(shaderProgram[1].displaymode,mode);
+        //console.log(mode);
     }   
 
     function drawInkQuat()
@@ -965,8 +1083,92 @@
         gl.bindTexture(gl.TEXTURE_2D,null);
     }
 
-   
+    function drawsils(){
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+       
+        gl.useProgram(shaderProgram[5]);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[3]);
+        gl.uniform1i(shaderProgram[5].depthsampler,0);
+
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[5]);
+        gl.uniform1i(shaderProgram[5].silcolorsampler,1);
+
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[6]);
+        gl.uniform1i(shaderProgram[5].sildepthsampler,2);
+        
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[4]);
+        gl.uniform1i(shaderProgram[5].depthsamplerfake,3);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
+        gl.vertexAttribPointer(shaderProgram[5].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
+        gl.vertexAttribPointer(shaderProgram[5].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
+        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[9]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+    }
     
+    function drawstroke(){
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+       
+        gl.useProgram(shaderProgram[6]);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[9]);
+        gl.uniform1i(shaderProgram[6].depthsampler,0);
+
+        gl.uniform1i(shaderProgram[6].viewwidth,gl.viewportWidth);
+        gl.uniform1i(shaderProgram[6].viewheight,gl.viewportHeight);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
+        gl.vertexAttribPointer(shaderProgram[6].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
+        gl.vertexAttribPointer(shaderProgram[6].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
+        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[10]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+    }
+    function blurstroke()
+    {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+       
+        gl.useProgram(shaderProgram[7]);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, rttTextures[10]);
+        gl.uniform1i(shaderProgram[7].strokesampler,0);
+
+        gl.uniform1i(shaderProgram[7].viewwidth,gl.viewportWidth);
+        gl.uniform1i(shaderProgram[7].viewheight,gl.viewportHeight);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
+        gl.vertexAttribPointer(shaderProgram[7].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
+        gl.vertexAttribPointer(shaderProgram[7].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
+
+        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D,rttTextures[11]);
+        gl.bindTexture(gl.TEXTURE_2D,null);
+    }
 	function drawScene(){
          
 		gl.useProgram(shaderProgram[0]);
@@ -989,17 +1191,22 @@
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
+        //draw ink quat
         gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
         drawInkQuat();
+        //draw diffusion
         gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
         drawSpartter();
 
         gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
+
+
         gl.disable(gl.DEPTH_TEST);       
 
         setupQuad(shaderProgram[1]);
-     
+
+
         // todo: change the draw mode here
         //0: normal //1: color // 2: screen space position // 3: depth // 4: depth fake //
         //5: silhouette //6: diffuse
@@ -1009,22 +1216,38 @@
             if(checkboxs[checkboxidx].checked == true)
             {
                 //console.log("checkboxid: " + checkboxidx);
-                if(checkboxidx == 5 && needupdate == true)
+                if(checkboxidx == 5 || checkboxidx == 7)
                 {
-                    viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
-                    viewVector = vec3.normalize(viewVector);;
-                    //console.log(viewVector);
-                    //update mesh face info
-                   // updateDepthbuffer();
-                    var idx = 0;
-                    for(mesh in meshes)
+                   
+                   
+                    
+                    if(needupdate == true)
                     {
-                        updateFaceInfo(meshes[mesh],models[idx]);
-                        idx ++;
-                    }
-                    needupdate = false;
+                        viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
+                        viewVector = vec3.normalize(viewVector);
+                        var idx = 0;
+                        for(mesh in meshes)
+                        {
+                            updateFaceInfo(meshes[mesh],models[idx]);
+                            idx ++;
+                        }
+                        needupdate = false;
+
+                    } 
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[9]);
+                    drawsils();      
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[10]);
+                    drawstroke();
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[11]);
+                    blurstroke();                     
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+                    setupQuad(shaderProgram[1]);
+
+                    gl.activeTexture(gl.TEXTURE8);
+                    gl.bindTexture(gl.TEXTURE_2D,rttTextures[11]);
+                    gl.uniform1i(shaderProgram[1].strokesampler,8);                 
                 }
-                else
+                else if(checkboxidx != 5 || checkboxidx!=7)
                 {
                     needupdate = true;
                 }
@@ -1094,13 +1317,14 @@
             //console.log(viewVector);
             //update mesh face info
            // updateDepthbuffer();
+
             var idx = 0;
             for(mesh in meshes)
             {
                 updateFaceInfo(meshes[mesh],models[idx]);
                 idx ++;
             }
-
+           // updateSilBuffer();
         }
        
        
@@ -1147,12 +1371,12 @@
         checkboxs.push(checkbox);
         checkbox = document.getElementById("depth2");
         checkboxs.push(checkbox);
-        checkbox = document.getElementById("silhouette");
+        checkbox = document.getElementById("silhouette"); // silhouette
         checkboxs.push(checkbox);
-        checkbox = document.getElementById("ink");
+        checkbox = document.getElementById("ink"); //only ink
         checkboxs.push(checkbox);        
-        checkbox = document.getElementById("inkSil");
-        checkboxs.push(checkbox);
+        checkbox = document.getElementById("inkSil"); // sil and interior
+        checkboxs.push(checkbox);        
         checkbox = document.getElementById("diffuse");
         checkboxs.push(checkbox);
        // console.log("checkbox length: "+checkboxs.length);
