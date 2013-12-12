@@ -1,6 +1,10 @@
 Tile Based WebGL Deferred Shader
 ----------------------------------------
 [Yuqin](https://github.com/yuqinshao) & [Sijie](https://github.com/tiansijie)
+
+* Sijie's twitter: https://twitter.com/sijietian
+* Yuqin's twitter: https://twitter.com/YuqinShao
+
 -------------------------------------------------------------------------------
 
 Overview
