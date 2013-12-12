@@ -130,7 +130,7 @@
 		gl.enableVertexAttribArray(shaderProgram[0].vertexPositionAttribute);
 		
 
-		shaderProgram[0].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[0],"Texcood");
+		//shaderProgram[0].vertexTexcoordAttribute = gl.getAttribLocation(shaderProgram[0],"Texcood");
 		//console.log("texcoord " + shaderProgram[0].vertexTexcoordAttribute);
 		gl.enableVertexAttribArray(shaderProgram[0].vertexTexcoordAttribute);
 
@@ -144,8 +144,8 @@
 		shaderProgram[0].perspMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Persp");
 		shaderProgram[0].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[0],"u_Inverse");
 		shaderProgram[0].drawmode = gl.getUniformLocation(shaderProgram[0],"u_DrawMode");
-		shaderProgram[0].colorsampler = gl.getUniformLocation(shaderProgram[0],"u_ColorSampler");
-		
+		//shaderProgram[0].colorsampler = gl.getUniformLocation(shaderProgram[0],"u_ColorSampler");
+		shaderProgram[0].colorUniform = gl.getUniformLocation(shaderProgram[0],"u_Color");
 
 		if(shaderProgram[0].modelMatrixUniform == null || shaderProgram[0].viewMatrixUniform == null
 		 || shaderProgram[0].perspMatrixUniform == null || shaderProgram[0].inverseMatrixUniform == null
@@ -218,14 +218,14 @@
         gl.useProgram(shaderProgram[2]);
         shaderProgram[2].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[2],"Position");
         gl.enableVertexAttribArray(shaderProgram[2].vertexPositionAttribute);
-        shaderProgram[2].vertexColorAttribute = gl.getAttribLocation(shaderProgram[2],"Color");
-        gl.enableVertexAttribArray(shaderProgram[2].vertexColorAttribute);
+        // shaderProgram[2].vertexColorAttribute = gl.getAttribLocation(shaderProgram[2],"Color");
+        // gl.enableVertexAttribArray(shaderProgram[2].vertexColorAttribute);
 
         shaderProgram[2].modelMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Model");
         shaderProgram[2].viewMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_View");  
         shaderProgram[2].perspMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Persp");
         shaderProgram[2].inverseMatrixUniform = gl.getUniformLocation(shaderProgram[2],"u_Inverse");
-
+        shaderProgram[2].colorUniform = gl.getUniformLocation(shaderProgram[2],"u_Color");
         shaderProgram[2].depthsampler = gl.getUniformLocation(shaderProgram[2],"u_DepthSampler");
         shaderProgram[2].drawmode = gl.getUniformLocation(shaderProgram[2],"u_DrawMode");
         
@@ -525,216 +525,403 @@
     // var meshnbo = [];
     // var meshibo = [];
     // var meshtbo = [];
-    var meshes = [];    
+    // var meshes = [];    
     var models = [];
+
+    var meshVertices = [];//new Float32Array();
+    var meshNormals = [];//new Float32Array();
+    var meshIndex = [];//new Uint16Array();
+
+    //ADD
+    var meshisFrontFace = [];
+    var meshedges = []; // store edge vertex indices 3,5 // connect vertex 3 and vertex 5
+    var meshedgefaces = []; //stroe each edge's face list  1,3 // connect face 1 and face 3
+    var meshfacenormals = [];
+
+    var bufferVertices = [];
+    var bufferIndex = [];
+
+    var vertexBuffer;
+    var normalBuffer;
+    var indexBuffer;
+
+    var vBuffers = [];
+    var nBuffers = [];
+    var iBuffers = [];
+    //ADD
+   
+
+    var iLens = [];
+
     var silEdgeMeshes;
+    var silvBuffers = [];
+    var siliBuffers = [];
     var silEdgeMeshesvbo = [];
     var silEdgeMeshesibo = [];
     var silEdgeMeshescbo = [];
-    function downloadMesh()
-    {
-        obj_utils.downloadMeshes(
-            {
-                 //'bottom' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                // 'back' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                // 'top' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                // 'left' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                // 'right' : 'http://localhost:288/webglDeferredShader/cube.obj',
-                'cow' : 'http://localhost:288/webglDeferredShader/cow.obj',
+    // function downloadMesh()
+    // {
+    //     obj_utils.downloadMeshes(
+    //         {
+    //              //'bottom' : 'http://localhost:288/webglDeferredShader/cube.obj',
+    //             // 'back' : 'http://localhost:288/webglDeferredShader/cube.obj',
+    //             // 'top' : 'http://localhost:288/webglDeferredShader/cube.obj',
+    //             // 'left' : 'http://localhost:288/webglDeferredShader/cube.obj',
+    //             // 'right' : 'http://localhost:288/webglDeferredShader/cube.obj',
+    //             'cow' : 'http://localhost:288/webglDeferredShader/cow.obj',
 
 
-                //'bunny' : 'http://localhost:288/webglDeferredShader/bunny.obj',
-                //'cube' : 'http://localhost:288/webglDeferredShader/cube5.obj'
-            },
-            initObj
-        );
-    }
-
-    function initObj(meshobjs)
-    {
-        meshes = meshobjs;
-        var idx = 0;
-        for(mesh in meshes){                     
-            obj_utils.initMeshBuffers(gl, meshes[mesh]);
-            // updateDepthbuffer(); 
-            updateFaceInfo(meshes[mesh],models[idx]);
-            idx ++;
-            
-        }        
-        
-    }
-    function setmodelMatrix()
-    {
-       
-        // //cube2 for test
-        // var matrix  = mat4.create();
-        // mat4.identity(matrix);
-        // mat4.scale(matrix,[2,2,2]);
-        // models.push(matrix);
-
-
-        //bottom
-        // var matrix = mat4.create();
-        // mat4.identity(matrix);
-        // mat4.scale(matrix,[4,.01,4]); 
-        // mat4.translate(matrix,[0,-400,0]);       
-        // models.push(matrix);     
-
-        // //back
-        // var matrix2 = mat4.create();
-        // mat4.identity(matrix2);
-        // mat4.scale(matrix2,[.01,4,4]);
-        // mat4.translate(matrix2,[400,0,0]);
-        // models.push(matrix2);
-
-        // //top
-        // var matrix3 = mat4.create();
-        // mat4.identity(matrix3);
-        // mat4.scale(matrix3,[4,.01,4]);
-        // mat4.translate(matrix3,[0,400,0]);
-        // models.push(matrix3);
-        
-        // //left
-        // var matrix4 = mat4.create();
-        // mat4.identity(matrix4);
-        // mat4.scale(matrix4,[4,4,.01]);
-        // mat4.translate(matrix4,[0,0,-400]);
-        // models.push(matrix4);
-
-        // //right
-        // var matrix5 = mat4.create();
-        // mat4.identity(matrix5);
-        // mat4.scale(matrix5,[4,4,.01]);
-        // mat4.translate(matrix5,[0,0,400]);
-        // models.push(matrix5);
-
-        //cow
-        var cowMatrix = mat4.create();
-        mat4.identity(cowMatrix);
-        mat4.scale(cowMatrix,[8,8,8]);
-        mat4.rotate(cowMatrix,90,[0,1,0]);
-        mat4.translate(cowMatrix,[0,-.1,0]);
-        models.push(cowMatrix);
-
-        // //bunny
-        // var bunnyMatrix = mat4.create();
-        // mat4.identity(bunnyMatrix);
-        // mat4.scale(bunnyMatrix,[50,50,50]);
-        // mat4.rotate(bunnyMatrix,90,[0,1,0]);
-        // mat4.translate(bunnyMatrix,[0,-.1,0]);
-        // models.push(bunnyMatrix);
-
-    }
-
-	function initMeshBuffers()
-	{
-        
-        //initsphere();
-		downloadMesh();
-        setmodelMatrix();       
-        
-	}
-
-    // function linearizeDepth(exp_depth, near, far) {
-    //     return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
+    //             //'bunny' : 'http://localhost:288/webglDeferredShader/bunny.obj',
+    //             //'cube' : 'http://localhost:288/webglDeferredShader/cube5.obj'
+    //         },
+    //         initObj
+    //     );
     // }
 
+    // function initObj(meshobjs)
+    // {
+    //     meshes = meshobjs;
+    //     var idx = 0;
+    //     for(mesh in meshes){                     
+    //         obj_utils.initMeshBuffers(gl, meshes[mesh]);
+    //         // updateDepthbuffer(); 
+    //         updateFaceInfo(meshes[mesh],models[idx]);
+    //         idx ++;
+            
+    //     }        
+        
+    // }
+    function setmodelMatrix()
+    {
+        var matrix = mat4.create();
+        mat4.identity(matrix);
+        //mat4.scale(matrix,[10,10,10]);
+        models.push(matrix);
+
+    }
+
+
+    function initMeshBuffers()
+    {
+        //downloadMesh();
+        setmodelMatrix();
+
+        //var scene = new THREE.Scene(); 
+        var loader = new THREE.OBJLoader();
+        // //var loader = new THREE.OBJMTLLoader();
+
+        //ADD
+        hashedges = {};
+        var edgeidx = 0;
+
+        // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
+        loader.load( 'http://localhost:288/webglDeferredShader/sibenik.obj', function ( event ) {
+            var object = event;
+
+            console.log("children " + object.children.length);
+
+            //console.log("just a test " + object.normals.length);
+
+            object.traverse( function ( child ) {
+              if ( child instanceof THREE.Mesh ) {
+
+                 var lenVertices = child.geometry.vertices.length;
+                 var lenFaces = child.geometry.faces.length;
+                 var lenNor = child.geometry.skinIndices.length;  
+
+                console.log ("Len Vertices " + lenVertices);
+                console.log ("Len Faces " + lenFaces);
+                console.log ("Len Nor " + lenNor);
+
+                // meshVertices = new Float32Array(lenVertices * 3);
+                // meshNormals = new Float32Array(lenVertices * 3);
+                // meshIndex = new Uint16Array(lenFaces * 3);
+
+                // bufferVertices = new Float32Array(lenFaces*9);
+                // meshNormals = new Float32Array(lenFaces*9);
+                // meshIndex = new Uint16Array(lenFaces*3);
+
+                for(var i = 0; i < lenVertices; i++)
+                {
+                    meshVertices[i*3] = (child.geometry.vertices[i].x);
+                    meshVertices[i*3+1] = (child.geometry.vertices[i].y);
+                    meshVertices[i*3+2] = (child.geometry.vertices[i].z);
+                }
+
+                 //console.log("Face normal " + child.geometry.faces[0].vertexNormals);                
+                 var point = 0;
+                for(var i = 0; i < lenFaces; i++)
+                {
+                    var indexa = child.geometry.faces[i].a;
+                    var indexb = child.geometry.faces[i].b;
+                    var indexc = child.geometry.faces[i].c;                 
+
+                    bufferVertices.push(meshVertices[indexa*3]);
+                    bufferVertices.push(meshVertices[indexa*3+1]);
+                    bufferVertices.push(meshVertices[indexa*3+2]);
+
+                    bufferVertices.push(meshVertices[indexb*3]);
+                    bufferVertices.push(meshVertices[indexb*3+1]);
+                    bufferVertices.push(meshVertices[indexb*3+2]);
+
+                    bufferVertices.push(meshVertices[indexc*3]);
+                    bufferVertices.push(meshVertices[indexc*3+1]);
+                    bufferVertices.push(meshVertices[indexc*3+2]);        
+                    
+                    meshfacenormals.push(child.geometry.faces[i].normal.x);
+                    meshfacenormals.push(child.geometry.faces[i].normal.y);
+                    meshfacenormals.push(child.geometry.faces[i].normal.z);
+
+                    for(var j = 0; j < 3; j++){                       
+                        meshNormals.push(child.geometry.faces[i].normal.x);
+                        meshNormals.push(child.geometry.faces[i].normal.y);
+                        meshNormals.push(child.geometry.faces[i].normal.z);
+                    }
+
+                    //ADD initialize front face buffer
+                    meshisFrontFace.push(0);
+                    // add to edge list
+                    var es = [];
+                    es.push([indexa,indexb]);
+                    es.push([indexb,indexc]);
+                    es.push([indexc,indexa]);
+
+
+                    for(var idx = 0; idx <3; idx ++)
+                    {
+                      var inverses = [es[idx][1],es[idx][0]];
+                      if(es[idx] in hashedges || inverses in hashedges)
+                      {
+                        //console.log(es[idx] + "  " + inverses);
+                        if(es[idx] in hashedges)
+                        {
+                          //console.log("exist " + packed.edgefaces[packed.hashedges[es[idx]]]);
+                          meshedgefaces[hashedges[es[idx]]].push(i);
+                        }
+                        else
+                        {
+                          //console.log("exist " + packed.edgefaces[packed.hashedges[inverses]]);
+                          meshedgefaces[hashedges[inverses]].push(i);
+                          //console.log(packed.hashedges[inverses] + " : "+ packed.edgefaces[packed.hashedges[inverses]]);
+                        }
+                        continue;
+                      }
+                      else
+                      {
+                        hashedges[es[idx]] = edgeidx;
+
+                        //console.log(packed.hashedges);
+                        meshedges.push(es[idx]);
+                        //console.log("edge : " + es[idx] + " edge idx: " + packed.hashedges[es[idx]]);                        
+                        meshedgefaces[edgeidx] = [];
+                        meshedgefaces[edgeidx].push(i);
+                        
+                        edgeidx ++;
+                      }
+                      //console.log(packed.edgefaces[1]);
+                    }
+
+
+
+                    // meshIndex[i*3] = i*3;
+                    // meshIndex[i*3+1] = i*3+1;
+                    // meshIndex[i*3+2] = i*3+2;
+
+                    meshIndex.push(point++);
+                    meshIndex.push(point++);
+                    meshIndex.push(point++);
+
+
+                    //I hate Javascript
+                    if(meshIndex.length > 64000)
+                    {
+                        console.log("meshIndex > 64000");
+                        vertexBuffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
+                        // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+                        // gl.enableVertexAttribArray(positionLocation);
+                        vertexBuffer.numItems = bufferVertices.length / 3;
+                        vBuffers.push(vertexBuffer);
+                    
+
+                        normalBuffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
+                        // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+                        // gl.enableVertexAttribArray(normalLocation);
+                        meshNormals.numItems = meshNormals.length / 3;
+                        nBuffers.push(normalBuffer);
+
+
+                        indexBuffer = gl.createBuffer();
+                        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
+                        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
+                        indexBuffer.numItems = meshIndex.length;
+                        iBuffers.push(indexBuffer);
+
+                        //console.log("Index len " + meshIndex.length);
+                        iLens.push(meshIndex.length);
+
+                        point = 0;
+                        bufferVertices = [];
+                        meshNormals = [];
+                        meshIndex = [];
+                    }                       
+
+                    
+
+                } // end for face loop            
+                // for(var mm = 0; mm<meshedges.length; mm++)
+                // {
+                //     console.log(meshedges[mm] + "   " + meshedgefaces[mm]);
+                // }
+                //console.log("edge nums: " + meshedges);
+                //console.log("edge norms: " + meshedgefaces.length);
+                //console.log("isfront face len: " + meshisFrontFace.length);
+
+                vertexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
+                // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+                // gl.enableVertexAttribArray(positionLocation);
+                vertexBuffer.numItems = bufferVertices.length / 3;
+                vBuffers.push(vertexBuffer);
+            
+
+                normalBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+                //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
+                // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+                // gl.enableVertexAttribArray(normalLocation);
+                meshNormals.numItems = meshNormals.length / 3;
+                nBuffers.push(normalBuffer);   
+
+
+                indexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
+                indexBuffer.numItems = meshIndex.length;
+                iBuffers.push(indexBuffer);
+
+                //console.log("Index len " + meshIndex.length);
+                iLens.push(meshIndex.length);
+
+                // meshNum ++;   
+                console.log("mehsnormals len " + meshNormals.length / 3);
+                 updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
+              }
+            } );
+        });
+        
+      
+    } // end for initmesh function
+    
+
     //function getSilEdges(mesh,mvp,mv)//silhouette culling version
-    function getSilEdges(mesh)
+    //function getSilEdges(mesh)
+    function getSilEdges(edgefacesArray, edgesArray,verticesArray)
     {
         //console.log("getsil edge");
         var edgeVerts = [];
         var edgeindices = [];
-        var edgecolor = [];
+        // var edgecolor = [];
         var verNum = 0;
-        var edgeVerts2D = [];  
-        var edgegroup = [];
+        // var edgeVerts2D = [];  
+        // var edgegroup = [];
         //console.log(mvp);
 
-        for(var idx = 0; idx < mesh.edgeArray.length;++idx){
+        for(var idx = 0; idx < edgesArray.length;++idx){
             //console.log(mesh.edgeArray[idx]);           
-            var edgefaces = mesh.edgefacesArray[idx];
+            var edgefaces = edgefacesArray[idx];
            // console.log(edgefaces);
-            if((mesh.isfrontfacesArray[edgefaces[0]] == 0 && mesh.isfrontfacesArray[edgefaces[1]] == 1)
-                ||(mesh.isfrontfacesArray[edgefaces[0]] == 1 && mesh.isfrontfacesArray[edgefaces[1]] == 0))
+            if((meshisFrontFace[edgefaces[0]] == 0 && meshisFrontFace[edgefaces[1]] == 1)
+                ||(meshisFrontFace[edgefaces[0]] == 1 && meshisFrontFace[edgefaces[1]] == 0))
             {
                 //console.log("sil edge " + mesh.edgeArray[idx]);
-                var veridx = [mesh.edgeArray[idx][0],mesh.edgeArray[idx][1]];
+                var veridx = [edgesArray[idx][0],edgesArray[idx][1]];
                 var ver1 = vec4.create(
-                                    [mesh.verticesArray[veridx[0]*3],
-                                    mesh.verticesArray[veridx[0]*3+1],
-                                    mesh.verticesArray[veridx[0]*3+2],
+                                    [verticesArray[veridx[0]*3],
+                                    verticesArray[veridx[0]*3+1],
+                                    verticesArray[veridx[0]*3+2],
                                     1.0]
                                     );
               
                 var ver2 = vec4.create(
-                                    [mesh.verticesArray[veridx[1]*3],
-                                    mesh.verticesArray[veridx[1]*3+1],
-                                    mesh.verticesArray[veridx[1]*3+2],
+                                    [verticesArray[veridx[1]*3],
+                                    verticesArray[veridx[1]*3+1],
+                                    verticesArray[veridx[1]*3+2],
                                     1.0 ]                               
                                     );                
-                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
-                // var ver1Clip = vec4.create();
-                // mat4.multiply(mvp,ver1,ver1Clip);
-                // var ver2Clip = vec4.create();
-                // mat4.multiplyVec4(mvp,ver2,ver2Clip);
-
-                // var ver1World = vec4.create();
-                // mat4.multiply(mv,ver1,ver1World);
-                // var ver2World = vec4.create();
-                // mat4.multiply(mv,ver2,ver2World);
-
-                // ver1Clip.set([ver1Clip[0]/ver1Clip[3],ver1Clip[1]/ver1Clip[3],ver1Clip[2]/ver1Clip[3],ver1Clip[3]/ver1Clip[3]]);
-                // ver2Clip.set([ver2Clip[0]/ver2Clip[3],ver2Clip[1]/ver2Clip[3],ver2Clip[2]/ver2Clip[3],ver2Clip[3]/ver2Clip[3]]);
-                // //console.log(ver1Clip[0] + " " + ver1Clip[1]);
-                // var pixel1 = [];
-                // pixel1.push(Math.round(((ver1Clip[0] + 1.0)/2.0) * gl.viewportWidth));
-                // pixel1.push(Math.round(((1.0 - ver1Clip[1])/2.0) * gl.viewportHeight));
                 
-                // var pixel2 = [];
-                // pixel2.push(Math.round(((ver2Clip[0] + 1.0)/2.0) * gl.viewportWidth));
-                // pixel2.push(Math.round(((1.0 - ver2Clip[1])/2.0) * gl.viewportHeight));
-                
-                // var ver1depth = linearizeDepth(ver1Clip[2], 0.1, 10)*255;
-                // var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
+                function silculling()
+                {
+                    /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+                    // var ver1Clip = vec4.create();
+                    // mat4.multiply(mvp,ver1,ver1Clip);
+                    // var ver2Clip = vec4.create();
+                    // mat4.multiplyVec4(mvp,ver2,ver2Clip);
 
-                // var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
-                // var depth1 = silValues[pixelIndex*4];
-                // //console.log(ver1depth + " " + depth1);
-                // var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
-                // var depth2 = silValues[pixelIndex2 * 4];
-                //console.log(silValues[pixelIndex*4]);
+                    // var ver1World = vec4.create();
+                    // mat4.multiply(mv,ver1,ver1World);
+                    // var ver2World = vec4.create();
+                    // mat4.multiply(mv,ver2,ver2World);
 
-                // if((depth1 != 0 && ver1depth > depth1) || (depth2!=0  && ver2depth > depth2))
-                // {
-                //     console.log("dd")
-                //     continue;
-                // }
-                // else
-                // {
-                //     //console.log("PASS");
-                // }
+                    // ver1Clip.set([ver1Clip[0]/ver1Clip[3],ver1Clip[1]/ver1Clip[3],ver1Clip[2]/ver1Clip[3],ver1Clip[3]/ver1Clip[3]]);
+                    // ver2Clip.set([ver2Clip[0]/ver2Clip[3],ver2Clip[1]/ver2Clip[3],ver2Clip[2]/ver2Clip[3],ver2Clip[3]/ver2Clip[3]]);
+                    // //console.log(ver1Clip[0] + " " + ver1Clip[1]);
+                    // var pixel1 = [];
+                    // pixel1.push(Math.round(((ver1Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                    // pixel1.push(Math.round(((1.0 - ver1Clip[1])/2.0) * gl.viewportHeight));
+                    
+                    // var pixel2 = [];
+                    // pixel2.push(Math.round(((ver2Clip[0] + 1.0)/2.0) * gl.viewportWidth));
+                    // pixel2.push(Math.round(((1.0 - ver2Clip[1])/2.0) * gl.viewportHeight));
+                    
+                    // var ver1depth = linearizeDepth(ver1Clip[2], 0.1, 10)*255;
+                    // var ver2depth = linearizeDepth(ver2Clip[2], 0.1, 10)*255;
 
-                //console.log("z: " + Math.floor(linearizeDepth(ver1Clip[2], 0.1, 10)*255));
-                
-                /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+                    // var pixelIndex = pixel1[1] * gl.viewportWidth + pixel1[0];
+                    // var depth1 = silValues[pixelIndex*4];
+                    // //console.log(ver1depth + " " + depth1);
+                    // var pixelIndex2 = pixel2[1] * gl.viewportWidth + pixel2[0];
+                    // var depth2 = silValues[pixelIndex2 * 4];
+                    //console.log(silValues[pixelIndex*4]);
 
-                edgeVerts.push(mesh.verticesArray[veridx[0]*3]); 
-                edgeVerts.push(mesh.verticesArray[veridx[0]*3+1]); 
-                edgeVerts.push(mesh.verticesArray[veridx[0]*3+2]);
-                edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                    // if((depth1 != 0 && ver1depth > depth1) || (depth2!=0  && ver2depth > depth2))
+                    // {
+                    //     console.log("dd")
+                    //     continue;
+                    // }
+                    // else
+                    // {
+                    //     //console.log("PASS");
+                    // }
+
+                    //console.log("z: " + Math.floor(linearizeDepth(ver1Clip[2], 0.1, 10)*255));
+                    
+                    /////////////////////////FOR SILHOUETTE CULLING //////////////////////////////////////////
+                }
+              
+
+                edgeVerts.push(verticesArray[veridx[0]*3]); 
+                edgeVerts.push(verticesArray[veridx[0]*3+1]); 
+                edgeVerts.push(verticesArray[veridx[0]*3+2]);
+                // edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
                 edgeindices.push(verNum);
                 verNum ++;
            
-                edgeVerts.push(mesh.verticesArray[veridx[1]*3]); 
-                edgeVerts.push(mesh.verticesArray[veridx[1]*3+1]); 
-                edgeVerts.push(mesh.verticesArray[veridx[1]*3+2]);
+                edgeVerts.push(verticesArray[veridx[1]*3]); 
+                edgeVerts.push(verticesArray[veridx[1]*3+1]); 
+                edgeVerts.push(verticesArray[veridx[1]*3+2]);
                 edgeindices.push(verNum);
                 verNum ++;              
-                edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                // edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
                 //group of each edge
 
-                edgegroup.push(0);
+                // edgegroup.push(0);
             }
         }
         silEdgeMeshesvbo = gl.createBuffer();
@@ -743,12 +930,12 @@
         silEdgeMeshesvbo.itemSize = 3;
         silEdgeMeshesvbo.numItems = edgeVerts.length/3;
        
-        silEdgeMeshescbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(edgecolor),gl.STATIC_DRAW);
-        silEdgeMeshescbo.itemSize = 3;
+        // silEdgeMeshescbo = gl.createBuffer();
+        // gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+        // gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(edgecolor),gl.STATIC_DRAW);
+        // silEdgeMeshescbo.itemSize = 3;
         //console.log("edgecolor length: " + edgecolor.length);
-        silEdgeMeshescbo.numItems = edgecolor.length/3;
+        // silEdgeMeshescbo.numItems = edgecolor.length/3;
 
         silEdgeMeshesibo = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,silEdgeMeshesibo);
@@ -757,7 +944,7 @@
         //console.log("edgeindices length: " + edgeindices.length);
         silEdgeMeshesibo.numItems = edgeindices.length;
         //console.log(edgeindices);
-
+        //console.log("edge indices len: " + edgeindices.length);
     }
    
     function updateSilBuffer()
@@ -806,7 +993,7 @@
         gl.disable(gl.DEPTH_TEST);
     }
 
-    function updateFaceInfo(mesh,model)
+    function updateFaceInfo(facenormals,model,isfrontfaces,meshedgefaces,meshedges,meshVertices)
     {
         // Converting viewVector to object space
         console.log("updateFaceInfo ...");
@@ -822,37 +1009,27 @@
         var viewVectorve4 = vec4.create([viewVector[0],viewVector[1],viewVector[2],1.0]);
         mat4.multiplyVec4(inverseModelV,viewVectorve4,viewVector_objecspace);
         //console.log(viewVector_objecspace);
-        //console.log(" front face:" + mesh.isfrontfacesArray.length);
-        for(var i = 0; i<mesh.facenormArray.length/3; ++i)
+        //console.log(" front face:" + facenormals.length/3);
+        for(var i = 0; i<facenormals.length/3; ++i)
         {           
 
             //object face normal in object space   
-            var norm = vec3.create([mesh.facenormArray[i*3],mesh.facenormArray[i*3+1],mesh.facenormArray[i*3+2]]);
+            var norm = vec3.create([facenormals[i*3],facenormals[i*3+1],facenormals[i*3+2]]);
 
             var dots = vec3.dot(vec3.create(viewVector_objecspace),norm);
             //console.log(dots);
             if(dots <= 0)
             {
-                mesh.isfrontfacesArray[i] = 1;
+                isfrontfaces[i] = 1;
                 //console.log("front")
             }
             else
             {
-                mesh.isfrontfacesArray[i] = 0;
+                isfrontfaces[i] = 0;
                 //console.log("back");
             }
         }
-
-        ///////////////////////////////////for back silhouette culling///////////////////////////////
-        // var mv = mat4.create();
-        // mat4.multiply(view, model, mv);
-        // var mvp = mat4.create();
-        // var persps = mat4.create();        
-        // mat4.perspective(45.0, gl.viewportWidth/gl.viewportHeight,0.1,100.0,persps);
-        // mat4.multiply(persps,mv,mvp);
-        //getSilEdges(mesh,mvp,mv); //SILHOUETTE CULLING 
-        ///////////////////////////////////for back silhouette culling///////////////////////////////
-        getSilEdges(mesh);
+        getSilEdges(meshedgefaces,meshedges,meshVertices);
     }
 
 
@@ -992,10 +1169,45 @@
 
 		gl.uniform1i(shaderProgram[0].drawmode,drawmode);
 
+        // var idx = 0;                
+        // for(mesh in meshes){
+        //     //console.log("idx " + idx);
+        //     var mv = mat4.create();
+        //     mat4.multiply(view, models[idx], mv);
+
+        //     inverse = mat4.create();
+        //     mat4.identity(inverse);
+        //     mat4.inverse(mv, inverse);
+        //     mat4.transpose(inverse);
+
+        //    // console.log(meshes[mesh].vertexBuffer);
+        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
+        //     gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+        //     gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].normalBuffer);
+        //     gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute,  meshes[mesh].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        //     gl.activeTexture(gl.TEXTURE0);
+        //     gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+        //     gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
+
+        //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);  
+        //     setMatrixUniforms(models[idx]);
+        //     gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+        //     idx ++;
+        // }
+
         var idx = 0;                
-        for(mesh in meshes){
+        for(var i = 0; i < vBuffers.length; i++){
             //console.log("idx " + idx);
             var mv = mat4.create();
+            //console.log(models[0]);
             mat4.multiply(view, models[idx], mv);
 
             inverse = mat4.create();
@@ -1003,31 +1215,34 @@
             mat4.inverse(mv, inverse);
             mat4.transpose(inverse);
 
-           // console.log(meshes[mesh].vertexBuffer);
-            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
-            gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            var colors = vec3.create([1.0,1.0,1.0]);
+            gl.uniform3fv(shaderProgram[0].colorUniform,colors);
+            //gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+                    
+            gl.bindBuffer(gl.ARRAY_BUFFER,vBuffers[i]);
+            gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
-            gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+            // gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].normalBuffer);
-            gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute,  meshes[mesh].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
+            gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
 
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-            gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
+            // gl.activeTexture(gl.TEXTURE0);
+            // gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+            // gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
 
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);  
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);  
             setMatrixUniforms(models[idx]);
-            gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+            gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
 
-            idx ++;
+           // idx ++;
         }
+        
 
         gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode]);
-        //gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D,null);
 	}
 
@@ -1056,11 +1271,14 @@
 
         gl.uniform1i(shaderProgram[2].drawmode,drawmode);
 
+        var colors = vec3.create([0.0,0.0,0.0]);
+        gl.uniform3fv(shaderProgram[2].colorUniform,colors);
+
         gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);             
         gl.vertexAttribPointer(shaderProgram[2].vertexPositionAttribute, silEdgeMeshesvbo.itemSize,gl.FLOAT, false,0,0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
-        gl.vertexAttribPointer(shaderProgram[2].vertexColorAttribute,silEdgeMeshescbo.itemSize,gl.FLOAT,false,0,0);
+        // gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+        // gl.vertexAttribPointer(shaderProgram[2].vertexColorAttribute,silEdgeMeshescbo.itemSize,gl.FLOAT,false,0,0);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, silEdgeMeshesibo);        
 
@@ -1182,6 +1400,8 @@
         
 		gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
+        // drawSilhouette(0);
+        // return;
         for(var j = 0;j<2;++j)
         {
             //console.log("draw silhouette stuffs....");
@@ -1190,14 +1410,14 @@
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
-        //draw ink quat
-        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
-        drawInkQuat();
-        //draw diffusion
-        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
-        drawSpartter();
+        // //draw ink quat
+        // gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
+        // drawInkQuat();
+        // //draw diffusion
+        // gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
+        // drawSpartter();
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+        // gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
 
 
@@ -1225,11 +1445,12 @@
                         viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
                         viewVector = vec3.normalize(viewVector);
                         var idx = 0;
-                        for(mesh in meshes)
-                        {
-                            updateFaceInfo(meshes[mesh],models[idx]);
-                            idx ++;
-                        }
+                        // for(mesh in meshes)
+                        // {
+                        //     updateFaceInfo(meshes[mesh],models[idx]);
+                        //     idx ++;
+                        // }
+                        updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);  
                         needupdate = false;
 
                     } 
@@ -1318,11 +1539,12 @@
            // updateDepthbuffer();
 
             var idx = 0;
-            for(mesh in meshes)
-            {
-                updateFaceInfo(meshes[mesh],models[idx]);
-                idx ++;
-            }
+            // for(mesh in meshes)
+            // {
+            //     updateFaceInfo(meshes[mesh],models[idx]);
+            //     idx ++;
+            // }
+             updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);  
            // updateSilBuffer();
         }
        
