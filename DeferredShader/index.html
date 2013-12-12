@@ -32,6 +32,7 @@
     varying vec3 fs_Normal;
     varying vec4 fs_Position;
     varying vec2 fs_Texcoord;
+    varying float fs_Depth;
 
     void main(void) {
         fs_Normal = ((u_InvTrans*vec4(Normal,0.0)).xyz);
@@ -40,6 +41,7 @@
         fs_Position = camera;
         gl_Position = u_Persp * camera;
         fs_Texcoord = Texcoord;
+        fs_Depth = ((gl_Position.z / gl_Position.w)  + 1.0) * 0.5;
     }
 </script>
 
@@ -54,18 +56,31 @@
     varying vec3 fs_Normal;
     varying vec4 fs_Position;
     varying vec2 fs_Texcoord;
+    varying float fs_Depth;
 
     void main(void)
     {
         //normal, position, depth, color
-        gl_FragData[0] = vec4(normalize(fs_Normal.xyz), 1.0);
-        gl_FragData[1] = fs_Position;
-        gl_FragData[2] = vec4(u_Color, 1.0);
-        gl_FragData[3] = vec4(fs_Texcoord, 0.0,0.0);
+        gl_FragData[0] = vec4(vec3(fs_Depth), 1.0);
+        gl_FragData[1] = vec4(normalize(fs_Normal.xyz), 1.0);
+        gl_FragData[2] = fs_Position;
+        gl_FragData[3] = vec4(vec3(fs_Depth), 1.0);
+        gl_FragData[4] = vec4(fs_Texcoord, 0.0,0.0);
         //vec4(0.0, 0.0, 1.0, 1.0);
         //gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
 
         //gl_FragColor = vec4(vec3(0.2), 1.0);
+    }
+</script>
+
+<script id="depth_fs" type="x-shader/x-fragment">
+    precision highp float;
+
+    varying float fs_Depth;
+
+    void main(void)
+    {
+        gl_FragColor = vec4(vec3(fs_Depth), 1.0);
     }
 </script>
 
@@ -83,6 +98,7 @@
         gl_Position = vec4(Position,1.0);
     }
 </script>
+
 
 <script id="light_fs" type="x-shader/x-fragment">
     precision highp float;
@@ -284,13 +300,14 @@
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
         
+        lin_depth = linearizeDepth(color.x,u_Near,u_Far);
 
         vec3 light = u_Light.xyz;//.position.xyz;
         //u_Light.xyz;
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
-            gl_FragData[0] = vec4(vec3(lin_depth), 1.0);
+            gl_FragData[0] = vec4(vec3(lin_depth * 3.0), 1.0);
         else if(u_DisplayType == DISPLAY_NORMAL)
             gl_FragData[0] = vec4(abs(normal), 1.0);
         else if(u_DisplayType == DISPLAY_POSITION)

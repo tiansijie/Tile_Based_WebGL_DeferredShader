@@ -87,6 +87,15 @@
     var u_CameraSpaceDirLightLocation;
     var u_ColorSamplerLocation;
 
+    var positionLocationdepth;
+    var normalLocationdepth;
+    var u_InvTransLocationdepth;
+    var u_ModelLocationdepth;
+    var u_ViewLocationdepth;
+    var u_PerspLocationdepth;
+    var u_CameraSpaceDirLightLocationdepth;
+    var u_ColorSamplerLocationdepth;
+
     var u_DisplayTypeLocation;
     var u_NearLocation;
     var u_FarLocation;
@@ -99,6 +108,7 @@
     var quad_texCoordLocation = 1;
 
     var pass_prog;
+    var depth_prog;
     var diagnostic_prog;
     var light_prog;
     var nontilelight_prog;
@@ -132,10 +142,6 @@
         normalLocation = gl.getAttribLocation(pass_prog, "Normal");
         //texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
 
-        console.log("pos loc " + positionLocation);
-        console.log("nor loc " + normalLocation);
-        //console.log("tex loc " + texCoordLocation);   	
-
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
@@ -143,7 +149,26 @@
         u_ColorSamplerLocation = gl.getUniformLocation(pass_prog,"u_ColorSampler");
 
 
-    	
+    	// vs = getShaderSource(document.getElementById("pass_vs"));
+     //    fs = getShaderSource(document.getElementById("depth_fs"));
+
+     //    depth_prog = createProgram(gl, vs, fs, message);    
+     //    if (!gl.getProgramParameter(depth_prog, gl.LINK_STATUS)) {
+     //        alert("Could not initialise depth_fs");
+     //    }
+
+     //    positionLocationdepth = gl.getAttribLocation(depth_prog, "Position");
+     //    //normalLocationdepth = gl.getAttribLocation(depth_prog, "Normal");
+
+     //    console.log("depth pos " + positionLocationdepth);
+     //    //console.log("nor pos " + normalLocationdepth);
+
+     //    u_ModelLocationdepth = gl.getUniformLocation(depth_prog,"u_Model");
+     //    u_ViewLocationdepth = gl.getUniformLocation(depth_prog,"u_View");
+     //    u_PerspLocationdepth = gl.getUniformLocation(depth_prog,"u_Persp");
+     //    u_InvTransLocationdepth = gl.getUniformLocation(depth_prog,"u_InvTrans");
+     //    u_ColorSamplerLocationdepth = gl.getUniformLocation(depth_prog,"u_ColorSampler");
+
         //Second shaders
     	vs = getShaderSource(document.getElementById("shade_vs"));
     	fs = getShaderSource(document.getElementById("diagnostic_fs"));
@@ -211,6 +236,7 @@
 	var positionTexture = gl.createTexture();
 	var colorTexture = gl.createTexture();
 	var postTexture = gl.createTexture();
+    var depthRGBTexture = gl.createTexture();
 
 	var FBO = [0,0];
 
@@ -232,6 +258,7 @@
       return array;
     }
 
+    var depthFrameBuffer;
 
 	function initializeFBO() {
 
@@ -278,6 +305,15 @@
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
 
 
+        gl.bindTexture(gl.TEXTURE_2D, depthRGBTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+
+
         FBO[0] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
         var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
@@ -286,17 +322,20 @@
   		bufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
     	bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
+        bufs[3] = ext.COLOR_ATTACHMENT3_WEBGL;
     	ext.drawBuffersWEBGL(bufs);
         //var bufs = gl.COLOR_ATTACHMENT0;
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
-    	gl.bindTexture(gl.TEXTURE_2D, normalTexture);
-    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[0], gl.TEXTURE_2D, normalTexture, 0);
+        gl.bindTexture(gl.TEXTURE_2D, depthRGBTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[0], gl.TEXTURE_2D, depthRGBTexture, 0);
+        gl.bindTexture(gl.TEXTURE_2D, normalTexture);
+    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[1], gl.TEXTURE_2D, normalTexture, 0);
     	gl.bindTexture(gl.TEXTURE_2D, positionTexture);
-    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[1], gl.TEXTURE_2D, positionTexture, 0);    
+    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[2], gl.TEXTURE_2D, positionTexture, 0);    
     	gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[2], gl.TEXTURE_2D, colorTexture, 0);        
+    	gl.framebufferTexture2D(gl.FRAMEBUFFER, bufs[3], gl.TEXTURE_2D, colorTexture, 0);        
 
 
     	var FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
@@ -796,6 +835,50 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
+
+
+    // function drawdepth()
+    // {
+    //     gl.bindTexture(gl.TEXTURE_2D, null);
+    //     gl.bindFramebuffer(gl.FRAMEBUFFER, depthFrameBuffer);
+    //     gl.clear(gl.DEPTH_BUFFER_BIT);
+    //     gl.enable(gl.DEPTH_TEST);
+
+    //     gl.useProgram(depth_prog);   
+
+    //     var idx = 0;
+    
+    //     for(var i = 0; i < vBuffers.length; i++){
+    //         var mv = mat4.create();
+    //         mat4.multiply(view, models[idx], mv);
+
+    //         invTrans = mat4.create();
+    //         mat4.identity(invTrans);
+    //         mat4.inverse(mv, invTrans);
+    //         mat4.transpose(invTrans);
+
+    //         gl.enableVertexAttribArray(positionLocationdepth);
+            
+    //         var colors = vec3.create([1.0,1.0,1.0]);
+    //         gl.uniform3fv(gl.getUniformLocation(depth_prog,"u_Color"),colors);
+            
+    //         gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
+    //         gl.vertexAttribPointer(positionLocationdepth, 3, gl.FLOAT, false, 0, 0);
+
+    //         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
+
+    //         gl.uniformMatrix4fv(u_ModelLocationdepth,false,models[idx]);
+    //         gl.uniformMatrix4fv(u_ViewLocationdepth,false,view);
+    //         gl.uniformMatrix4fv(u_PerspLocationdepth,false,persp);
+    //         gl.uniformMatrix4fv(u_InvTransLocationdepth,false,invTrans);  
+
+    //         gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
+    //     }
+
+    //     gl.disableVertexAttribArray(positionLocationdepth);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    // }
 
     var display_type = 0;
 
@@ -1561,20 +1644,25 @@
     var pixels;
     function readDepthBuffer()
     {
-        var fbDepth = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbDepth);
-        gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depthTexture, 0);
-        //gl.bindTexture(gl.TEXTURE_2D, positionTexture);
-        //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, positionTexture, 0); 
+        //var fbDepth = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
+        gl.bindTexture(gl.TEXTURE_2D, depthRGBTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depthRGBTexture, 0);
+       
         var canRead = (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE);
         //canRead = true;
         if(canRead)
         {
             pixels = new Uint8Array(canvas.width * canvas.height * 4);
             gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-            console.log("Size of pixels " + pixels.length);
+            //console.log("Size of pixels " + pixels.length);
+            // for(var i = 0; i < pixels.length; i+=4)
+            // {
+            //     if( pixels[i+1]!= 0)
+            //         console.log(pixels[i]);
+            // }
         }
+        
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
@@ -1593,6 +1681,14 @@
      	bindFBO(0);
      	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
      	drawmesh();     	
+        //readDepthBuffer();
+
+
+        //for depth
+        //setTextures();
+        //drawdepth();
+        //setTextures();
+        
 
      	//2
      	setTextures();
