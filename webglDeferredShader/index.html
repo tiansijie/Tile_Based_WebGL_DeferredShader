@@ -46,24 +46,6 @@
 	void main(void)
 	{
 		vec4 color = texture2D(u_SilColorSampler,fs_Texcoord);
-		// gl_FragColor = color;
-		// return;
-		// vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0));	
-		// vec4 colorAccu = vec4(0.0,0.0,0.0,1.0);
-		// for(int i = -1; i<=1 ;++i)
-		// {
-		// 	for(int j = -1; j<=1; ++j)
-		// 	{
-		// 		// if(i == 0 && j == 0)
-		// 		// 	continue;
-		// 		vec2 newpixelIdx = pixelIndex + vec2(i,j);
-		// 		vec4 newColor = texture2D(u_SilColorSampler,vec2(newpixelIdx.x / (float(u_viewportWidth)-1.0),
-		// 											newpixelIdx.y / (float(u_viewportHeight)-1.0)));
-		// 		colorAccu += newColor;
-		// 	}
-		// }
-
-		// color = colorAccu / 9.0;
 
 		int numofColoredPixel = 0;
 		int hasPixel = 0;
@@ -81,13 +63,10 @@
 														newpixelIdx.y / (float(u_viewportHeight)-1.0)));
 					if(equal(newColor,vec4(0.0,0.0,0.0,1.0)) == true)
 					{
-						// numofColoredPixel  += (i+j);
-						// hasPixel = 1;
 						numofColoredPixel ++;
 					}
 				}
 			}
-			// if(numofColoredPixel  == 0 && hasPixel == 1)
 			if(numofColoredPixel  >= 1)
 			{
 				color = vec4(0.0,0.0,0.0,1.0);
@@ -111,17 +90,14 @@
 	{
 
 		vec4 color = texture2D(u_StrokeSampler,fs_Texcoord);
-		// gl_FragColor = color;
-		// return;
-		
+
 		vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0));	
 		vec4 colorAccu = vec4(0.0,0.0,0.0,1.0);
 		for(int i = -1; i<=1 ;++i)
 		{
 			for(int j = -1; j<=1; ++j)
 			{
-				// if(i == 0 && j == 0)
-				// 	continue;
+
 				vec2 newpixelIdx = pixelIndex + vec2(i,j);
 				vec4 newColor = texture2D(u_StrokeSampler,vec2(newpixelIdx.x / (float(u_viewportWidth)-1.0),
 													newpixelIdx.y / (float(u_viewportHeight)-1.0)));
@@ -157,13 +133,10 @@
 		float depthColorfake = texture2D(u_DepthSamplerFake,fs_Texcoord).r;
 		float linDepth = linearizeDepth(depthColorfake,0.1, 10.0);
 		float originDepth = linDepth;
-
-		// gl_FragColor = vec4(1.0,1.0,0.0,1.0);
-		// return;
-		//if(silDepth != 0.0 && abs(silDepth - originDepth) <= 0.005)			
+		
 		if(abs(silDepth - originDepth) <= 0.009)
 		{
-			gl_FragColor = vec4(0.0,0.0,0.0,1.0);//vec4(0.0,0.0,0.0,1.0)* sil;
+			gl_FragColor = vec4(0.0,0.0,0.0,1.0);
 			return; 
 		}		
 		else

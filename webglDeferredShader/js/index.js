@@ -44,7 +44,7 @@
         return [x,y,z];
     }
 
-    var radius = 20.0;
+    var radius = 30.0;
     var azimuth = Math.PI;
     var elevation = 0.0001;
 
@@ -595,7 +595,14 @@
     {
         var matrix = mat4.create();
         mat4.identity(matrix);
-        //mat4.scale(matrix,[10,10,10]);
+        //mat4.scale(matrix,[50,50,50]); // head
+        //mat4.scale(matrix,[10,10,10]); // cow
+        mat4.scale(matrix,[50,50,50]); //bunny
+        //mat4.scale(matrix,[5,5,5]); // sparrow
+        //mat4.scale(matrix,[.5,.5,.5]); // female
+        //mat4.rotate(matrix,90,[1.0,0.0,0.0]);
+        //mat4.scale(matrix,[.05,.05,.05]); // room
+        //mat4.translate(matrix,[0,-100,0]);
         models.push(matrix);
 
     }
@@ -615,7 +622,7 @@
         var edgeidx = 0;
 
         // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
-        loader.load( 'http://localhost:288/webglDeferredShader/sibenik.obj', function ( event ) {
+        loader.load( 'http://localhost:288/webglDeferredShader/obj/bunny.obj', function ( event ) {
             var object = event;
 
             console.log("children " + object.children.length);
@@ -633,13 +640,6 @@
                 console.log ("Len Faces " + lenFaces);
                 console.log ("Len Nor " + lenNor);
 
-                // meshVertices = new Float32Array(lenVertices * 3);
-                // meshNormals = new Float32Array(lenVertices * 3);
-                // meshIndex = new Uint16Array(lenFaces * 3);
-
-                // bufferVertices = new Float32Array(lenFaces*9);
-                // meshNormals = new Float32Array(lenFaces*9);
-                // meshIndex = new Uint16Array(lenFaces*3);
 
                 for(var i = 0; i < lenVertices; i++)
                 {
@@ -722,11 +722,6 @@
                     }
 
 
-
-                    // meshIndex[i*3] = i*3;
-                    // meshIndex[i*3+1] = i*3+1;
-                    // meshIndex[i*3+2] = i*3+2;
-
                     meshIndex.push(point++);
                     meshIndex.push(point++);
                     meshIndex.push(point++);
@@ -772,30 +767,18 @@
                     
 
                 } // end for face loop            
-                // for(var mm = 0; mm<meshedges.length; mm++)
-                // {
-                //     console.log(meshedges[mm] + "   " + meshedgefaces[mm]);
-                // }
-                //console.log("edge nums: " + meshedges);
-                //console.log("edge norms: " + meshedgefaces.length);
-                //console.log("isfront face len: " + meshisFrontFace.length);
 
                 vertexBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-                //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-                // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-                // gl.enableVertexAttribArray(positionLocation);
+
                 vertexBuffer.numItems = bufferVertices.length / 3;
                 vBuffers.push(vertexBuffer);
             
 
                 normalBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-                //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-                // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-                // gl.enableVertexAttribArray(normalLocation);
                 meshNormals.numItems = meshNormals.length / 3;
                 nBuffers.push(normalBuffer);   
 
@@ -806,10 +789,8 @@
                 indexBuffer.numItems = meshIndex.length;
                 iBuffers.push(indexBuffer);
 
-                //console.log("Index len " + meshIndex.length);
                 iLens.push(meshIndex.length);
-
-                // meshNum ++;   
+ 
                 console.log("mehsnormals len " + meshNormals.length / 3);
                  updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
               }
@@ -820,18 +801,12 @@
     } // end for initmesh function
     
 
-    //function getSilEdges(mesh,mvp,mv)//silhouette culling version
-    //function getSilEdges(mesh)
     function getSilEdges(edgefacesArray, edgesArray,verticesArray)
     {
         //console.log("getsil edge");
         var edgeVerts = [];
         var edgeindices = [];
-        // var edgecolor = [];
         var verNum = 0;
-        // var edgeVerts2D = [];  
-        // var edgegroup = [];
-        //console.log(mvp);
 
         for(var idx = 0; idx < edgesArray.length;++idx){
             //console.log(mesh.edgeArray[idx]);           
@@ -918,10 +893,7 @@
                 edgeVerts.push(verticesArray[veridx[1]*3+2]);
                 edgeindices.push(verNum);
                 verNum ++;              
-                // edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
-                //group of each edge
 
-                // edgegroup.push(0);
             }
         }
         silEdgeMeshesvbo = gl.createBuffer();
@@ -930,12 +902,6 @@
         silEdgeMeshesvbo.itemSize = 3;
         silEdgeMeshesvbo.numItems = edgeVerts.length/3;
        
-        // silEdgeMeshescbo = gl.createBuffer();
-        // gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
-        // gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(edgecolor),gl.STATIC_DRAW);
-        // silEdgeMeshescbo.itemSize = 3;
-        //console.log("edgecolor length: " + edgecolor.length);
-        // silEdgeMeshescbo.numItems = edgecolor.length/3;
 
         silEdgeMeshesibo = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,silEdgeMeshesibo);
@@ -1169,40 +1135,6 @@
 
 		gl.uniform1i(shaderProgram[0].drawmode,drawmode);
 
-        // var idx = 0;                
-        // for(mesh in meshes){
-        //     //console.log("idx " + idx);
-        //     var mv = mat4.create();
-        //     mat4.multiply(view, models[idx], mv);
-
-        //     inverse = mat4.create();
-        //     mat4.identity(inverse);
-        //     mat4.inverse(mv, inverse);
-        //     mat4.transpose(inverse);
-
-        //    // console.log(meshes[mesh].vertexBuffer);
-        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].vertexBuffer);
-        //     gl.vertexAttribPointer(shaderProgram[0].vertexPositionAttribute, meshes[mesh].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-
-        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
-        //     gl.vertexAttribPointer(shaderProgram[0].vertexTexcoordAttribute,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-
-        //     gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].normalBuffer);
-        //     gl.vertexAttribPointer(shaderProgram[0].vertexNormalAttribute,  meshes[mesh].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        //     gl.activeTexture(gl.TEXTURE0);
-        //     gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-        //     gl.uniform1i(shaderProgram[0].colorsampler,0); // 0 represents the index of texture
-
-        //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,  meshes[mesh].indexBuffer);  
-        //     setMatrixUniforms(models[idx]);
-        //     gl.drawElements(gl.TRIANGLES, meshes[mesh].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-
-        //     idx ++;
-        // }
-
         var idx = 0;                
         for(var i = 0; i < vBuffers.length; i++){
             //console.log("idx " + idx);
@@ -1410,14 +1342,14 @@
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
-        // //draw ink quat
-        // gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
-        // drawInkQuat();
-        // //draw diffusion
-        // gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
-        // drawSpartter();
+        //draw ink quat
+        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[7]);
+        drawInkQuat();
+        //draw diffusion
+        gl.bindFramebuffer(gl.FRAMEBUFFER,rttFramebuffers[8]);
+        drawSpartter();
 
-        // gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
 
 
@@ -1527,24 +1459,16 @@
         {
            
             radius += 0.01 * deltaY;
-            radius = Math.min(Math.max(radius, 2.0), 20.0);
+            radius = Math.min(Math.max(radius, 2.0), 30.0);
         }
         eye = sphericalToCartesian(radius, azimuth, elevation);
         if(checkboxs[5].checked == true || checkboxs[6].checked == true || checkboxs[7].checked == true)
         {          
             viewVector = [center[0] - eye[0],center[1]-eye[1],center[2]-eye[2]];
             viewVector = vec3.normalize(viewVector);;
-            //console.log(viewVector);
-            //update mesh face info
-           // updateDepthbuffer();
 
             var idx = 0;
-            // for(mesh in meshes)
-            // {
-            //     updateFaceInfo(meshes[mesh],models[idx]);
-            //     idx ++;
-            // }
-             updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);  
+            updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);  
            // updateSilBuffer();
         }
        
@@ -1600,23 +1524,7 @@
         checkboxs.push(checkbox);        
         checkbox = document.getElementById("diffuse");
         checkboxs.push(checkbox);
-       // console.log("checkbox length: "+checkboxs.length);
 
-        //checkboxs[3].disabled = true;
-        // for(var i = 0;i<checkboxs.length; ++i)
-        // {
-            
-        //     if(i == 3)
-        //     {
-        //         checkboxs[i].checked = false;
-        //         checkboxs[i].disabled = true;
-        //         continue;
-        //     }
-        //     if(i == 4)
-        //         checkboxs[i].checked = true;
-        //     else
-        //         checkboxs[i].checked = false;
-        // }
 
     }
  
