@@ -11,7 +11,7 @@ Tile Based WebGL Deferred Shader
 
 ![Alt text](screenshots/500lights2.png "Figure 2")
 
-![Alt text](screenshots/stroke_ink3.png "Figure 2")
+![Alt text](webglDeferredShader/results/bunny/bunny_stroke_diffustion.JPG "Figure 2")
 
 ![Alt text](screenshots/HEAD_STROKE.png "Figure 2")
 
@@ -37,7 +37,7 @@ Please make sure your web browser support these WebGL extensions before you run 
 
 
 ## Video ##
-[http://www.youtube.com/watch?v=od9kJC089BI&feature=youtu.be](http://www.youtube.com/watch?v=od9kJC089BI&feature=youtu.be)
+[http://youtu.be/od9kJC089BI](http://youtu.be/od9kJC089BI)
 
 
 Overview
@@ -74,7 +74,7 @@ In this project, we are trying to implement an advanced deferred shader on WebGL
 
 	- Silhouette Extraction
 	
-		A silhouette edge is an edge adjacent to one front-facing and one back-facing polygon. A polygon is defined as front-facing if the dot product of its outward normal and a vector from the camera position to a point on the polygon is negative. Otherwise the polygon is back-facing.
+		A silhouette edge is an edge adjacent to one front-facing and one back-facing polygon. A polygon is defined as front-facing if the dot product of its outward normal and a vector from the camera position to a point on the polygon is negative. Otherwise the polygon is back-facing. We use the object based extractio method to get all silhouette edges. And render them as seprate mesh object with webgl DRAW_LINE function.
 
 	
 	- Silhouette Culling
@@ -83,10 +83,10 @@ In this project, we are trying to implement an advanced deferred shader on WebGL
 		
 	- Stroke rendering
 			
-		Basically, in this step’s fragment shader, we make pixels that around silhouette edge to be the same color as of silhouette edge. And in the final step, we use Gaussian blur method to blur the current stroke and finally make them blend with the interior color. 
+		In the fragment shader, we first make pixels that around silhouette edge to be the same color as of silhouette edge to make silhouette edges thicker. And in the final step, we use Gaussian blur method to blur the current stroke and finally make them blend with the interior color. 
 	- Interior shading - Ink painting effects
 
-		Interior shading could be a separate step from the stroke rendering. This step only need us to work on shaders instead of creating complex data structure with javascript. 
+		Interior shading could be a separate step from the stroke rendering. This step only need us to work on shaders instead of creating complex data structure with javascript. First step is quantization, we categorize mesh color into four types based on the diffuse factor calculated by dot product of normal and light vector. Next we apply a spattering filter to the image to make some noist. What spatering filter do is to replace the current pixel's color with a random pixel around a radius of it. Next stpe, we use a median filter to suppress the noises brought from the spattering step. Finally, in order to achieve more realistic Chinese painting effect, we also use a gamma correction formula to increase the contrast of our image.
 
 
 
@@ -119,6 +119,8 @@ Chinese painting effect with and without stroke
 ![Alt text](screenshots/300lights.png "Figure")
 
 ![Alt text](screenshots/TileOnly.png "Figure")
+
+![Alt text](webglDeferredShader/results/inkdiffusion2.JPG "Figure")
 
 ![Alt text](screenshots/bunny_diffustion2.png "Figure")
 
