@@ -44,6 +44,8 @@
     var display_light = 5;
     var display_nontilelight = 6;
     var display_ink = 7;
+    var display_stroke = 8;
+    var display_all = 9;
 
     //var model;
     //var mv;
@@ -57,10 +59,12 @@
     var eye = sphericalToCartesian(radius, azimuth, elevation);
     var center = [0.0, 0.0, 0.0];
     var eyedis = 1.0;
-    var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+    var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));    
     var up = [0.0, 1.0, 0.0];
     var view = mat4.create();
     mat4.lookAt(eye, center, up, view);
+
+    var viewVector = cam_dir;
 
 
     //For tile base lighting
@@ -108,6 +112,8 @@
     var quad_positionLocation = 0;
     var quad_texCoordLocation = 1;
 
+    var siledge_positionLocation;
+
     var pass_prog;
     var depth_prog;
     var diagnostic_prog;
@@ -116,6 +122,11 @@
     var ambient_prog;
     var post_prog;
     var spatter_prog;
+    var siledge_prog;
+    var silcull_prog;
+    var stroke_prog;
+    var strokeblur_prog;
+    var edge_prog;
 
     var ext = null;
 
@@ -218,6 +229,62 @@
         if (!gl.getProgramParameter(spatter_prog, gl.LINK_STATUS)) {
             alert("Could not initialise spatter_prog");
         }    	
+
+
+        //Sil Shader
+        vs = getShaderSource(document.getElementById("siledgevs"));
+        fs = getShaderSource(document.getElementById("siledgefs"));
+    
+        siledge_prog = createProgram(gl, vs, fs, message);
+        siledge_prog.positionLocation = gl.getAttribLocation(siledge_prog, "Position");
+
+        siledge_prog.u_ModelLocation = gl.getUniformLocation(siledge_prog,"u_Model");
+        siledge_prog.u_ViewLocation = gl.getUniformLocation(siledge_prog,"u_View");
+        siledge_prog.u_PerspLocation = gl.getUniformLocation(siledge_prog,"u_Persp");
+        siledge_prog.u_InvTransLocation = gl.getUniformLocation(siledge_prog,"u_InvTrans");
+
+        if (!gl.getProgramParameter(siledge_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise siledge_prog");
+        }
+
+
+        //silCullfs Shader
+        vs = getShaderSource(document.getElementById("shade_vs"));
+        fs = getShaderSource(document.getElementById("silCullfs"));
+    
+        silcull_prog = createProgram(gl, vs, fs, message);
+        gl.bindAttribLocation(silcull_prog, quad_positionLocation, "Position");
+        gl.bindAttribLocation(silcull_prog, quad_texCoordLocation, "Texcoord");
+
+        if (!gl.getProgramParameter(silcull_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise silcull_prog");
+        }    
+
+
+         //stroke Shader
+        vs = getShaderSource(document.getElementById("shade_vs"));
+        fs = getShaderSource(document.getElementById("strokefs"));
+    
+        stroke_prog = createProgram(gl, vs, fs, message);
+        gl.bindAttribLocation(stroke_prog, quad_positionLocation, "Position");
+        gl.bindAttribLocation(stroke_prog, quad_texCoordLocation, "Texcoord");
+
+        if (!gl.getProgramParameter(stroke_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise stroke_prog");
+        }                  
+
+
+         //stroke blur Shader
+        vs = getShaderSource(document.getElementById("shade_vs"));
+        fs = getShaderSource(document.getElementById("strokeblurfs"));
+    
+        strokeblur_prog = createProgram(gl, vs, fs, message);
+        gl.bindAttribLocation(strokeblur_prog, quad_positionLocation, "Position");
+        gl.bindAttribLocation(strokeblur_prog, quad_texCoordLocation, "Texcoord");
+
+        if (!gl.getProgramParameter(strokeblur_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise stroke_prog");
+        }          
 	}
 
 
@@ -230,6 +297,17 @@
 	var postTexture = gl.createTexture();
     var depthRGBTexture = gl.createTexture();
     var spatterTexture = gl.createTexture();
+
+    var silcolorTexture = gl.createTexture();
+    var sildepthTexture = gl.createTexture();
+
+    var silCullTexture = gl.createTexture();
+
+    var strokeTexture = gl.createTexture();
+
+    var edgeTexture = gl.createTexture();
+
+    var strokeblurTexture = gl.createTexture();
 
 	var FBO = [0,0,0];
 
@@ -264,7 +342,9 @@
         if(!extDepth)
         	console.log("Extension Depth buffer is not working");
 
-		gl.activeTexture(gl.TEXTURE0);
+
+        //Geometry Frame Buffer
+		//gl.activeTexture(gl.TEXTURE0);
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -305,8 +385,6 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
 
-
-
         FBO[0] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
         var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
@@ -317,7 +395,6 @@
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
         bufs[3] = ext.COLOR_ATTACHMENT3_WEBGL;
     	ext.drawBuffersWEBGL(bufs);
-        //var bufs = gl.COLOR_ATTACHMENT0;
 
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
@@ -336,7 +413,10 @@
         	console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[0]\n");        	
     	}    	
 
-        gl.activeTexture(gl.TEXTURE10);
+
+        //Spatter Frame Buffer
+
+        //gl.activeTexture(gl.TEXTURE10);
         gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -360,8 +440,9 @@
             console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");         
         }
 
+        //Post Frame Buffer
 
-        gl.activeTexture(gl.TEXTURE9);
+        //gl.activeTexture(gl.TEXTURE9);
         gl.bindTexture(gl.TEXTURE_2D, postTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -383,6 +464,106 @@
             console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");        
         }
 
+        //Sil Frame Buffer
+
+        gl.bindTexture(gl.TEXTURE_2D, silcolorTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        gl.bindTexture(gl.TEXTURE_2D, sildepthTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        FBO[3] = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[3]);
+        var silbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        silbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        silbufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
+        ext.drawBuffersWEBGL(silbufs);
+
+        gl.bindTexture(gl.TEXTURE_2D, silcolorTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, silbufs[0], gl.TEXTURE_2D, silcolorTexture, 0);
+        gl.bindTexture(gl.TEXTURE_2D, sildepthTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, silbufs[1], gl.TEXTURE_2D, sildepthTexture, 0);
+
+        FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+            console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[3]\n");        
+        }
+
+
+        //Stroke Frame buffer //Edge Texture Frame Buffer
+        gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        FBO[4] = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[4]);
+        var sillCullbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        sillCullbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        ext.drawBuffersWEBGL(sillCullbufs);
+
+        gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, sillCullbufs[0], gl.TEXTURE_2D, silCullTexture, 0);
+
+        FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+            console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[4]\n");        
+        }
+
+
+         //Stroke Blur Frame buffer
+        gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        FBO[5] = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[5]);
+        var strokeblurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        strokeblurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        ext.drawBuffersWEBGL(strokeblurbufs);
+
+        gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, strokeblurbufs[0], gl.TEXTURE_2D, strokeTexture, 0);
+
+        FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+            console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[5]\n");        
+        }
+
+
+        gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        FBO[6] = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[6]);
+        var blurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        blurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        ext.drawBuffersWEBGL(blurbufs);
+
+        gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, blurbufs[0], gl.TEXTURE_2D, strokeblurTexture, 0);
+
+        FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+            console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[6]\n");        
+        }
 
 
     	gl.clear(gl.DEPTH_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -501,6 +682,36 @@
     var meshNormals = [];//new Float32Array();
     var meshIndex = [];//new Uint16Array();
 
+    //ADD
+    var meshisFrontFace = [];
+    var meshedges = []; // store edge vertex indices 3,5 // connect vertex 3 and vertex 5
+    var meshedgefaces = []; //stroe each edge's face list  1,3 // connect face 1 and face 3
+    var meshfacenormals = [];
+
+    var bufferVertices = [];
+    var bufferIndex = [];
+
+    var vertexBuffer;
+    var normalBuffer;
+    var indexBuffer;
+
+    var vBuffers = [];
+    var nBuffers = [];
+    var iBuffers = [];
+    
+
+    //ADD
+    var iLens = [];
+
+    var silEdgeMeshes;
+    // var silvBuffers = [];
+    // var siliBuffers = [];
+    var silEdgeMeshesvbo;
+    var silEdgeMeshesibo;
+    var silEdgeMeshescbo = [];
+
+
+
     var bufferVertices = [];
     var bufferIndex = [];
 
@@ -516,15 +727,342 @@
 
     var meshNum = 0;
 
-    function initMeshBuffers()
+//     function initMeshBuffers()
+//     {
+//         //downloadMesh();
+//         setmodelMatrix();
+
+//         //var scene = new THREE.Scene(); 
+
+//          var loader = new THREE.OBJLoader();
+//         // //var loader = new THREE.OBJMTLLoader();
+
+//         // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
+//         loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
+//             var object = event;
+
+//             console.log("children " + object.children.length);
+
+//             //console.log("just a test " + object.normals.length);
+
+//             object.traverse( function ( child ) {
+//               if ( child instanceof THREE.Mesh ) {
+
+//                  var lenVertices = child.geometry.vertices.length;
+//                  var lenFaces = child.geometry.faces.length;
+//                  var lenNor = child.geometry.skinIndices.length;  
+
+//                  console.log ("Len Vertices " + lenVertices);
+//                  console.log ("Len Faces " + lenFaces);
+//                  console.log ("Len Nor " + lenNor);
+
+//                 // meshVertices = new Float32Array(lenVertices * 3);
+//                 // meshNormals = new Float32Array(lenVertices * 3);
+//                 // meshIndex = new Uint16Array(lenFaces * 3);
+
+//                 // bufferVertices = new Float32Array(lenFaces*9);
+//                 // meshNormals = new Float32Array(lenFaces*9);
+//                 // meshIndex = new Uint16Array(lenFaces*3);
+
+//                  for(var i = 0; i < lenVertices; i++)
+//                  {
+//                     meshVertices[i*3] = (child.geometry.vertices[i].x);
+//                     meshVertices[i*3+1] = (child.geometry.vertices[i].y);
+//                     meshVertices[i*3+2] = (child.geometry.vertices[i].z);
+//                  }
+
+//                  //console.log("Face normal " + child.geometry.faces[0].vertexNormals);                
+//                  var point = 0;
+//                  for(var i = 0; i < lenFaces; i++)
+//                  {
+//                     var indexa = child.geometry.faces[i].a;
+//                     var indexb = child.geometry.faces[i].b;
+//                     var indexc = child.geometry.faces[i].c;                 
+
+//                     bufferVertices.push(meshVertices[indexa*3]);
+//                     bufferVertices.push(meshVertices[indexa*3+1]);
+//                     bufferVertices.push(meshVertices[indexa*3+2]);
+
+//                     bufferVertices.push(meshVertices[indexb*3]);
+//                     bufferVertices.push(meshVertices[indexb*3+1]);
+//                     bufferVertices.push(meshVertices[indexb*3+2]);
+
+//                     bufferVertices.push(meshVertices[indexc*3]);
+//                     bufferVertices.push(meshVertices[indexc*3+1]);
+//                     bufferVertices.push(meshVertices[indexc*3+2]);        
+                
+
+//                     for(var j = 0; j < 3; j++){                       
+//                         meshNormals.push(child.geometry.faces[i].normal.x);
+//                         meshNormals.push(child.geometry.faces[i].normal.y);
+//                         meshNormals.push(child.geometry.faces[i].normal.z);
+//                     }
+
+//                     // meshIndex[i*3] = i*3;
+//                     // meshIndex[i*3+1] = i*3+1;
+//                     // meshIndex[i*3+2] = i*3+2;
+
+//                     meshIndex.push(point++);
+//                     meshIndex.push(point++);
+//                     meshIndex.push(point++);
+
+
+//                     //I hate Javascript
+//                     if(meshIndex.length > 64000)
+//                     {
+//                         vertexBuffer = gl.createBuffer();
+//                         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
+//                         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+//                         gl.enableVertexAttribArray(positionLocation);
+//                         vertexBuffer.numItems = bufferVertices.length / 3;
+//                         vBuffers.push(vertexBuffer);
+                    
+
+//                         normalBuffer = gl.createBuffer();
+//                         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+//                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
+//                         gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+//                         gl.enableVertexAttribArray(normalLocation);
+//                         meshNormals.numItems = meshNormals.length / 3;
+//                         nBuffers.push(normalBuffer);
+
+
+//                         indexBuffer = gl.createBuffer();
+//                         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
+//                         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
+//                         indexBuffer.numItems = meshIndex.length;
+//                         iBuffers.push(indexBuffer);
+
+//                         //console.log("Index len " + meshIndex.length);
+//                         iLens.push(meshIndex.length);
+
+//                         point = 0;
+//                         bufferVertices = [];
+//                         meshNormals = [];
+//                         meshIndex = [];
+//                     }                       
+//                  }                 
+
+//                 vertexBuffer = gl.createBuffer();
+//                 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//                 //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
+//                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
+//                 gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+//                 gl.enableVertexAttribArray(positionLocation);
+//                 vertexBuffer.numItems = bufferVertices.length / 3;
+//                 vBuffers.push(vertexBuffer);
+            
+
+//                 normalBuffer = gl.createBuffer();
+//                 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+//                 //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
+//                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
+//                 gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+//                 gl.enableVertexAttribArray(normalLocation);
+//                 meshNormals.numItems = meshNormals.length / 3;
+//                 nBuffers.push(normalBuffer);   
+
+
+//                 indexBuffer = gl.createBuffer();
+//                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
+//                 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
+//                 indexBuffer.numItems = meshIndex.length;
+//                 iBuffers.push(indexBuffer);
+
+//                 //console.log("Index len " + meshIndex.length);
+//                 iLens.push(meshIndex.length);
+
+//                 meshNum ++;           
+//               }
+//             } );
+//         });
+
+       
+// }
+
+    function getSilEdges(edgefacesArray, edgesArray,verticesArray)
+    {
+        //console.log("getsil edge");
+        var edgeVerts = [];
+        var edgeindices = [];
+        // var edgecolor = [];
+        var verNum = 0;
+        // var edgeVerts2D = [];  
+        // var edgegroup = [];
+        //console.log(mvp);
+
+        for(var idx = 0; idx < edgesArray.length;++idx){
+            //console.log(mesh.edgeArray[idx]);           
+            var edgefaces = edgefacesArray[idx];
+           // console.log(edgefaces);
+            if((meshisFrontFace[edgefaces[0]] == 0 && meshisFrontFace[edgefaces[1]] == 1)
+                ||(meshisFrontFace[edgefaces[0]] == 1 && meshisFrontFace[edgefaces[1]] == 0))
+            {
+                //console.log("sil edge " + mesh.edgeArray[idx]);
+                var veridx = [edgesArray[idx][0],edgesArray[idx][1]];
+                var ver1 = vec4.create(
+                                    [verticesArray[veridx[0]*3],
+                                    verticesArray[veridx[0]*3+1],
+                                    verticesArray[veridx[0]*3+2],
+                                    1.0]
+                                    );
+              
+                var ver2 = vec4.create(
+                                    [verticesArray[veridx[1]*3],
+                                    verticesArray[veridx[1]*3+1],
+                                    verticesArray[veridx[1]*3+2],
+                                    1.0 ]                               
+                                    );
+              
+
+                edgeVerts.push(verticesArray[veridx[0]*3]); 
+                edgeVerts.push(verticesArray[veridx[0]*3+1]); 
+                edgeVerts.push(verticesArray[veridx[0]*3+2]);
+                // edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                edgeindices.push(verNum);
+                verNum ++;
+           
+                edgeVerts.push(verticesArray[veridx[1]*3]); 
+                edgeVerts.push(verticesArray[veridx[1]*3+1]); 
+                edgeVerts.push(verticesArray[veridx[1]*3+2]);
+                edgeindices.push(verNum);
+                verNum ++;              
+                // edgecolor.push(1.0); edgecolor.push(1.0); edgecolor.push(0.0);
+                //group of each edge
+
+                // edgegroup.push(0);
+            }
+        }
+        silEdgeMeshesvbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edgeVerts), gl.STATIC_DRAW);
+        silEdgeMeshesvbo.itemSize = 3;
+        silEdgeMeshesvbo.numItems = edgeVerts.length/3;
+       
+        // silEdgeMeshescbo = gl.createBuffer();
+        // gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+        // gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(edgecolor),gl.STATIC_DRAW);
+        // silEdgeMeshescbo.itemSize = 3;
+        //console.log("edgecolor length: " + edgecolor.length);
+        // silEdgeMeshescbo.numItems = edgecolor.length/3;
+
+        silEdgeMeshesibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,silEdgeMeshesibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(edgeindices),gl.STATIC_DRAW);
+        silEdgeMeshesibo.itemSize = 1;
+        //console.log("edgeindices length: " + edgeindices.length);
+        silEdgeMeshesibo.numItems = edgeindices.length;
+        //console.log(edgeindices);
+        console.log("edge indices len: " + edgeindices.length);
+    }
+
+    function drawSilhouette()
+    {
+        if(silEdgeMeshesvbo != undefined){
+            gl.useProgram(siledge_prog);
+            gl.enable(gl.DEPTH_TEST);
+
+            gl.viewport(0,0,gl.canvas.width,canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            //mat4.perspective(45.0,canvas.width/canvas.height,near,far.0,persp);
+
+            var idx = 0;
+
+            var mv = mat4.create();
+            mat4.multiply(view, models[idx], mv);
+
+
+            inverse = mat4.create();
+            mat4.identity(inverse);
+            mat4.inverse(mv, inverse);
+            mat4.transpose(inverse);
+
+            //gl.uniform1i(shaderProgram[2].drawmode,drawmode);
+
+            // var colors = vec3.create([0.0,0.0,0.0]);
+            // gl.uniform3fv(shaderProgram[2].colorUniform,colors);
+            gl.enableVertexAttribArray(siledge_prog.positionLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshesvbo);             
+            gl.vertexAttribPointer(siledge_prog.positionLocation, silEdgeMeshesvbo.itemSize,gl.FLOAT, false,0,0);
+
+            // gl.bindBuffer(gl.ARRAY_BUFFER,silEdgeMeshescbo);
+            // gl.vertexAttribPointer(shaderProgram[2].vertexColorAttribute,silEdgeMeshescbo.itemSize,gl.FLOAT,false,0,0);
+
+                  
+
+            gl.uniformMatrix4fv(siledge_prog.u_ModelLocation,false,models[idx]);
+            gl.uniformMatrix4fv(siledge_prog.u_ViewLocation,false, view);
+            gl.uniformMatrix4fv(siledge_prog.u_PerspLocation,false,persp);
+            gl.uniformMatrix4fv(siledge_prog.u_InvTransLocation,false,inverse);       
+
+            // gl.activeTexture(gl.TEXTURE0);
+            // gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
+            // gl.uniform1i(shaderProgram[2].depthsampler,0);
+
+            // var reso = vec2.create(gl.viewportWidth,gl.viewportHeight);
+            // gl.uniform2fv(shaderProgram[2].resolution,reso);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, silEdgeMeshesibo);
+            gl.drawElements(gl.LINES, silEdgeMeshesibo.numItems, gl.UNSIGNED_SHORT,0);
+            //gl.bindTexture(gl.TEXTURE_2D,null);
+        }
+
+        //gl.bindTexture(gl.TEXTURE_2D,rttTextures[drawmode+4]);
+        //gl.bindTexture(gl.TEXTURE_2D,null);
+    }
+
+
+ function updateFaceInfo(facenormals,model,isfrontfaces,meshedgefaces,meshedges,meshVertices)
+    {
+        // Converting viewVector to object space
+        console.log("updateFaceInfo ...");
+
+        var modelV = mat4.create(model);
+        modelV[12] = 0;
+        modelV[13] = 0;
+        modelV[14] = 0;
+        //console.log(modelV);
+        var viewVector_objecspace = vec4.create();
+        var inverseModelV = mat4.create();
+        mat4.inverse(modelV,inverseModelV);
+        var viewVectorve4 = vec4.create([viewVector[0],viewVector[1],viewVector[2],1.0]);
+        mat4.multiplyVec4(inverseModelV,viewVectorve4,viewVector_objecspace);
+        //console.log(viewVector_objecspace);
+        //console.log(" front face:" + facenormals.length/3);
+        for(var i = 0; i<facenormals.length/3; ++i)
+        {           
+
+            //object face normal in object space   
+            var norm = vec3.create([facenormals[i*3],facenormals[i*3+1],facenormals[i*3+2]]);
+
+            var dots = vec3.dot(vec3.create(viewVector_objecspace),norm);
+            //console.log(dots);
+            if(dots <= 0)
+            {
+                isfrontfaces[i] = 1;
+                //console.log("front")
+            }
+            else
+            {
+                isfrontfaces[i] = 0;
+                //console.log("back");
+            }
+        }
+        getSilEdges(meshedgefaces,meshedges,meshVertices);
+    }
+
+ function initMeshBuffers()
     {
         //downloadMesh();
         setmodelMatrix();
 
         //var scene = new THREE.Scene(); 
-
-         var loader = new THREE.OBJLoader();
+        var loader = new THREE.OBJLoader();
         // //var loader = new THREE.OBJMTLLoader();
+
+        //ADD
+        hashedges = {};
+        var edgeidx = 0;
 
         // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
         loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
@@ -541,9 +1079,9 @@
                  var lenFaces = child.geometry.faces.length;
                  var lenNor = child.geometry.skinIndices.length;  
 
-                 console.log ("Len Vertices " + lenVertices);
-                 console.log ("Len Faces " + lenFaces);
-                 console.log ("Len Nor " + lenNor);
+                console.log ("Len Vertices " + lenVertices);
+                console.log ("Len Faces " + lenFaces);
+                console.log ("Len Nor " + lenNor);
 
                 // meshVertices = new Float32Array(lenVertices * 3);
                 // meshNormals = new Float32Array(lenVertices * 3);
@@ -553,17 +1091,17 @@
                 // meshNormals = new Float32Array(lenFaces*9);
                 // meshIndex = new Uint16Array(lenFaces*3);
 
-                 for(var i = 0; i < lenVertices; i++)
-                 {
+                for(var i = 0; i < lenVertices; i++)
+                {
                     meshVertices[i*3] = (child.geometry.vertices[i].x);
                     meshVertices[i*3+1] = (child.geometry.vertices[i].y);
                     meshVertices[i*3+2] = (child.geometry.vertices[i].z);
-                 }
+                }
 
                  //console.log("Face normal " + child.geometry.faces[0].vertexNormals);                
                  var point = 0;
-                 for(var i = 0; i < lenFaces; i++)
-                 {
+                for(var i = 0; i < lenFaces; i++)
+                {
                     var indexa = child.geometry.faces[i].a;
                     var indexb = child.geometry.faces[i].b;
                     var indexc = child.geometry.faces[i].c;                 
@@ -579,13 +1117,61 @@
                     bufferVertices.push(meshVertices[indexc*3]);
                     bufferVertices.push(meshVertices[indexc*3+1]);
                     bufferVertices.push(meshVertices[indexc*3+2]);        
-                
+                    
+                    meshfacenormals.push(child.geometry.faces[i].normal.x);
+                    meshfacenormals.push(child.geometry.faces[i].normal.y);
+                    meshfacenormals.push(child.geometry.faces[i].normal.z);
 
                     for(var j = 0; j < 3; j++){                       
                         meshNormals.push(child.geometry.faces[i].normal.x);
                         meshNormals.push(child.geometry.faces[i].normal.y);
                         meshNormals.push(child.geometry.faces[i].normal.z);
                     }
+
+                    //ADD initialize front face buffer
+                    meshisFrontFace.push(0);
+                    // add to edge list
+                    var es = [];
+                    es.push([indexa,indexb]);
+                    es.push([indexb,indexc]);
+                    es.push([indexc,indexa]);
+
+
+                    for(var idx = 0; idx <3; idx ++)
+                    {
+                      var inverses = [es[idx][1],es[idx][0]];
+                      if(es[idx] in hashedges || inverses in hashedges)
+                      {
+                        //console.log(es[idx] + "  " + inverses);
+                        if(es[idx] in hashedges)
+                        {
+                          //console.log("exist " + packed.edgefaces[packed.hashedges[es[idx]]]);
+                          meshedgefaces[hashedges[es[idx]]].push(i);
+                        }
+                        else
+                        {
+                          //console.log("exist " + packed.edgefaces[packed.hashedges[inverses]]);
+                          meshedgefaces[hashedges[inverses]].push(i);
+                          //console.log(packed.hashedges[inverses] + " : "+ packed.edgefaces[packed.hashedges[inverses]]);
+                        }
+                        continue;
+                      }
+                      else
+                      {
+                        hashedges[es[idx]] = edgeidx;
+
+                        //console.log(packed.hashedges);
+                        meshedges.push(es[idx]);
+                        //console.log("edge : " + es[idx] + " edge idx: " + packed.hashedges[es[idx]]);                        
+                        meshedgefaces[edgeidx] = [];
+                        meshedgefaces[edgeidx].push(i);
+                        
+                        edgeidx ++;
+                      }
+                      //console.log(packed.edgefaces[1]);
+                    }
+
+
 
                     // meshIndex[i*3] = i*3;
                     // meshIndex[i*3+1] = i*3+1;
@@ -599,11 +1185,12 @@
                     //I hate Javascript
                     if(meshIndex.length > 64000)
                     {
+                        //console.log("meshIndex > 64000");
                         vertexBuffer = gl.createBuffer();
                         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-                        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-                        gl.enableVertexAttribArray(positionLocation);
+                        // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+                        // gl.enableVertexAttribArray(positionLocation);
                         vertexBuffer.numItems = bufferVertices.length / 3;
                         vBuffers.push(vertexBuffer);
                     
@@ -611,8 +1198,8 @@
                         normalBuffer = gl.createBuffer();
                         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-                        gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-                        gl.enableVertexAttribArray(normalLocation);
+                        // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+                        // gl.enableVertexAttribArray(normalLocation);
                         meshNormals.numItems = meshNormals.length / 3;
                         nBuffers.push(normalBuffer);
 
@@ -631,14 +1218,24 @@
                         meshNormals = [];
                         meshIndex = [];
                     }                       
-                 }                 
+
+                    
+
+                } // end for face loop            
+                // for(var mm = 0; mm<meshedges.length; mm++)
+                // {
+                //     console.log(meshedges[mm] + "   " + meshedgefaces[mm]);
+                // }
+                //console.log("edge nums: " + meshedges);
+                //console.log("edge norms: " + meshedgefaces.length);
+                //console.log("isfront face len: " + meshisFrontFace.length);
 
                 vertexBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
                 //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-                gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-                gl.enableVertexAttribArray(positionLocation);
+                // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
+                // gl.enableVertexAttribArray(positionLocation);
                 vertexBuffer.numItems = bufferVertices.length / 3;
                 vBuffers.push(vertexBuffer);
             
@@ -647,8 +1244,8 @@
                 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
                 //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-                gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(normalLocation);
+                // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
+                // gl.enableVertexAttribArray(normalLocation);
                 meshNormals.numItems = meshNormals.length / 3;
                 nBuffers.push(normalBuffer);   
 
@@ -662,13 +1259,15 @@
                 //console.log("Index len " + meshIndex.length);
                 iLens.push(meshIndex.length);
 
-                meshNum ++;           
+                // meshNum ++;   
+                console.log("mehsnormals len " + meshNormals.length / 3);
+                 updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
               }
             } );
         });
-
-       
-}
+        
+      
+    } // end for initmesh function
 
 
 	var numberOfIndices;
@@ -1542,6 +2141,8 @@
     var MouseDowndeltaX = 0;
     var MouseDowndeltaY = 0;
     function handleMouseMove(event) {
+
+
         if (!(mouseLeftDown || mouseRightDown || mouseMiddleDown)) {
             return;
         }
@@ -1576,6 +2177,12 @@
         {
             radius -= 0.01 * deltaY;
             radius = Math.min(Math.max(radius, 2.0), 15.0);
+        }
+
+        if(display_type == display_stroke){
+            cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]])); 
+            viewVector = cam_dir;
+            updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
         }
 
 
@@ -1657,75 +2264,72 @@
     }
 
 
-     function drawInkQuat()
-    {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        //console.log("drawInkQuat...");
-        gl.useProgram(shaderProgram[3]);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, rttTextures[0]);
-        gl.uniform1i(shaderProgram[3].normalsampler,0);
-
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[1]);
-        gl.uniform1i(shaderProgram[3].colorsampler,1);
-
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[2]);
-        gl.uniform1i(shaderProgram[3].positionsampler,2);        
-
-        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
-        gl.vertexAttribPointer(shaderProgram[3].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
-        gl.vertexAttribPointer(shaderProgram[3].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
-
-        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
-
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[7]);
-        gl.bindTexture(gl.TEXTURE_2D,null);
-
-    }
-
-
-    function drawSpartter()
-    {
-        //console.log("drawSpartter....");
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.useProgram(shaderProgram[4]);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, rttTextures[7]);
-        gl.uniform1i(shaderProgram[4].quatcolorsampler,0);
-
-        gl.uniform1i(shaderProgram[4].viewwidth,gl.viewportWidth);
-        gl.uniform1i(shaderProgram[4].viewheight,gl.viewportHeight);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER,quadvbo);
-        gl.vertexAttribPointer(shaderProgram[4].vertexPositionAttribute,quadvbo.itemSize,gl.FLOAT,false,0,0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER,quadtbo);
-        gl.vertexAttribPointer(shaderProgram[4].vertexTexcoordAttribute,quadtbo.itemSize,gl.FLOAT,false,0,0);
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadibo);
-
-        gl.drawElements(gl.TRIANGLES, quadibo.numItems, gl.UNSIGNED_SHORT, 0);
-
-        gl.bindTexture(gl.TEXTURE_2D,rttTextures[8]);
-        gl.bindTexture(gl.TEXTURE_2D,null);
-
-    }
 
     function animate() { 
         camera();
-     	//1
-     	bindFBO(0);
-     	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-     	drawmesh();     	
-        //readDepthBuffer();        
+
+
+        bindFBO(0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        drawmesh();
+
+
+        if(display_type == display_ink){
+            setTextures();
+            bindFBO(3);
+            drawSilhouette();       
+
+            setTextures();
+            bindFBO(4);
+            gl.useProgram(silcull_prog);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_DepthSampler"),0);
+
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, depthRGBTexture);
+            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_DepthSamplerFake"),1);
+
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, silcolorTexture);
+            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_SilColorSampler"),2);
+
+            gl.activeTexture(gl.TEXTURE3);
+            gl.bindTexture(gl.TEXTURE_2D, sildepthTexture);
+            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_SilDepthSampler"),3);
+
+            drawQuad();
+
+
+            setTextures();
+            bindFBO(5);
+            gl.useProgram(stroke_prog);
+          
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportWidth"), canvas.width);
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportHeight"), canvas.height);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
+
+            drawQuad();
+
+
+            setTextures();
+            bindFBO(6);
+            gl.useProgram(strokeblur_prog);
+                 
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportWidth"), canvas.width);
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportHeight"), canvas.height);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_StrokeSampler"),0);
+
+            drawQuad();
+        }
+
 
      	//2
      	setTextures();
@@ -1733,9 +2337,7 @@
      	gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
      	gl.blendFunc(gl.ONE, gl.ONE);
-     	gl.clear(gl.COLOR_BUFFER_BIT);       
-       
-
+     	gl.clear(gl.COLOR_BUFFER_BIT);
 
         var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
         var lightdest = vec4.create();
@@ -1766,7 +2368,7 @@
         gl.disable(gl.BLEND);
 
 
-     	//3
+        //3
      	setTextures();
         bindFBO(2);
         gl.enable(gl.BLEND);
@@ -1786,7 +2388,7 @@
         gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_QuatColorSampler"),0);
 
     	drawQuad();
-        gl.disable(gl.BLEND);
+         gl.disable(gl.BLEND);
 
 
 
@@ -1806,9 +2408,11 @@
         gl.bindTexture(gl.TEXTURE_2D, postTexture);
         gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
 
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
+        gl.uniform1i(gl.getUniformLocation(post_prog, "u_StrokeBlurtex"),1);
+
         drawQuad();
-
-
 
     	
         //reset
