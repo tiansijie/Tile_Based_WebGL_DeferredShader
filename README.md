@@ -7,9 +7,9 @@ Tile Based WebGL Deferred Shader
 * Yuqin's twitter: https://twitter.com/YuqinShao
 
 
-![Alt text](Screenshots/SilEdge6.png "Figure 2")
+![Alt text](screenshots/SilEdge6.png "Figure 2")
 
-![Alt text](Screenshots/500lights2.png "Figure 2")
+![Alt text](screenshots/500lights2.png "Figure 2")
 
 
 ## Live Demo ##
@@ -108,11 +108,11 @@ Chinese painting effect with and without stroke
 
 ## Screen Shots ##
 
-![Alt text](Screenshots/SilEdge7.png "Figure 2")
+![Alt text](screenshots/SilEdge7.png "Figure 2")
 
-![Alt text](Screenshots/500lights.png "Figure 2")
+![Alt text](screenshots/500lights.png "Figure 2")
 
-![Alt text](Screenshots/TileOnly.png "Figure 2")
+![Alt text](screenshots/TileOnly.png "Figure 2")
 
 Note
 -------------------------------------------
