@@ -7,13 +7,17 @@ Tile Based WebGL Deferred Shader
 * Yuqin's twitter: https://twitter.com/YuqinShao
 
 
+Overview
+--------------------------------------------
+Deferred shading, a screen-space shading technique, which enables fast and complex light resource management, has been more and more widely used in game industry. However, it seems this technique has much less use on WebGL.
+In this project, we are trying to implement an advanced deferred shader on WebGL as well as to achieve some non-photorealistic rendering effects. Besides, in order to accelerate the whole process, we plan to implement the tile based deferred shading. Having these features, we can make games like Borderland on Web.
+
+Some of the rendered results:
+
 ![Alt text](screenshots/SilEdge6.png "Figure 2")
 
 ![Alt text](screenshots/500lights2.png "Figure 2")
 
-![Alt text](webglDeferredShader/results/bunny/bunny_stroke_diffustion.JPG "Figure 2")
-
-![Alt text](screenshots/HEAD_STROKE.png "Figure 2")
 
 
 ## Live Demo ##
@@ -40,13 +44,9 @@ Please make sure your web browser support these WebGL extensions before you run 
 [http://youtu.be/od9kJC089BI](http://youtu.be/od9kJC089BI)
 
 
-Overview
---------------------------------------------
-Deferred shading, a screen-space shading technique, which enables fast and complex light resource management, has been more and more widely used in game industry. However, it seems this technique has much less use on WebGL.
-In this project, we are trying to implement an advanced deferred shader on WebGL as well as to achieve some non-photorealistic rendering effects. Besides, in order to accelerate the whole process, we plan to implement the tile based deferred shading. Having these features, we can make games like Borderland on Web.
 
 
-## Description ##
+## Algorithm Details ##
 
 
 - Tile-based deferred shading on WebGL
@@ -80,17 +80,31 @@ In this project, we are trying to implement an advanced deferred shader on WebGL
 	- Silhouette Culling
 	
 		Since we are drawing silhouette as separate mesh. It’s impossible for us to use the webgl’s depth buffer for back silhouette culling.  Thus, we’ll have to write it by ourselves.In our method, we need three framebuffer textures for the final result. First two textures stroe values of silhouette edges color pass(without culling) and silhouette edges’ depth buffer values respectively. The third pass we store the depth buffer value of the original triangle mesh. In the final post fragment shader, before we set the final fragment color, we first compare the depth value of the edges’ depth texture and the original mesh’s depth texture and only render out the color that pass the depth buffer.
-		
+
+
 	- Stroke rendering
 			
 		In the fragment shader, we first make pixels that around silhouette edge to be the same color as of silhouette edge to make silhouette edges thicker. And in the final step, we use Gaussian blur method to blur the current stroke and finally make them blend with the interior color. 
-	- Interior shading - Ink painting effects
+	
+	- Ink Shading
 
-		Interior shading could be a separate step from the stroke rendering. This step only need us to work on shaders instead of creating complex data structure with javascript. First step is quantization, we categorize mesh color into four types based on the diffuse factor calculated by dot product of normal and light vector. Next we apply a spattering filter to the image to make some noist. What spatering filter do is to replace the current pixel's color with a random pixel around a radius of it. Next stpe, we use a median filter to suppress the noises brought from the spattering step. Finally, in order to achieve more realistic Chinese painting effect, we also use a gamma correction formula to increase the contrast of our image.
+		Interior shading could be a separate step from the stroke rendering. This step only need us to work on shaders instead of creating complex data structure with javascript.
+		
+*	Stroke rendering
 
+![Alt text](webglDeferredShader/results/stroke.JPG "Figure 2")	
 
+*	Quantization Step
 
+![Alt text](webglDeferredShader/results/quantization.JPG "Figure 2")	
 
+*	Spattering Step
+
+![Alt text](webglDeferredShader/results/spatter.JPG "Figure 2")
+
+*	Final Result Step
+	
+![Alt text](webglDeferredShader/results/bunny_stroke_diffustion.JPG "Figure 2")
 
 
 ## Performance Evaluation ##
