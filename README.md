@@ -1,11 +1,40 @@
 Tile Based WebGL Deferred Shader
 ----------------------------------------
+
 [Yuqin](https://github.com/yuqinshao) & [Sijie](https://github.com/tiansijie)
 
 * Sijie's twitter: https://twitter.com/sijietian
 * Yuqin's twitter: https://twitter.com/YuqinShao
 
--------------------------------------------------------------------------------
+
+![Alt text](Screenshots/SilEdge6.png "Figure 2")
+
+![Alt text](Screenshots/500lights2.png "Figure 2")
+
+
+## Live Demo ##
+Please make sure your web browser support these WebGL extensions before you run it. `OES_texture_float`, `OES_texture_float_linear`, `WEBGL_depth_texture` and `WEBGL_draw_buffers`
+
+[NPR Deferred Shading Live Demo](http://sijietian.com//WebGL/deferredshading/index.html)
+
+
+## How to Use ##
+- 1 depth render
+- 2 normal render
+- 3 position render
+- 4 color render
+- 5 one light scene
+- 6 tile based deferred shading
+- 7 non tile based deferred shading
+- 8 NPR with tile based deferred shading
+- Drag mouse to changed view direction
+- Use w,s,a,d to move forward, backward, left and right
+- Use q, e to move up and down.
+
+
+## Video ##
+[http://www.youtube.com/watch?v=od9kJC089BI&feature=youtu.be](http://www.youtube.com/watch?v=od9kJC089BI&feature=youtu.be)
+
 
 Overview
 --------------------------------------------
@@ -33,6 +62,29 @@ In this project, we are trying to implement an advanced deferred shader on WebGL
 
 	We also try to do some optimization on tile-based deferred shading like using the depth range to cull light more aggressive. However, this project is based on WebGL 1.0, which has a lot limitations. The WebGL 1.0 is not support reading data form depth buffer. We work around this issue using `gl.readPixels`. Again, the WebGL only support `UNSIGNED_BYTE`, which return a very unaccurate result and enormous reduce the frame rate.
 
+- NPR Chinese painting effect
+	
+	The NPR effects we are trying to achieve in this project is the Chinese Painting Effects. Basically, what we do includes two steps which are silhouette and stroke simulation as well as interior ink shading. 
+
+	
+
+	- Silhouette Extraction
+	
+		A silhouette edge is an edge adjacent to one front-facing and one back-facing polygon. A polygon is defined as front-facing if the dot product of its outward normal and a vector from the camera position to a point on the polygon is negative. Otherwise the polygon is back-facing.
+
+	
+	- Silhouette Culling
+	
+		Since we are drawing silhouette as separate mesh. It’s impossible for us to use the webgl’s depth buffer for back silhouette culling.  Thus, we’ll have to write it by ourselves.In our method, we need three framebuffer textures for the final result. First two textures stroe values of silhouette edges color pass(without culling) and silhouette edges’ depth buffer values respectively. The third pass we store the depth buffer value of the original triangle mesh. In the final post fragment shader, before we set the final fragment color, we first compare the depth value of the edges’ depth texture and the original mesh’s depth texture and only render out the color that pass the depth buffer.
+		
+	- Stroke rendering
+			
+		Basically, in this step’s fragment shader, we make pixels that around silhouette edge to be the same color as of silhouette edge. And in the final step, we use Gaussian blur method to blur the current stroke and finally make them blend with the interior color. 
+	- Interior shading - Ink painting effects
+
+		Interior shading could be a separate step from the stroke rendering. This step only need us to work on shaders instead of creating complex data structure with javascript. 
+
+
 
 
 
@@ -46,9 +98,21 @@ We did several performance evaluations on Tile based with different number of li
 ![Alt text](tilesizeandframe.png "Figure 4")
 
 
-NPR 
+Chinese painting effect with and without stroke 
 
 ![Alt text](Fpswithandwithoutstroke.png "Figure 5")
+
+
+
+
+
+## Screen Shots ##
+
+![Alt text](Screenshots/SilEdge7.png "Figure 2")
+
+![Alt text](Screenshots/500lights.png "Figure 2")
+
+![Alt text](Screenshots/TileOnly.png "Figure 2")
 
 Note
 -------------------------------------------
@@ -64,39 +128,6 @@ The easiest way is to use the firefox.
 * Set it to false
 
 
-Details
----------------------------------------------------------------
-* We use webgl [WEBGL_depth_texture](http://www.khronos.org/registry/webgl/extensions/WEBGL_depth_texture/) exension, and here is a very good [example](http://blog.tojicode.com/2012/07/using-webgldepthtexture.html) to show how to use this extension 
-* We also use [OES_texture_float](http://www.khronos.org/registry/webgl/extensions/OES_texture_float/) which suports floating type texture in WebGL.
-
-
-
-
-
-
-
-Useful links
-----------------------------
-* [Mesh resources](http://graphics.cs.williams.edu/data/meshes.xml)
-* 
-
-Development Log
--------------------------------
-Silhouette Culling Step [FAILED]
-Since we are drawing silhouette based on the object. We cannot use webgl's own depth test to cull those back silhouette. So, based on the paper, we'll have to implement the silhouette culling step by ourselves.
-What the paper did is to store the 2d position of both end points of the edge as well as the depth value in the data structure. And use the depth buffer data to compare. If pass didn't pass the depth test, then eliminate the edge.
-However, webgl is only 1.0 version which means it has a lot of limitations.
-For example, in order to get the depth value from depth buffer, I'll have to use the function readpixels. This function, the problem is that the function supported by webgl can only receive UNSIGNED_BYTE data type. Which means all the floating point data supposed to be pass out will be clamped into integers, which results in a very big, unignorable error. 
-
-Since in order to achieve the effect we want, we just cannot ignore the silhouette culling step. Thus, the solution (the only solution) I'm thinking of is that:
-
-first render the non-culled silhouette into framebuffer. And render the depth value of those points into another framebuffer as well.
-Also render the depth value of the triangle mesh into a third framebuffer.
-And based on this three texture, draw the final image with quad. Just like what deferred is doing. 
-This method may solve the problem visually. However, it will end up with a low speed, probably when the scene becomes more complicated.:(
-But compared with no back silhouette culling, this could be a good solution :) 
-
-
 References
 ---------------------------------------------------------------
 * [A demo of webgl deferred shading](http://codeflow.org/entries/2012/aug/25/webgl-deferred-irradiance-volumes/#!)
@@ -104,8 +135,8 @@ References
 * Very useful resource for tile shading [Tile Shading](http://www.cse.chalmers.se/~uffe/tiled_shading_preprint.pdf)
 
 
-Third Party
+Third Party Library
 -------------------------------------------------
-
+[Three.js](http://threejs.org/) for obj loader
 
 
