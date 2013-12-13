@@ -11,6 +11,10 @@ Tile Based WebGL Deferred Shader
 
 ![Alt text](screenshots/500lights2.png "Figure 2")
 
+![Alt text](screenshots/stroke_ink3.png "Figure 2")
+
+![Alt text](screenshots/HEAD_STROKE.png "Figure 2")
+
 
 ## Live Demo ##
 Please make sure your web browser support these WebGL extensions before you run it. `OES_texture_float`, `OES_texture_float_linear`, `WEBGL_depth_texture` and `WEBGL_draw_buffers`
@@ -108,11 +112,32 @@ Chinese painting effect with and without stroke
 
 ## Screen Shots ##
 
-![Alt text](screenshots/SilEdge7.png "Figure 2")
+![Alt text](screenshots/SilEdge7.png "Figure")
 
-![Alt text](screenshots/500lights.png "Figure 2")
+![Alt text](screenshots/500lights.png "Figure")
 
-![Alt text](screenshots/TileOnly.png "Figure 2")
+![Alt text](screenshots/300lights.png "Figure")
+
+![Alt text](screenshots/TileOnly.png "Figure")
+
+![Alt text](screenshots/bunny_diffustion2.png "Figure")
+
+![Alt text](screenshots/conference_room.png "Figure")
+
+![Alt text](screenshots/spi_ink_stroke2.png "Figure")
+
+![Alt text](screenshots/SilEdge2.png "Figure")
+
+![Alt text](screenshots/SilEdge3.png "Figure")
+
+![Alt text](screenshots/SilEdge4.png "Figure")
+
+![Alt text](screenshots/SilEdge5.png "Figure")
+
+
+
+
+
 
 Note
 -------------------------------------------
