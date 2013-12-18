@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Fragment Globe</title>
+<title>Chinese Painting Tile Based Deferred Shading</title>
 <meta charset ="utf-8">
 <meta http-equiv="X-UA-Compatible" content="chrome=1">  <!-- Use Chrome Frame in IE --> 
 </head>
@@ -15,7 +15,6 @@
 <script type="text/javascript" src="three/OBJLoader.js"></script>
 <script type="text/javascript" src="three/MTLLoader.js"></script>
 <script type="text/javascript" src="three/OBJMTLLoader.js"></script>
-<script type="text/javascript" src="NPR.js"></script>
 
 
 <script id="pass_vs" type="x-shader/x-vertex">    
@@ -109,7 +108,8 @@
     #define DISPLAY_LIGHTS 5
     #define DISPLAY_NONTILE_LIGHTS 6
     #define DISPLAY_INK 7
-    #define TILESIZE 16    
+    #define DISPLAY_DEBUGTILE 8
+    #define TILESIZE 32    
     #define LIGHTNUM 200
  
 
@@ -154,7 +154,7 @@
         //float exp_depth = texture2D(u_Depthtex, fs_Texcoord).r;
         //float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-        if(u_DisplayType == DISPLAY_LIGHTS || u_DisplayType == DISPLAY_INK){           
+        if(u_DisplayType == DISPLAY_LIGHTS || u_DisplayType == DISPLAY_INK || u_DisplayType == DISPLAY_DEBUGTILE){           
             //get the grid data index
             vec2 gridIndex = vec2(((fs_Texcoord.x*u_Width) / float(u_TileSize)) / (u_WidthTile), ((fs_Texcoord.y*u_Height) / float(u_TileSize)) / (u_HeightTile));
             //x for offset, y for count
@@ -228,17 +228,20 @@
                             }                            
                             //lightColor += lightColorRadius.xyz;
                             //if(distoL > 0.0)
-                            //lightCount ++;
+                            lightCount ++;
                         }                         
                     }
                     else
                         break;
+                }      
+                if(u_DisplayType == DISPLAY_DEBUGTILE){
+                   float countR = float(lightCount) / float(LIGHTNUM) * 40.0;
+                   lightColor = vec3(  floor(((fs_Texcoord.x*u_Width) / float(u_TileSize))) / (u_WidthTile) * countR, floor(((fs_Texcoord.y*u_Height) / float(u_TileSize))) / (u_HeightTile) * countR , 1.0);
                 }
-                //if(lightCount != 0)
-                   // lightColor /= float(lightCount);                
-                lightColor = mix(vec3(0.0), vec3(1.0), lightColor);
+                else
+                    lightColor = mix(vec3(0.0), vec3(1.0), lightColor);
+
                 lightColor = clamp(lightColor, vec3(0.0), vec3(1.0));
-                //lightColor = vec3(float(lightCount) / float(LIGHTNUM)) * 3.0;// * lightColor;
             }       
             gl_FragData[0] = vec4(lightColor, 1.0);// + vec4(color * 0.3,1.0);
         }
