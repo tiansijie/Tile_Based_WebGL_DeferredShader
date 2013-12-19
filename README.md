@@ -21,6 +21,9 @@ Some of the rendered results:
 
 
 ## Live Demo ##
+
+[updated] Now our live demo support more browsers even without `WEBGL_draw_buffers`.
+
 Please make sure your web browser support these WebGL extensions before you run it. `OES_texture_float`, `OES_texture_float_linear`, `WEBGL_depth_texture` and `WEBGL_draw_buffers`
 
 [NPR Deferred Shading Live Demo](http://sijietian.com//WebGL/deferredshading/index.html)

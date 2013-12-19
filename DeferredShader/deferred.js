@@ -129,8 +129,10 @@
 
         //for extension 
     	ext = gl.getExtension("WEBGL_draw_buffers");
+
         if (!ext) {
-            return alert("You need WebGL Draw Buffer Extension by turning on 'Enable WebGL Draft Extensions' on your web browser. Chrome keys in chrome://flags. Firefox keys in about:config.");
+            //alert("You need WebGL Draw Buffer Extension by turning on 'Enable WebGL Draft Extensions' on your web browser. Chrome keys in chrome://flags. Firefox keys in about:config.");
+            return window.location.href = "http://sijietian.com/WebGL/noMRTdeferredshading/index.html";
             //console.log("No WEBGL_draw_buffers support -- this is legal");
         } else {
             console.log("Successfully enabled WEBGL_draw_buffers extension");
@@ -391,9 +393,10 @@
 
         FBO[0] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
-        var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
-  		var maxColorAttachments = gl.getParameter(ext.MAX_COLOR_ATTACHMENTS_WEBGL);
-  		var bufs = makeColorAttachmentArray(maxDrawingBuffers);
+        //var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
+  		//var maxColorAttachments = gl.getParameter(ext.MAX_COLOR_ATTACHMENTS_WEBGL);
+  		//var bufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var bufs = [];
   		bufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
     	bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
@@ -430,7 +433,7 @@
         FBO[1] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[1]);
         //gl.renderbufferStorage(gl.FRAMEBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
-        var spatterbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var spatterbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         spatterbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(spatterbufs);
 
@@ -452,7 +455,7 @@
 
         FBO[2] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[2]);
-        var postbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var postbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         postbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(postbufs);
 
@@ -482,7 +485,7 @@
 
         FBO[3] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[3]);
-        var silbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var silbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         silbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         silbufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
         ext.drawBuffersWEBGL(silbufs);
@@ -508,7 +511,7 @@
 
         FBO[4] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[4]);
-        var sillCullbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var sillCullbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         sillCullbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(sillCullbufs);
 
@@ -531,7 +534,7 @@
 
         FBO[5] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[5]);
-        var strokeblurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var strokeblurbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         strokeblurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(strokeblurbufs);
 
@@ -553,7 +556,7 @@
 
         FBO[6] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[6]);
-        var blurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var blurbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         blurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(blurbufs);
 
@@ -575,7 +578,7 @@
 
         FBO[7] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[7]);
-        var edgebufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var edgebufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         edgebufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(blurbufs);
 
@@ -848,6 +851,7 @@
         //address for obj
         //loader.load( 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.obj', 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.mtl', function ( event ) {
         loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
+        //loader.load( 'http://sijietian.com/WebGL/OBJ/sibenik.obj', function ( event ) {
             var object = event;
 
             console.log("children " + object.children.length);
@@ -1856,7 +1860,7 @@
             setTextures();
             bindFBO(7);
             setupQuad(edge_prog);
-            gl.uniform4fv(gl.getUniformLocation(ambient_prog,"u_Light"), lightdest);
+            gl.uniform4fv(gl.getUniformLocation(edge_prog,"u_Light"), vec4.create([0.0, 0.0, 0.0, 0.3]));
             gl.activeTexture(gl.TEXTURE4);
             gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
             gl.uniform1i(gl.getUniformLocation(edge_prog, "u_QuatColorSampler"),4);
