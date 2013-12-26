@@ -237,13 +237,17 @@
                 if(u_DisplayType == DISPLAY_DEBUGTILE){
                    float countR = float(lightCount) / float(LIGHTNUM) * 40.0;
                    lightColor = vec3(  floor(((fs_Texcoord.x*u_Width) / float(u_TileSize))) / (u_WidthTile) * countR, floor(((fs_Texcoord.y*u_Height) / float(u_TileSize))) / (u_HeightTile) * countR , 1.0);
+
+                   lightColor = vec3(float(count) / float(LIGHTNUM));
                 }
                 else
                     lightColor = mix(vec3(0.0), vec3(1.0), lightColor);
 
                 lightColor = clamp(lightColor, vec3(0.0), vec3(1.0));
             }       
-            gl_FragData[0] = vec4(lightColor, 1.0);// + vec4(color * 0.3,1.0);
+            //gl_FragData[0] = vec4(vec3(float(count) / float(LIGHTNUM)),1.0);
+            gl_FragData[0] = vec4(lightColor, 1.0);
+            // + vec4(color * 0.3,1.0);
         }
         else
             gl_FragData[0] = vec4(vec3(0.0), 1.0);
@@ -349,11 +353,11 @@
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
-            gl_FragData[0] = vec4(vec3(lin_depth), 1.0);
+            gl_FragData[0] = vec4(vec3(lin_depth) * 10.0, 1.0);
         else if(u_DisplayType == DISPLAY_NORMAL)
             gl_FragData[0] = vec4(abs(normal), 1.0);
         else if(u_DisplayType == DISPLAY_POSITION)
-            gl_FragData[0] = vec4(abs(position)/u_Far, 1.0);
+            gl_FragData[0] = vec4(abs(position)/u_Far * 15.0, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR)
             gl_FragData[0] = vec4(color, 1.0);
         else if(u_DisplayType == DISPLAY_TOTAL)
@@ -505,7 +509,8 @@
             vec3 strokecolor = texture2D(u_StrokeBlurtex,fs_Texcoord).rgb;  
             gl_FragData[0] =    vec4(strokecolor, 1.0);
             
-            if(equal(strokecolor, vec3(1.0,1.0,1.0)) == false)
+            if(strokecolor.x != 1.0 || strokecolor.y != 1.0 || strokecolor != 1.0)
+            //if(equal(strokecolor, vec3(1.0,1.0,1.0)) == false)
             {
                gl_FragData[0] = vec4(min(spattercolor,strokecolor),1.0);
                //gl_FragData[0] = vec4(spattercolor, 1.0);
@@ -694,7 +699,8 @@
         int numofColoredPixel = 0;
         int hasPixel = 0;
         vec4 tempColor = vec4(0.0);
-        if(equal(color,vec4(1.0,1.0,1.0,1.0)) == true)
+        if(color.x == 1.0 && color.y == 1.0 && color.z == 1.0 && color.w == 1.0)
+        //if(equal(color,vec4(1.0,1.0,1.0,1.0)) == true)
         {
             vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth)),fs_Texcoord.y * (float(u_viewportHeight))); 
             for(int i = -2; i<=2 ;++i)
@@ -708,11 +714,10 @@
                     {
                         vec4 newColor = texture2D(u_SilColorSampler,vec2(newpixelIdx.x / (float(u_viewportWidth)),
                                                             newpixelIdx.y / (float(u_viewportHeight))));
-                        if(equal(newColor,vec4(0.0,0.0,0.0,1.0)) == true)
+                        if(newColor.x == 0.0 && newColor.y == 0.0 && newColor.z == 0.0 && newColor.w == 1.0)
+                        //if(equal(newColor,vec4(0.0,0.0,0.0,1.0)) == true)
                         {
-                            // numofColoredPixel  += (i+j);
-                            // hasPixel = 1;
-                            numofColoredPixel ++;
+                          numofColoredPixel ++;
                         }
                     }
                 }
@@ -742,8 +747,6 @@
     {
 
         vec4 color = texture2D(u_StrokeSampler,fs_Texcoord);
-        // gl_FragColor = color;
-        // return;
         
         vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0)); 
         vec4 colorAccu = vec4(0.0,0.0,0.0,1.0);
@@ -839,8 +842,6 @@
 
         vec3 mag = sqrt((magX)*(magX) + (magY)*(magY));
 
-        //gl_FragColor = vec4(vec3(1.0) - mag, 1.0);
-         //gl_FragColor = vec4(color,1.0);
          if(mag.x < 0.1 && mag.y < 0.1 && mag.z < 0.1)
          {
             gl_FragColor = vec4(vec3(1.0), 1.0);
@@ -849,13 +850,6 @@
          {
             gl_FragColor = vec4(vec3(0.0), 1.0);
          }
-
-        // mag = clamp(mag, 0.0, 1.0);
-
-        // if(mag > 0.0001)
-        //     gl_FragColor = vec4(vec3(0.0), 1.0);
-        // else
-        //     gl_FragColor = vec4(vec3(1.0), 1.0);
     }
 </script>
 

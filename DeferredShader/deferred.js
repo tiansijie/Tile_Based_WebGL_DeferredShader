@@ -69,6 +69,8 @@
 
 
     var lights = [];
+    var lightVel = [];
+    var lightAccel = [];
     var lightPosition = [];
     var lightColorRadius = [];
     var lightGrid = [];
@@ -606,16 +608,19 @@
 
      function setmodelMatrix()
     {
-        //var meshNum = meshes.length;
-        //console.log("mesh number : "+ meshNum);   
-
-        var matrix = mat4.create();
-        mat4.identity(matrix);
-        //mat4.scale(matrix,[0.01,0.01,0.01]); 
-        //mat4.scale(matrix,[0.1,0.1,0.1]); 
-        //mat4.scale(matrix,[2,2,2]); 
-        //mat4.translate(matrix,[0,0,0]);       
-        models.push(matrix);
+        for(var i = 0; i < 1; ++i){
+            for(var j = 0; j < 1; ++j){
+                //for(var k = 0; k < 1; ++k){
+                    var matrix = mat4.create();
+                    mat4.identity(matrix);
+                    //mat4.scale(matrix,[0.01,0.01,0.01]); 
+                    //mat4.scale(matrix,[0.1,0.1,0.1]); 
+                    //mat4.scale(matrix,[2,2,2]);
+                    mat4.translate(matrix,[i*2,j*2,0]);       
+                    models.push(matrix);
+                //}
+            }
+        }
     }
 
 
@@ -856,7 +861,6 @@
 
             console.log("children " + object.children.length);
 
-
             object.traverse( function ( child ) {
               if ( child instanceof THREE.Mesh ) {
 
@@ -1028,7 +1032,9 @@
 
                 // meshNum ++;   
                 console.log("mehsnormals len " + meshNormals.length / 3);
-                updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
+                //updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);
+
+                console.log("Let see how many buffer for a dragon " + vBuffers.length);
               }
             } );
         });
@@ -1100,41 +1106,43 @@
     {
     	gl.useProgram(pass_prog);	
 
-        var idx = 0;
+        //var idx = 0;
        
-        for(var i = 0; i < vBuffers.length; i++){
-            var mv = mat4.create();
-            mat4.multiply(view, models[idx], mv);
+       for(var idx = 0; idx < models.length; idx++){
+            for(var i = 0; i < vBuffers.length; i++){
+                var mv = mat4.create();
+                mat4.multiply(view, models[idx], mv);
 
-            invTrans = mat4.create();
-            mat4.identity(invTrans);
-            mat4.inverse(mv, invTrans);
-            mat4.transpose(invTrans);
+                invTrans = mat4.create();
+                mat4.identity(invTrans);
+                mat4.inverse(mv, invTrans);
+                mat4.transpose(invTrans);
 
-            gl.enableVertexAttribArray(positionLocation);
-            gl.enableVertexAttribArray(normalLocation);
-            //gl.enableVertexAttribArray(texCoordLocation);
+                gl.enableVertexAttribArray(positionLocation);
+                gl.enableVertexAttribArray(normalLocation);
+                //gl.enableVertexAttribArray(texCoordLocation);
 
 
-            var colors = vec3.create([1.0,1.0,1.0]);
-            gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
-            gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
+                var colors = vec3.create([1.0,1.0,1.0]);
+                gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+                
+                gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
+                gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
 
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
-            gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+                
+                gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
+                gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
-            // gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
-            // gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                // gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+                // gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
 
-            setMatrixUniforms(models[idx]);
-            gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
+                setMatrixUniforms(models[idx]);
+                gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
 
-            //idx ++;
+                //idx ++;
+            }
         }
 
         gl.disableVertexAttribArray(positionLocation);
@@ -1363,9 +1371,9 @@
         var rightTile = Math.min(Math.ceil(boundary.right / tileSize), canvas.width/tileSize);
         var bottomTile = Math.max(Math.floor(boundary.bottom / tileSize),0);
 
-        for(var i = leftTile; i <= rightTile; i++)
+        for(var i = leftTile; i < rightTile; i++)
         {
-            for(var j = bottomTile; j <= topTile; j++)
+            for(var j = bottomTile; j < topTile; j++)
             {    
                 var indexId = i + j * tileWidth;
                 if(indexId < numTile && indexId >= 0){
@@ -1496,6 +1504,9 @@
 
             lights.push({position:vec3.create([20 + -40 * Math.random(), -25 + 30 * Math.random(), -5+15*Math.random()]),
                 color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+
+            //var r = vec3.length(lights[i].position) + 0.000001;
+            //var s = Math.sqrt() 
 
             //light position x y z
             lightPosition.push(lights[i].position[0]);
