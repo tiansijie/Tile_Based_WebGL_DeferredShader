@@ -5,11 +5,6 @@
         var y = r * Math.sin(e);
         var z = r * Math.cos(e) * Math.sin(a);
 
-        //Should be like this
-        // var x = r * Math.sin(e) * Math.cos(a);
-        // var y = r * Math.sin(e) * Math.sin(a);
-        // var z = r * Math.cos(e);
-
         return [x,y,z];
     }
 
@@ -44,8 +39,7 @@
     var display_light = 5;
     var display_nontilelight = 6;
     var display_ink = 7;
-    var display_stroke = 8;
-    var display_all = 9;
+    var display_debugtile = 8;
 
     //var model;
     //var mv;
@@ -75,6 +69,8 @@
 
 
     var lights = [];
+    var lightVel = [];
+    var lightAccel = [];
     var lightPosition = [];
     var lightColorRadius = [];
     var lightGrid = [];
@@ -114,6 +110,7 @@
 
     var siledge_positionLocation;
 
+    //difererent shaders
     var pass_prog;
     var depth_prog;
     var diagnostic_prog;
@@ -131,9 +128,14 @@
     var ext = null;
 
     function initializeShader() {
+
+        //for extension 
     	ext = gl.getExtension("WEBGL_draw_buffers");
+
         if (!ext) {
-            console.log("No WEBGL_draw_buffers support -- this is legal");
+            //alert("You need WebGL Draw Buffer Extension by turning on 'Enable WebGL Draft Extensions' on your web browser. Chrome keys in chrome://flags. Firefox keys in about:config.");
+            return window.location.href = "http://sijietian.com/WebGL/noMRTdeferredshading/index.html";
+            //console.log("No WEBGL_draw_buffers support -- this is legal");
         } else {
             console.log("Successfully enabled WEBGL_draw_buffers extension");
         }
@@ -143,9 +145,6 @@
         var fs = getShaderSource(document.getElementById("pass_fs"));
 
         pass_prog = createProgram(gl, vs, fs, message);    
-    	//gl.bindAttribLocation(pass_prog, positionLocation, "Position");
-    	//gl.bindAttribLocation(pass_prog, normalLocation, "Normal");
-    	//gl.bindAttribLocation(pass_prog, texCoordLocation, "Texcoord");
 
         if (!gl.getProgramParameter(pass_prog, gl.LINK_STATUS)) {
             alert("Could not initialise pass_fs");
@@ -182,6 +181,17 @@
     	
     	if (!gl.getProgramParameter(ambient_prog, gl.LINK_STATUS)) {
             alert("Could not initialise ambient_fs");
+        }
+
+        vs = getShaderSource(document.getElementById("shade_vs"));
+        fs = getShaderSource(document.getElementById("edgefs"));
+        
+        edge_prog = createProgram(gl, vs, fs, message);
+        gl.bindAttribLocation(edge_prog, quad_positionLocation, "Position");
+        gl.bindAttribLocation(edge_prog, quad_texCoordLocation, "Texcoord");
+        
+        if (!gl.getProgramParameter(edge_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise edgefs");
         }
 
         vs = getShaderSource(document.getElementById("shade_vs"));
@@ -309,7 +319,7 @@
 
     var strokeblurTexture = gl.createTexture();
 
-	var FBO = [0,0,0];
+	var FBO = [];
 
 
 	//from extension file
@@ -344,8 +354,6 @@
 
 
         //Geometry Frame Buffer
-		//gl.activeTexture(gl.TEXTURE0);
-
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -387,9 +395,10 @@
 
         FBO[0] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
-        var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
-  		var maxColorAttachments = gl.getParameter(ext.MAX_COLOR_ATTACHMENTS_WEBGL);
-  		var bufs = makeColorAttachmentArray(maxDrawingBuffers);
+        //var maxDrawingBuffers = gl.getParameter(ext.MAX_DRAW_BUFFERS_WEBGL);
+  		//var maxColorAttachments = gl.getParameter(ext.MAX_COLOR_ATTACHMENTS_WEBGL);
+  		//var bufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var bufs = [];
   		bufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
     	bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
     	bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
@@ -415,8 +424,6 @@
 
 
         //Spatter Frame Buffer
-
-        //gl.activeTexture(gl.TEXTURE10);
         gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -428,7 +435,7 @@
         FBO[1] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[1]);
         //gl.renderbufferStorage(gl.FRAMEBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
-        var spatterbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var spatterbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         spatterbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(spatterbufs);
 
@@ -441,8 +448,6 @@
         }
 
         //Post Frame Buffer
-
-        //gl.activeTexture(gl.TEXTURE9);
         gl.bindTexture(gl.TEXTURE_2D, postTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -452,7 +457,7 @@
 
         FBO[2] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[2]);
-        var postbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var postbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         postbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(postbufs);
 
@@ -482,7 +487,7 @@
 
         FBO[3] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[3]);
-        var silbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var silbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         silbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         silbufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
         ext.drawBuffersWEBGL(silbufs);
@@ -508,7 +513,7 @@
 
         FBO[4] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[4]);
-        var sillCullbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var sillCullbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         sillCullbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(sillCullbufs);
 
@@ -531,7 +536,7 @@
 
         FBO[5] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[5]);
-        var strokeblurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var strokeblurbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         strokeblurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(strokeblurbufs);
 
@@ -553,7 +558,7 @@
 
         FBO[6] = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[6]);
-        var blurbufs = makeColorAttachmentArray(maxDrawingBuffers);
+        var blurbufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
         blurbufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
         ext.drawBuffersWEBGL(blurbufs);
 
@@ -566,115 +571,56 @@
         }
 
 
+        gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        FBO[7] = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[7]);
+        var edgebufs = [];//makeColorAttachmentArray(maxDrawingBuffers);
+        edgebufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        ext.drawBuffersWEBGL(blurbufs);
+
+        gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, edgebufs[0], gl.TEXTURE_2D, edgeTexture, 0);
+
+        FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if(FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+            console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[7]\n");        
+        }
+
+
     	gl.clear(gl.DEPTH_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
+    
 
 
     //OBJ
     var meshes = [];    
     var models = [];
-
-    function downloadMesh()
-    {
-        obj_utils.downloadMeshes(
-            {
-                // 'bottom' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                // 'back' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                // 'top' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                // 'left' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                // 'right' : 'http://sijietian.com/WebGL/OBJ/cube.obj',
-                // 'cow' : 'http://sijietian.com/WebGL/OBJ/cow.obj',
-
-                'sponza' : 'http://127.0.0.1:8089/OBJ/sponza1.obj',
-
-                // 'bottom' : 'http://127.0.0.1:8089/OBJ/cube.obj',
-                // 'back' : 'http://127.0.0.1:8089/OBJ/cube.obj',
-                // 'top' : 'http://127.0.0.1:8089/OBJ/cube.obj',
-                // 'left' : 'http://127.0.0.1:8089/OBJ/cube.obj',
-                // 'right' : 'http://127.0.0.1:8089/OBJ/cube.obj',
-                // 'cow' : 'http://127.0.0.1:8089/OBJ/cow.obj',
-            },
-            initObj
-        );
-    };
-
-    function initObj(meshobjs)
-    {
-        meshes = meshobjs;
-
-        var count = 0;
-        for(mesh in meshes){                     
-            //console.log("How many mesh " + ++count);
-            obj_utils.initMeshBuffers(gl, meshes[mesh]);            
-        }
-        
-    }
+   
 
      function setmodelMatrix()
     {
-        var meshNum = meshes.length;
-        console.log("mesh number : "+ meshNum);
-       
-        //cube2 for test
-        // var matrix  = mat4.create();
-        // mat4.identity(matrix);
-        // models.push(matrix);
-
-        var matrix = mat4.create();
-        mat4.identity(matrix);
-        //mat4.scale(matrix,[0.01,0.01,0.01]); 
-        //mat4.scale(matrix,[0.1,0.1,0.1]); 
-        //mat4.scale(matrix,[2,2,2]); 
-        //mat4.translate(matrix,[0,0,0]);       
-        models.push(matrix);
-
-
-        //bottom
-        // var matrix = mat4.create();
-        // mat4.identity(matrix);
-        // mat4.scale(matrix,[4,.01,4]); 
-        // mat4.translate(matrix,[0,-400,0]);       
-        // models.push(matrix);     
-
-        // //back
-        // var matrix2 = mat4.create();
-        // mat4.identity(matrix2);
-        // mat4.scale(matrix2,[.01,4,4]);
-        // mat4.translate(matrix2,[400,0,0]);
-        // models.push(matrix2);
-
-        // //top
-        // var matrix3 = mat4.create();
-        // mat4.identity(matrix3);
-        // mat4.scale(matrix3,[4,.01,4]);
-        // mat4.translate(matrix3,[0,400,0]);
-        // models.push(matrix3);
-        
-        // //left
-        // var matrix4 = mat4.create();
-        // mat4.identity(matrix4);
-        // mat4.scale(matrix4,[4,4,.01]);
-        // mat4.translate(matrix4,[0,0,-400]);
-        // models.push(matrix4);
-
-        // //right
-        // var matrix5 = mat4.create();
-        // mat4.identity(matrix5);
-        // mat4.scale(matrix5,[4,4,.01]);
-        // mat4.translate(matrix5,[0,0,400]);
-        // models.push(matrix5);
-
-        // //cow
-        // var bunnyMatrix = mat4.create();
-        // mat4.identity(bunnyMatrix);
-        // mat4.scale(bunnyMatrix,[8,8,8]);
-        // mat4.rotate(bunnyMatrix,90,[0,1,0]);
-        // mat4.translate(bunnyMatrix,[0,-.1,0]);
-        // models.push(bunnyMatrix);
-
+        for(var i = 0; i < 1; ++i){
+            for(var j = 0; j < 1; ++j){
+                //for(var k = 0; k < 1; ++k){
+                    var matrix = mat4.create();
+                    mat4.identity(matrix);
+                    //mat4.scale(matrix,[0.01,0.01,0.01]); 
+                    //mat4.scale(matrix,[0.1,0.1,0.1]); 
+                    //mat4.scale(matrix,[2,2,2]);
+                    mat4.translate(matrix,[i*2,j*2,0]);       
+                    models.push(matrix);
+                //}
+            }
+        }
     }
 
 
@@ -722,175 +668,20 @@
     var vBuffers = [];
     var nBuffers = [];
     var iBuffers = [];
+    var uBuffers = [];
 
     var iLens = [];
 
     var meshNum = 0;
 
-//     function initMeshBuffers()
-//     {
-//         //downloadMesh();
-//         setmodelMatrix();
-
-//         //var scene = new THREE.Scene(); 
-
-//          var loader = new THREE.OBJLoader();
-//         // //var loader = new THREE.OBJMTLLoader();
-
-//         // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
-//         loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
-//             var object = event;
-
-//             console.log("children " + object.children.length);
-
-//             //console.log("just a test " + object.normals.length);
-
-//             object.traverse( function ( child ) {
-//               if ( child instanceof THREE.Mesh ) {
-
-//                  var lenVertices = child.geometry.vertices.length;
-//                  var lenFaces = child.geometry.faces.length;
-//                  var lenNor = child.geometry.skinIndices.length;  
-
-//                  console.log ("Len Vertices " + lenVertices);
-//                  console.log ("Len Faces " + lenFaces);
-//                  console.log ("Len Nor " + lenNor);
-
-//                 // meshVertices = new Float32Array(lenVertices * 3);
-//                 // meshNormals = new Float32Array(lenVertices * 3);
-//                 // meshIndex = new Uint16Array(lenFaces * 3);
-
-//                 // bufferVertices = new Float32Array(lenFaces*9);
-//                 // meshNormals = new Float32Array(lenFaces*9);
-//                 // meshIndex = new Uint16Array(lenFaces*3);
-
-//                  for(var i = 0; i < lenVertices; i++)
-//                  {
-//                     meshVertices[i*3] = (child.geometry.vertices[i].x);
-//                     meshVertices[i*3+1] = (child.geometry.vertices[i].y);
-//                     meshVertices[i*3+2] = (child.geometry.vertices[i].z);
-//                  }
-
-//                  //console.log("Face normal " + child.geometry.faces[0].vertexNormals);                
-//                  var point = 0;
-//                  for(var i = 0; i < lenFaces; i++)
-//                  {
-//                     var indexa = child.geometry.faces[i].a;
-//                     var indexb = child.geometry.faces[i].b;
-//                     var indexc = child.geometry.faces[i].c;                 
-
-//                     bufferVertices.push(meshVertices[indexa*3]);
-//                     bufferVertices.push(meshVertices[indexa*3+1]);
-//                     bufferVertices.push(meshVertices[indexa*3+2]);
-
-//                     bufferVertices.push(meshVertices[indexb*3]);
-//                     bufferVertices.push(meshVertices[indexb*3+1]);
-//                     bufferVertices.push(meshVertices[indexb*3+2]);
-
-//                     bufferVertices.push(meshVertices[indexc*3]);
-//                     bufferVertices.push(meshVertices[indexc*3+1]);
-//                     bufferVertices.push(meshVertices[indexc*3+2]);        
-                
-
-//                     for(var j = 0; j < 3; j++){                       
-//                         meshNormals.push(child.geometry.faces[i].normal.x);
-//                         meshNormals.push(child.geometry.faces[i].normal.y);
-//                         meshNormals.push(child.geometry.faces[i].normal.z);
-//                     }
-
-//                     // meshIndex[i*3] = i*3;
-//                     // meshIndex[i*3+1] = i*3+1;
-//                     // meshIndex[i*3+2] = i*3+2;
-
-//                     meshIndex.push(point++);
-//                     meshIndex.push(point++);
-//                     meshIndex.push(point++);
-
-
-//                     //I hate Javascript
-//                     if(meshIndex.length > 64000)
-//                     {
-//                         vertexBuffer = gl.createBuffer();
-//                         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-//                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-//                         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-//                         gl.enableVertexAttribArray(positionLocation);
-//                         vertexBuffer.numItems = bufferVertices.length / 3;
-//                         vBuffers.push(vertexBuffer);
-                    
-
-//                         normalBuffer = gl.createBuffer();
-//                         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-//                         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-//                         gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-//                         gl.enableVertexAttribArray(normalLocation);
-//                         meshNormals.numItems = meshNormals.length / 3;
-//                         nBuffers.push(normalBuffer);
-
-
-//                         indexBuffer = gl.createBuffer();
-//                         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
-//                         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
-//                         indexBuffer.numItems = meshIndex.length;
-//                         iBuffers.push(indexBuffer);
-
-//                         //console.log("Index len " + meshIndex.length);
-//                         iLens.push(meshIndex.length);
-
-//                         point = 0;
-//                         bufferVertices = [];
-//                         meshNormals = [];
-//                         meshIndex = [];
-//                     }                       
-//                  }                 
-
-//                 vertexBuffer = gl.createBuffer();
-//                 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-//                 //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
-//                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-//                 gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-//                 gl.enableVertexAttribArray(positionLocation);
-//                 vertexBuffer.numItems = bufferVertices.length / 3;
-//                 vBuffers.push(vertexBuffer);
-            
-
-//                 normalBuffer = gl.createBuffer();
-//                 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-//                 //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
-//                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-//                 gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-//                 gl.enableVertexAttribArray(normalLocation);
-//                 meshNormals.numItems = meshNormals.length / 3;
-//                 nBuffers.push(normalBuffer);   
-
-
-//                 indexBuffer = gl.createBuffer();
-//                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
-//                 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(meshIndex), gl.STATIC_DRAW);  
-//                 indexBuffer.numItems = meshIndex.length;
-//                 iBuffers.push(indexBuffer);
-
-//                 //console.log("Index len " + meshIndex.length);
-//                 iLens.push(meshIndex.length);
-
-//                 meshNum ++;           
-//               }
-//             } );
-//         });
-
-       
-// }
 
     function getSilEdges(edgefacesArray, edgesArray,verticesArray)
     {
-        //console.log("getsil edge");
+       
         var edgeVerts = [];
-        var edgeindices = [];
-        // var edgecolor = [];
+        var edgeindices = [];        
         var verNum = 0;
-        // var edgeVerts2D = [];  
-        // var edgegroup = [];
-        //console.log(mvp);
+       
 
         for(var idx = 0; idx < edgesArray.length;++idx){
             //console.log(mesh.edgeArray[idx]);           
@@ -1053,43 +844,33 @@
 
  function initMeshBuffers()
     {
-        //downloadMesh();
         setmodelMatrix();
 
-        //var scene = new THREE.Scene(); 
         var loader = new THREE.OBJLoader();
-        // //var loader = new THREE.OBJMTLLoader();
+        //var loader = new THREE.OBJMTLLoader();
 
         //ADD
         hashedges = {};
         var edgeidx = 0;
 
-        // //loader.load( 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.obj', 'http://127.0.0.1:8089/OBJ/CornellBox-Empty-CO.mtl',
+        //address for obj
+        //loader.load( 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.obj', 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.mtl', function ( event ) {
         loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
+        //loader.load( 'http://sijietian.com/WebGL/OBJ/sibenik.obj', function ( event ) {
             var object = event;
 
             console.log("children " + object.children.length);
 
-            //console.log("just a test " + object.normals.length);
-
             object.traverse( function ( child ) {
               if ( child instanceof THREE.Mesh ) {
 
-                 var lenVertices = child.geometry.vertices.length;
-                 var lenFaces = child.geometry.faces.length;
-                 var lenNor = child.geometry.skinIndices.length;  
+                var lenVertices = child.geometry.vertices.length;
+                var lenFaces = child.geometry.faces.length;
+                var lenNor = child.geometry.skinIndices.length;  
 
                 console.log ("Len Vertices " + lenVertices);
                 console.log ("Len Faces " + lenFaces);
                 console.log ("Len Nor " + lenNor);
-
-                // meshVertices = new Float32Array(lenVertices * 3);
-                // meshNormals = new Float32Array(lenVertices * 3);
-                // meshIndex = new Uint16Array(lenFaces * 3);
-
-                // bufferVertices = new Float32Array(lenFaces*9);
-                // meshNormals = new Float32Array(lenFaces*9);
-                // meshIndex = new Uint16Array(lenFaces*3);
 
                 for(var i = 0; i < lenVertices; i++)
                 {
@@ -1173,10 +954,6 @@
 
 
 
-                    // meshIndex[i*3] = i*3;
-                    // meshIndex[i*3+1] = i*3+1;
-                    // meshIndex[i*3+2] = i*3+2;
-
                     meshIndex.push(point++);
                     meshIndex.push(point++);
                     meshIndex.push(point++);
@@ -1232,20 +1009,14 @@
 
                 vertexBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-                //gl.bufferData(gl.ARRAY_BUFFER, bufferVertices.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferVertices), gl.STATIC_DRAW);
-                // gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);  
-                // gl.enableVertexAttribArray(positionLocation);
                 vertexBuffer.numItems = bufferVertices.length / 3;
                 vBuffers.push(vertexBuffer);
             
 
                 normalBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-                //gl.bufferData(gl.ARRAY_BUFFER, meshNormals.length, gl.STATIC_DRAW);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshNormals), gl.STATIC_DRAW);
-                // gl.vertexAttribPointer(normalLocation,  3, gl.FLOAT, false, 0, 0);
-                // gl.enableVertexAttribArray(normalLocation);
                 meshNormals.numItems = meshNormals.length / 3;
                 nBuffers.push(normalBuffer);   
 
@@ -1261,7 +1032,9 @@
 
                 // meshNum ++;   
                 console.log("mehsnormals len " + meshNormals.length / 3);
-                 updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
+                //updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);
+
+                console.log("Let see how many buffer for a dragon " + vBuffers.length);
               }
             } );
         });
@@ -1275,82 +1048,6 @@
 	var normalsName;
 	var texCoordsName;
 	var indicesName;
-
-	function initializeSphere() {
-        function uploadMesh(positions, texCoords, indices) {
-            // Positions
-            positionsName = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionsName);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-            gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(positionLocation);
-            
-            // Normals
-            normalsName = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, normalsName);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-            gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(normalLocation);
-            
-            // TextureCoords
-            texCoordsName = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsName);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
-            gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(texCoordLocation);
-
-            // Indices
-            indicesName = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesName);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-        }
-
-        var WIDTH_DIVISIONS = NUM_WIDTH_PTS - 1;
-        var HEIGHT_DIVISIONS = NUM_HEIGHT_PTS - 1;
-
-        var numberOfPositions = NUM_WIDTH_PTS * NUM_HEIGHT_PTS;
-
-        var positions = new Float32Array(3 * numberOfPositions);
-        var texCoords = new Float32Array(2 * numberOfPositions);
-        var indices = new Uint16Array(6 * (WIDTH_DIVISIONS * HEIGHT_DIVISIONS));
-
-        var positionsIndex = 0;
-        var texCoordsIndex = 0;
-        var indicesIndex = 0;
-        var length;
-
-        for( var j = 0; j < NUM_HEIGHT_PTS; ++j )
-        {
-            var inclination = Math.PI * (j / HEIGHT_DIVISIONS);
-            for( var i = 0; i < NUM_WIDTH_PTS; ++i )
-            {
-                var azimuth = 2 * Math.PI * (i / WIDTH_DIVISIONS);
-                positions[positionsIndex++] = Math.sin(inclination)*Math.cos(azimuth);
-                positions[positionsIndex++] = Math.cos(inclination);
-                positions[positionsIndex++] = Math.sin(inclination)*Math.sin(azimuth);
-                texCoords[texCoordsIndex++] = i / WIDTH_DIVISIONS;
-                texCoords[texCoordsIndex++] = j / HEIGHT_DIVISIONS;
-            } 
-        }
-
-        for( var j = 0; j < HEIGHT_DIVISIONS; ++j )
-        {
-            var index = j*NUM_WIDTH_PTS;
-            for( var i = 0; i < WIDTH_DIVISIONS; ++i )
-            {
-                    indices[indicesIndex++] = index + i;
-                    indices[indicesIndex++] = index + i+1;
-                    indices[indicesIndex++] = index + i+NUM_WIDTH_PTS;
-                    indices[indicesIndex++] = index + i+NUM_WIDTH_PTS;
-                    indices[indicesIndex++] = index + i+1;
-                    indices[indicesIndex++] = index + i+NUM_WIDTH_PTS+1;
-            }
-        }
-
-        uploadMesh(positions, texCoords, indices);
-        numberOfIndices = indicesIndex;
-    }
-
 
     var device_quad = {num_indices:0};
 
@@ -1409,43 +1106,43 @@
     {
     	gl.useProgram(pass_prog);	
 
-        var idx = 0;
-        //for(mesh in meshes){
-            //console.log("idx " + idx);
-        //if(meshNum > 0){
-        for(var i = 0; i < vBuffers.length; i++){
-            var mv = mat4.create();
-            mat4.multiply(view, models[idx], mv);
+        //var idx = 0;
+       
+       for(var idx = 0; idx < models.length; idx++){
+            for(var i = 0; i < vBuffers.length; i++){
+                var mv = mat4.create();
+                mat4.multiply(view, models[idx], mv);
 
-            invTrans = mat4.create();
-            mat4.identity(invTrans);
-            mat4.inverse(mv, invTrans);
-            mat4.transpose(invTrans);
+                invTrans = mat4.create();
+                mat4.identity(invTrans);
+                mat4.inverse(mv, invTrans);
+                mat4.transpose(invTrans);
 
-            gl.enableVertexAttribArray(positionLocation);
-            gl.enableVertexAttribArray(normalLocation);
-            //gl.enableVertexAttribArray(texCoordLocation);
+                gl.enableVertexAttribArray(positionLocation);
+                gl.enableVertexAttribArray(normalLocation);
+                //gl.enableVertexAttribArray(texCoordLocation);
 
 
-            var colors = vec3.create([1.0,1.0,1.0]);
-            gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
-            gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
+                var colors = vec3.create([1.0,1.0,1.0]);
+                gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+                
+                gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
+                gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
 
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
-            gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+                
+                gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
+                gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
-            // gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
-            // gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                // gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
+                // gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
 
-            setMatrixUniforms(models[idx]);
-            gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
+                setMatrixUniforms(models[idx]);
+                gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
 
-            //idx ++;
+                //idx ++;
+            }
         }
 
         gl.disableVertexAttribArray(positionLocation);
@@ -1456,7 +1153,7 @@
     }
 
 
-    var display_type = 0;
+    var display_type = 5;
 
     var lightGridTex = gl.createTexture();
     var lightIndexTex = gl.createTexture();
@@ -1598,130 +1295,6 @@
     }
 
     //Light bounding box
-    function getLightBoundingBoxNew(light_pos, radius, boundary)
-    {
-        var lx = light_pos[0];
-        var ly = light_pos[1];
-        var lz = light_pos[2];
-
-        var lx2 = lx*lx;
-        var ly2 = ly*ly;
-        var lz2 = lz*lz;
-
-        var r = radius;
-        var r2 = r*r;
-
-        //X direction
-        var dz = (r2*lx2 - (lx2 + lz2)*(r2-lz2));
-
-        console.log("dz " + dz);
-
-
-        if(dz <= 0){
-            boundary.left = 0;
-            boundary.right = canvas.width;
-            boundary.bottom = 0;
-            boundary.top = canvas.height;            
-            return 0;
-        }
-
-        var nx1 = (r*lx + Math.sqrt(dz)) / (lx2 + lz2);
-        var nx2 = (r*lx - Math.sqrt(dz)) / (lx2 + lz2);
-
-        var nz1 = (r-nx1*lx)/lz;
-        var nz2 = (r-nx2*lx)/lz;
-
-        var pzx1 = (lx2+lz2-r2) / (lz-(nz1/nx1)*lx);
-        var pzx2 = (lx2+lz2-r2) / (lz-(nz2/nx2)*lx);
-
-       // console.log("pzx1 " + pzx1);
-        //console.log("pzx2 " + pzx2);    
-
-        var viewX1, viewX2;
-        //viewX1 = viewX2 = canvas.width;
-        if(pzx1 < 0){
-            var px = pzx1 * nz1 / nx1;
-            viewX1 = nz1 * near / nx1;
-            viewX1 = ((viewX1 + 1) / 2.0) * canvas.width;
-           if(px < lx)
-               boundary.left = viewX1;
-           else{
-               boundary.right = viewX1;
-               // console.log("111 RIght");
-            }
-           //console.log("viewX1 " + viewX1);
-        }
-
-        if(pzx2 < 0){
-            var px = pzx2 * nz2 / nx2;
-            viewX2 = nz2 * near / nx2;
-            viewX2 = ((viewX2 + 1) / 2.0) * canvas.width;
-           if(px < lx)
-               boundary.left = viewX2;
-           else{
-               boundary.right = viewX2;
-                //console.log("222 RIght");
-               // console.log("viewX2 " + viewX2); 
-           }
-           //console.log("viewX2 " + viewX2); 
-        }
-
-
-        //boundary.left = viewX1 < viewX2? viewX1 : viewX2;
-        //boundary.right = viewX1 > viewX2? viewX1: viewX2;
-
-        //Y direction
-        var dy = r2*ly2 - (ly2+lz2)*(r2-lz2);
-        console.log("dy " + dy);
-        if(dy < 0){
-            //boundary.left = 0;
-            //boundary.right = canvas.width;
-            boundary.bottom = 0;
-            boundary.top = canvas.height;       
-            return 0;
-        }
-
-        var ny1 = (r*ly + Math.sqrt(dy)) / (ly2 + lz2);
-        var ny2 = (r*ly - Math.sqrt(dy)) / (ly2 + lz2);
-
-        var nz11 = (r-ny1*ly)/lz;
-        var nz22 = (r-ny2*ly)/lz;
-
-        var pzy1 = (ly2+lz2-r2)/(lz-(nz11/ny1)*ly);
-        var pzy2 = (ly2+lz2-r2)/(lz-(nz22/ny2)*ly);
-
-        var viewY1, viewY2;
-        //viewY1 = viewY2 = canvas.height;
-        var as = canvas.height / canvas.width;
-        
-        // if(pzy1 < 0)
-        // {
-        //     var py = -pzy1 * nz11 / ny1;
-        //     viewY1 = nz11 * near / (ny1 * as);
-        //     viewY1 = ((viewY1 + 1) / 2.0) * canvas.height;
-        //     if(py < ly)
-        //         boundary.bottom = viewY1
-        //     else{
-        //         boundary.top = viewY1;
-        //        //console.log("view Y1 " + viewY1);
-        //     }
-        // }
-
-        // if(pzy2 < 0)
-        // {
-        //     var py = -pzy2 * nz22 / ny2;
-        //     viewY2 = nz22 * near / (ny2 * as);
-        //     viewY2 = ((viewY2 + 1) / 2.0) * canvas.height;
-        //      if(py < ly)
-        //         boundary.bottom = viewY2
-        //     else
-        //         boundary.top = viewY2;
-        //     //console.log("view Y2 " + viewY2);
-        // }     
-
-        return true;
-    }
-
     function getLightBoundingBox(light_pos, radius, pv, viewport, boundary)
     {
         var lx = light_pos[0];
@@ -1730,32 +1303,10 @@
         //var dir = vec3.create([1.0,0.0,0.0]);
         
         cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
-        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
         var dir = cam_dir;
-        // var camUp = vec3.create([0,1,0]);
-        // var camLeft = vec3.create();
-        // vec3.cross(camUp, dir, camLeft);
-        // camLeft = vec3.normalize(camLeft);
-        // vec3.cross(dir, camLeft, camUp);
-        // camUp = vec3.normalize(camUp);
-
-
-        //var camUp = vec3.create([0.0,1.0,0.0]);
         var camUp = vec3.normalize(vec3.create([view[4],view[5],view[6]]));
-        //console.log("up vector " + camUp[0] + " " + camUp[1] + " " + camUp[2]);
-        //var forward = vec3.create([view[8], view[9], view[10]]);
         var camLeft = vec3.normalize(vec3.cross(camUp, cam_dir));
-        //var camLeft = vec3.normalize(vec3.cross(camUp, forward));
-        //var camLeft = vec3.normalize(vec3.create([view[0],view[1],view[2]]));
-
-        //console.log("left vector111 " + camLeft[0] + " " + camLeft[1] + " " + camLeft[2]);
-        //console.log("left vector222 " + view[0] + " " + view[1] + " " + view[2]);
-
-        //console.log("foward vector " + view[8] + " " + view[9] + " " + view[10]);
-        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
-
-
-        //var camLeft = vec3.create([1.0,0.0,0.0]);
+      
        
        
         var leftLight = vec4.create();
@@ -1792,10 +1343,6 @@
         boundary.right = rightx;
         boundary.bottom = bottomy;
         boundary.top = topy;
-
-        //console.log("cx is " + leftx);
-        //console.log("cy is " + rightx);
-        //console.log("r is " + r);
     }
 
     function setNonTileLight(boundary, light_pos, radius, color)
@@ -1824,9 +1371,9 @@
         var rightTile = Math.min(Math.ceil(boundary.right / tileSize), canvas.width/tileSize);
         var bottomTile = Math.max(Math.floor(boundary.bottom / tileSize),0);
 
-        for(var i = leftTile; i <= rightTile; i++)
+        for(var i = leftTile; i < rightTile; i++)
         {
-            for(var j = bottomTile; j <= topTile; j++)
+            for(var j = bottomTile; j < topTile; j++)
             {    
                 var indexId = i + j * tileWidth;
                 if(indexId < numTile && indexId >= 0){
@@ -1838,14 +1385,13 @@
 
     function resetLights()
     {
-        //lights.length = 0;
-        //lightPosition.length = 0;
-        //lightColorRadius.length = 0;
         lightGrid.length = 0;
         lightIndex.length = 0;
     }
 
 
+    var lightMove = 0.2;
+    var moveTime = 0.0;
     function setUpLights(){
 
         resetLights();   
@@ -1881,9 +1427,27 @@
         for(var i = 0; i<numTile; i++)
             tileLightId[i] = [];
 
+        moveTime ++;
+        if(moveTime >= 20)
+        {
+            moveTime = 0.0;
+            lightMove = -lightMove;
+        }
 
         for(var i = 0; i < lightNum; i++){
             var boundary = {left:0, right:0, top:0, bottom:0};
+
+            if(i%2 == 0 ){
+                lights[i].position[0] += lightMove;
+                lights[i].position[1] += lightMove;
+                lights[i].position[2] += lightMove;
+            }
+            else
+            {
+                lights[i].position[0] -= lightMove;
+                lights[i].position[1] -= lightMove;
+                lights[i].position[2] -= lightMove;
+            }
 
             var lightViewPos = vec4.create([lights[i].position[0], lights[i].position[1], lights[i].position[2], 1.0]);
             lightViewPos = mat4.multiplyVec4(view, lightViewPos);    
@@ -1891,8 +1455,6 @@
             lightPosition[i*3] = lightViewPos[0];
             lightPosition[i*3+1] = lightViewPos[1];
             lightPosition[i*3+2] = lightViewPos[2];
-
-            //getLightBoundingBoxNew(lightViewPos, lights[i].radius, boundary);
 
             getLightBoundingBox(lights[i].position, lights[i].radius, pv, viewport, boundary);
 
@@ -1904,14 +1466,14 @@
             // boundary.bottom = 0;
             // boundary.top = 600;
           
-            if(display_type == display_light || display_type == 0 || display_type == display_ink) 
+            if(display_type == display_light || display_type == 0 || display_type == display_ink || display_type == display_debugtile) 
                 setLightOnTile(boundary, i);
             else if(display_type == display_nontilelight){
                 setNonTileLight(boundary, lightViewPos, lights[i].radius, lights[i].color);                
             }
         }
         
-        if(display_type == display_light || display_type == 0 || display_type == display_ink){
+        if(display_type == display_light || display_type == 0 || display_type == display_ink || display_type == display_debugtile){
             var offset = 0;           
 
             for(var index = 0; index < numTile; index++)
@@ -1942,6 +1504,9 @@
 
             lights.push({position:vec3.create([20 + -40 * Math.random(), -25 + 30 * Math.random(), -5+15*Math.random()]),
                 color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+
+            //var r = vec3.length(lights[i].position) + 0.000001;
+            //var s = Math.sqrt() 
 
             //light position x y z
             lightPosition.push(lights[i].position[0]);
@@ -2179,20 +1744,11 @@
             radius = Math.min(Math.max(radius, 2.0), 15.0);
         }
 
-        if(display_type == display_stroke){
-            cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]])); 
-            viewVector = cam_dir;
-            updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
-        }
-
-
-        //eye = sphericalToCartesian(radius, azimuth, elevation);
-        //cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
-
-
-        //console.log("cam dir " + cam_dir[0] + " " + cam_dir[1] + " " + cam_dir[2]);
-        //view = mat4.create();
-        //mat4.lookAt(eye, center, up, view);
+        // if(display_type == display_stroke){
+        //     cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]])); 
+        //     viewVector = cam_dir;
+        //     updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);       
+        // }
 
         lastMouseX = newX;
         lastMouseY = newY;
@@ -2238,6 +1794,7 @@
         mat4.lookAt(eye, center, up, view);
     }
 
+    //dead method
     var pixels;
     function readDepthBuffer()
     {
@@ -2252,12 +1809,6 @@
         {
             pixels = new Uint8Array(canvas.width * canvas.height * 4);
             gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-            //console.log("Size of pixels " + pixels.length);
-            // for(var i = 0; i < pixels.length; i+=4)
-            // {
-            //     if( pixels[i+1]!= 0)
-            //         console.log(pixels[i]);
-            // }
         }
         
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -2268,87 +1819,34 @@
     function animate() { 
         camera();
 
+        var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
+        var lightdest = vec4.create();
+        mat4.multiplyVec4(view, [lightPos[0], lightPos[1], lightPos[2], 0.0], lightdest);
+        lightdest[3] = 0.6;
 
         bindFBO(0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        drawmesh();
-
-
-        if(display_type == display_ink){
-            setTextures();
-            bindFBO(3);
-            drawSilhouette();       
-
-            setTextures();
-            bindFBO(4);
-            gl.useProgram(silcull_prog);
-            
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_DepthSampler"),0);
-
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, depthRGBTexture);
-            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_DepthSamplerFake"),1);
-
-            gl.activeTexture(gl.TEXTURE2);
-            gl.bindTexture(gl.TEXTURE_2D, silcolorTexture);
-            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_SilColorSampler"),2);
-
-            gl.activeTexture(gl.TEXTURE3);
-            gl.bindTexture(gl.TEXTURE_2D, sildepthTexture);
-            gl.uniform1i(gl.getUniformLocation(silcull_prog, "u_SilDepthSampler"),3);
-
-            drawQuad();
-
-
-            setTextures();
-            bindFBO(5);
-            gl.useProgram(stroke_prog);
-          
-            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportWidth"), canvas.width);
-            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportHeight"), canvas.height);
-
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
-            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
-
-            drawQuad();
-
-
-            setTextures();
-            bindFBO(6);
-            gl.useProgram(strokeblur_prog);
-                 
-            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportWidth"), canvas.width);
-            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportHeight"), canvas.height);
-
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
-            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_StrokeSampler"),0);
-
-            drawQuad();
-        }
+        drawmesh();       
 
 
      	//2
      	setTextures();
-     	bindFBO(1);
+        if(display_type == display_ink)
+     	  bindFBO(1);
      	gl.enable(gl.BLEND);
      	gl.disable(gl.DEPTH_TEST);
      	gl.blendFunc(gl.ONE, gl.ONE);
      	gl.clear(gl.COLOR_BUFFER_BIT);
 
-        var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
-        var lightdest = vec4.create();
-        mat4.multiplyVec4(view, [lightPos[0], lightPos[1], lightPos[2], 0.0], lightdest);
-        lightdest[3] = 0.3;
+      
 
-        setupQuad(ambient_prog);
-        gl.uniform4fv(gl.getUniformLocation(ambient_prog,"u_Light"), lightdest);
-        drawQuad();
+        if(display_type != display_depth && display_type != display_position && display_type != display_color){
+            setupQuad(ambient_prog);
+            gl.uniform4fv(gl.getUniformLocation(ambient_prog,"u_Light"), lightdest);
+            drawQuad();
+        }
         
-        if(display_type == display_light || display_type == display_ink){
+        if(display_type == display_light || display_type == display_ink || display_type == display_debugtile){
             setUpLights();
             setupQuad(light_prog);
             lightQuad(light_prog);
@@ -2368,51 +1866,92 @@
         gl.disable(gl.BLEND);
 
 
-        //3
-     	setTextures();
-        bindFBO(2);
-        gl.enable(gl.BLEND);
-        gl.disable(gl.DEPTH_TEST);
-        gl.blendFunc(gl.ONE, gl.ONE);
-        gl.clear(gl.COLOR_BUFFER_BIT);   
+         if(display_type == display_ink){// for stroke
 
-        gl.useProgram(spatter_prog);
+            setTextures();
+            bindFBO(7);
+            setupQuad(edge_prog);
+            gl.uniform4fv(gl.getUniformLocation(edge_prog,"u_Light"), vec4.create([0.0, 0.0, 0.0, 0.3]));
+            gl.activeTexture(gl.TEXTURE4);
+            gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
+            gl.uniform1i(gl.getUniformLocation(edge_prog, "u_QuatColorSampler"),4);
+            drawQuad();
 
-        gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_DisplayType"), display_type);
+            setTextures();
+            bindFBO(5);
+            gl.useProgram(stroke_prog);
+          
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportWidth"), canvas.width);
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportHeight"), canvas.height);
 
-        gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Width"), canvas.width);
-        gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Height"), canvas.height);
+            // gl.activeTexture(gl.TEXTURE0);
+            // gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
+            // gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
-        gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_QuatColorSampler"),0);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
+            gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
 
-    	drawQuad();
-         gl.disable(gl.BLEND);
-
+            drawQuad();
 
 
-        //4
-        setTextures();
+            setTextures();
+            bindFBO(6);
+            gl.useProgram(strokeblur_prog);
+                 
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportWidth"), canvas.width);
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportHeight"), canvas.height);
 
-        gl.useProgram(post_prog);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
+            gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_StrokeSampler"),0);
 
-        gl.uniform1i(gl.getUniformLocation(post_prog, "u_DisplayType"), display_type);
+            drawQuad();
 
-        gl.uniform1f(gl.getUniformLocation(post_prog, "u_Width"), canvas.width);
-        gl.uniform1f(gl.getUniformLocation(post_prog, "u_Height"), canvas.height); 
+            //3
+         	setTextures();
+            bindFBO(2);
+            gl.enable(gl.BLEND);
+            gl.disable(gl.DEPTH_TEST);
+            gl.blendFunc(gl.ONE, gl.ONE);
+            gl.clear(gl.COLOR_BUFFER_BIT);   
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, postTexture);
-        gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
+            gl.useProgram(spatter_prog);
 
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
-        gl.uniform1i(gl.getUniformLocation(post_prog, "u_StrokeBlurtex"),1);
+            gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_DisplayType"), display_type);
 
-        drawQuad();
+            gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Width"), canvas.width);
+            gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Height"), canvas.height);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
+            gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_QuatColorSampler"),0);
+
+        	drawQuad();
+            gl.disable(gl.BLEND);
+
+            //4
+            setTextures();
+
+            gl.useProgram(post_prog);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.uniform1i(gl.getUniformLocation(post_prog, "u_DisplayType"), display_type);
+
+            gl.uniform1f(gl.getUniformLocation(post_prog, "u_Width"), canvas.width);
+            gl.uniform1f(gl.getUniformLocation(post_prog, "u_Height"), canvas.height); 
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, postTexture);
+            gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
+
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
+            gl.uniform1i(gl.getUniformLocation(post_prog, "u_StrokeBlurtex"),1);
+
+            drawQuad();
+        }
 
     	
         //reset
@@ -2440,13 +1979,5 @@
         initLightsFBO();      
 
         animate();
-     })();
-
-
-    
-
-
-
-
-    
+     })();    
  }());
