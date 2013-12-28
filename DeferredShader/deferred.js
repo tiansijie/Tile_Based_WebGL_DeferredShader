@@ -265,7 +265,7 @@ var rttFramebuffers = [];
 
 function initializeFBO() {
 
-    	console.log("initFBO");
+    console.log("initFBO");
     gl.getExtension("OES_texture_float");
     gl.getExtension("OES_texture_float_linear");
     var extDepth = gl.getExtension("WEBGL_depth_texture");
@@ -611,8 +611,8 @@ function initMeshBuffers()
     //address for obj
     //loader.load( 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.obj', 'http://127.0.0.1:8089/OBJ/sibenik/sibenik.mtl', function ( event ) {
     loader.load( 'http://127.0.0.1:8089/OBJ/sibenik.obj', function ( event ) {
-    		//loader.load( 'http://sijietian.com/WebGL/OBJ/sibenik.obj', function ( event ) {
-    	var object = event;
+    //loader.load( 'http://sijietian.com/WebGL/OBJ/sibenik.obj', function ( event ) {
+        var object = event;
 
         console.log("children " + object.children.length);
 
