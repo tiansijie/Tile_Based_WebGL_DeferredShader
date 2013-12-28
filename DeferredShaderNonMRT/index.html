@@ -8,12 +8,17 @@
 
 <body>
 <div class = "tip">
-    <p class = "extension" style = "padding-left : 100px"> Your browser is using <a href = "http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/" >WEBGL_draw_buffers</a> extension.</p>
+    <p class = "noextension" style = "padding-left:100px">Your browser doesn't support <a href = "http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/" >WEBGL_draw_buffers</a> extension which allows multiple render target(MRT) on WebGL. Please visit the link for more information about the extension.</p>
+    <p class = "extension" style = "padding-left : 100px"> Your browser is using <a href = "http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/" >WEBGL_draw_buffers</a> extension which allows multiple render target(MRT) on WebGL.</p>
 </div>
 <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
 <canvas id="canvas" style="border: none;" width="800" height="600" tabindex="1"></canvas>
+<div>
+    <p> <span style = "font-size:22px; color:#ff0000">Left click</span> and <span style = "font-size:22px; color:#ff0000">drag </span>your mouse to rotate the scene </p>
+    <p> Use <span style = "font-size:22px; color:#ff0000">A,W,S,D</span> to move the camera </p>
+</div>
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="jquery-1.10.2.min.js"></script>
 <script type="text/javascript" src="three/three.js"></script>
 <script type="text/javascript" src="three/OBJLoader.js"></script>
 <script type="text/javascript" src="three/MTLLoader.js"></script>
@@ -48,28 +53,46 @@
     }
 </script>
 
-<script id="pass_fs" type="x-shader/x-fragment">
-    #extension GL_EXT_draw_buffers : require
-    precision highp float;
+<script type="x-shader/x-fragment" id = "withoutdrawbufferfs">
+    precision mediump float;
 
-    uniform vec3 u_Color;
     //uniform sampler2D u_ColorSampler;
 
-    //in
+    uniform vec3 u_Color;
+
+    uniform int u_DrawMode;
+
     varying vec3 fs_Normal;
     varying vec4 fs_Position;
     varying vec2 fs_Texcoord;
     varying float fs_Depth;
 
-    void main(void)
-    {
-        //normal, position, depth, color
-        gl_FragData[0] = vec4(vec3(fs_Depth), 1.0);
-        gl_FragData[1] = vec4(normalize(fs_Normal.xyz), 1.0);
-        gl_FragData[2] = fs_Position;
-        gl_FragData[3] = vec4(u_Color, 1.0);
+
+    void main(void) {
+        //vec3 color = texture2D(u_ColorSampler,vTexcoord).rgb;
+        vec3 color = u_Color;
+        if(u_DrawMode == 0)
+        {
+            gl_FragColor = vec4(normalize(fs_Normal),0.0);    
+            //gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+            return;
+        }
+        else if(u_DrawMode == 1)
+        {
+            //diaplay color
+            gl_FragColor = vec4(color,1.0); 
+            //gl_FragColor = vec4(255.0,0.0,155.0,155.0);
+            return;         
+        }
+        else if(u_DrawMode == 2)
+        {
+            //display screen space position
+            gl_FragColor = vec4(fs_Position.xyz,1.0);
+            return;
+        }
     }
 </script>
+
 
 <script id="depth_fs" type="x-shader/x-fragment">
     precision highp float;
@@ -100,7 +123,7 @@
 
 <script id="light_fs" type="x-shader/x-fragment">
     precision highp float;
-    #extension GL_EXT_draw_buffers : require
+    //#extension GL_EXT_draw_buffers : require
    
 
     #define DISPLAY_DEPTH 0
@@ -173,6 +196,7 @@
 
                         int lightId;    
                         float temp = (mod(float(offset+i), u_FloatLightIndexSize));
+                        //float temp = float(offset+i) - floor(float(offset+i)/u_FloatLightIndexSize) * u_FloatLightIndexSize;
                         //precesion problem
                         if(temp == u_FloatLightIndexSize)
                            temp = 0.0;
@@ -236,7 +260,7 @@
                     }
                     else
                         break;
-                }      
+                }
                 if(u_DisplayType == DISPLAY_DEBUGTILE){
                    float countR = float(lightCount) / float(LIGHTNUM) * 40.0;
                    lightColor = vec3(  floor(((fs_Texcoord.x*u_Width) / float(u_TileSize))) / (u_WidthTile) * countR, floor(((fs_Texcoord.y*u_Height) / float(u_TileSize))) / (u_HeightTile) * countR , 1.0);
@@ -248,9 +272,7 @@
 
                 lightColor = clamp(lightColor, vec3(0.0), vec3(1.0));
             }       
-            //gl_FragData[0] = vec4(vec3(float(count) / float(LIGHTNUM)),1.0);
-            gl_FragData[0] = vec4(lightColor, 1.0);
-            // + vec4(color * 0.3,1.0);
+            gl_FragData[0] = vec4(lightColor, 1.0);// + vec4(color * 0.3,1.0);
         }
         else
             gl_FragData[0] = vec4(vec3(0.0), 1.0);
@@ -310,7 +332,7 @@
 
 
 <script id="diagnostic_fs" type="x-shader/x-fragment">
-    #extension GL_EXT_draw_buffers : require
+   //#extension GL_EXT_draw_buffers : require
     precision highp float;
 
     #define DISPLAY_DEPTH 0
@@ -356,11 +378,11 @@
         float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
-            gl_FragData[0] = vec4(vec3(lin_depth) * 10.0, 1.0);
+            gl_FragData[0] = vec4(vec3(lin_depth), 1.0);
         else if(u_DisplayType == DISPLAY_NORMAL)
             gl_FragData[0] = vec4(abs(normal), 1.0);
         else if(u_DisplayType == DISPLAY_POSITION)
-            gl_FragData[0] = vec4(abs(position)/u_Far * 15.0, 1.0);
+            gl_FragData[0] = vec4(abs(position)/u_Far, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR)
             gl_FragData[0] = vec4(color, 1.0);
         else if(u_DisplayType == DISPLAY_TOTAL)
@@ -377,7 +399,7 @@
 
 
 <script id="ambient_fs" type="x-shader/x-fragment">
-    #extension GL_EXT_draw_buffers : require
+    //#extension GL_EXT_draw_buffers : require
     precision highp float;
 
     uniform sampler2D u_Depthtex;
@@ -512,7 +534,7 @@
             vec3 strokecolor = texture2D(u_StrokeBlurtex,fs_Texcoord).rgb;  
             gl_FragData[0] =    vec4(strokecolor, 1.0);
             
-            if(strokecolor.x != 1.0 || strokecolor.y != 1.0 || strokecolor != 1.0)
+            if(strokecolor.x != 1.0 || strokecolor.y != 1.0 || strokecolor.z != 1.0)
             //if(equal(strokecolor, vec3(1.0,1.0,1.0)) == false)
             {
                gl_FragData[0] = vec4(min(spattercolor,strokecolor),1.0);
@@ -612,7 +634,7 @@
 
 <script type="x-shader/x-fragment" id = "siledgefs">
     precision mediump float; // have to add this, dont' exactly know why
-    #extension GL_EXT_draw_buffers : require   
+    //#extension GL_EXT_draw_buffers : require   
     //uniform int u_DrawMode;
     uniform vec3 u_Color;
 
@@ -628,7 +650,7 @@
         float linDepth = linearizeDepth(vDepth,0.1,10.0);
 
         gl_FragData[0] = vec4(1.0,0.0,0.0,1.0);
-        gl_FragData[1] = vec4(vec3(linDepth),1.0);
+        //gl_FragData[1] = vec4(vec3(linDepth),1.0);
 
         // if(u_DrawMode == 0)
         // {
@@ -720,7 +742,7 @@
                         if(newColor.x == 0.0 && newColor.y == 0.0 && newColor.z == 0.0 && newColor.w == 1.0)
                         //if(equal(newColor,vec4(0.0,0.0,0.0,1.0)) == true)
                         {
-                          numofColoredPixel ++;
+                            numofColoredPixel ++;
                         }
                     }
                 }
@@ -750,6 +772,8 @@
     {
 
         vec4 color = texture2D(u_StrokeSampler,fs_Texcoord);
+        // gl_FragColor = color;
+        // return;
         
         vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0)); 
         vec4 colorAccu = vec4(0.0,0.0,0.0,1.0);
