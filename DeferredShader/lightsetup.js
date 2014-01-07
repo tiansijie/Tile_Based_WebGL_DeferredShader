@@ -95,6 +95,7 @@ function resetLights()
 
 var lightMove = 0.2;
 var moveTime = 0.0;
+var maxTileLightNum = 0;
 function setUpLights(){
 
     resetLights();   
@@ -181,7 +182,9 @@ function setUpLights(){
 
         for(var index = 0; index < numTile; index++)
         {             
-            var size = tileLightId[index].length;                     
+            var size = tileLightId[index].length; 
+            if(size > maxTileLightNum)
+                maxTileLightNum = size;                    
 
             for(var k = 0; k < size; k++)
             {
@@ -205,8 +208,11 @@ function initLights(){
 
         var radius = 5.0;
 
-        lights.push({position:vec3.create([20 + -40 * Math.random(), -25 + 30 * Math.random(), -5+15*Math.random()]),
+        lights.push({position:vec3.create([20 + -40 * Math.random(), -25 + 45 * Math.random(), -2.5+3.0*Math.random()]),
             color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
+
+        // lights.push({position:vec3.create([20 + -20 * Math.random(), -25 + 40 * Math.random(), -5+5*Math.random()]),
+        //     color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
 
         //var r = vec3.length(lights[i].position) + 0.000001;
         //var s = Math.sqrt() 

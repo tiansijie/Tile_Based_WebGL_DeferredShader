@@ -8,8 +8,9 @@
 
 <body>
 <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
-<canvas id="canvas" style="border: none;" width="800px" height="600px" tabindex="1"></canvas>
-
+<canvas id="canvas" style="border: none;" width="1024px" height="768px" tabindex="1"></canvas>
+<p class = "extension" style = "padding-left : 100px"> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
+">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 
 
@@ -54,13 +55,16 @@
     varying vec2 fs_Texcoord;
     varying float fs_Depth;
 
+    uniform sampler2D u_Texutre;
+
     void main(void)
     {
         //normal, position, depth, color
         gl_FragData[0] = vec4(vec3(fs_Depth), 1.0);
         gl_FragData[1] = vec4(normalize(fs_Normal.xyz), 1.0);
         gl_FragData[2] = fs_Position;
-        gl_FragData[3] = vec4(u_Color, 1.0);
+        //gl_FragData[3] = vec4(u_Color.x, u_Color.y, u_Color.z, 1.0);
+        gl_FragData[3] = vec4(texture2D(u_Texutre, fs_Texcoord).xyz, 1.0);
     }
 </script>
 
@@ -78,6 +82,8 @@
     varying vec2 fs_Texcoord;
     varying float fs_Depth;
 
+    uniform sampler2D u_Texutre;
+
 
     void main(void) {
         //vec3 color = texture2D(u_ColorSampler,vTexcoord).rgb;
@@ -91,7 +97,7 @@
         else if(u_DrawMode == 1)
         {
             //diaplay color
-            gl_FragColor = vec4(color,1.0); 
+            gl_FragColor = vec4(texture2D(u_Texutre, fs_Texcoord).xyz, 1.0);
             //gl_FragColor = vec4(255.0,0.0,155.0,155.0);
             return;         
         }
@@ -132,8 +138,7 @@
     #define DISPLAY_NONTILE_LIGHTS 6
     #define DISPLAY_INK 7
     #define DISPLAY_DEBUGTILE 8
-    #define TILESIZE 32    
-    #define LIGHTNUM 200
+    #define MAXLIGHTNUM 1000
  
 
     uniform sampler2D u_Depthtex;
@@ -153,6 +158,7 @@
     uniform float u_Near;
     uniform float u_Width;
     uniform float u_Height;
+    uniform int u_MaxTileLightNum;
 
     uniform int u_TileSize;
     //uniform Light u_Lights[LIGHTNUM];
@@ -188,7 +194,7 @@
             vec3 lightColor = vec3(0.0);
             int lightCount = 0;
             if(count > 0){
-                for(int i = 0; i < LIGHTNUM; i++){
+                for(int i = 0; i < MAXLIGHTNUM; i++){
                     if(i < count){
 
                         int lightId;    
@@ -215,6 +221,8 @@
                             //float distoL = distance(lightPos, position);
                             //distoL = max(lightColorRadius.w - distoL, 0.0);
                             float diffuse = max(dot(normal, normalize(lightPos - position)),0.0); 
+                            if(diffuse == 0.0)
+                                diffuse = dot(-normal, normalize(lightPos - position));
 
                             float dist = distance(lightPos, position);
                             float lightR = lightColorRadius.w;
@@ -257,11 +265,8 @@
                     else
                         break;
                 }      
-                if(u_DisplayType == DISPLAY_DEBUGTILE){
-                   float countR = float(lightCount) / float(LIGHTNUM) * 40.0;
-                   lightColor = vec3(  floor(((fs_Texcoord.x*u_Width) / float(u_TileSize))) / (u_WidthTile) * countR, floor(((fs_Texcoord.y*u_Height) / float(u_TileSize))) / (u_HeightTile) * countR , 1.0);
-
-                   lightColor = vec3(float(count) / float(LIGHTNUM));
+                if(u_DisplayType == DISPLAY_DEBUGTILE){                   
+                   lightColor = vec3(float(count) / float(u_MaxTileLightNum)) ;                   
                 }
                 else
                     lightColor = mix(vec3(0.0), vec3(1.0), lightColor);
@@ -318,7 +323,7 @@
                 attenuation = attenuation / lightR + 1.0;
                 attenuation = 1.0 / (attenuation * attenuation);   
 
-                float diffuse = max(dot(normal, normalize(light - position)),0.0);
+                float diffuse = abs(dot(normal, normalize(light - position)));
                 gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);// * ((lightRadius- distance(light, position)) / lightRadius), 0.0);
             }
             else
@@ -376,16 +381,21 @@
         if(u_DisplayType == DISPLAY_DEPTH)
             gl_FragColor = vec4(vec3(lin_depth) * 10.0, 1.0);
         else if(u_DisplayType == DISPLAY_NORMAL)
-            gl_FragColor = vec4(abs(normal), 1.0);
+            gl_FragColor = vec4((normal), 1.0);
         else if(u_DisplayType == DISPLAY_POSITION)
             gl_FragColor = vec4(abs(position)/u_Far * 15.0, 1.0);
-        else if(u_DisplayType == DISPLAY_COLOR)
+        else if(u_DisplayType == DISPLAY_COLOR){
+            //gl_FragColor = vec4(color, 1.0);
             gl_FragColor = vec4(color, 1.0);
+        }
         else if(u_DisplayType == DISPLAY_TOTAL)
         {
+            if(diffuse == 0.0)
+                diffuse = dot(-normal, normalize(light - position));
+
             gl_FragColor = vec4(diffuse * color , 1.0);      
             //if(diffuse == 0.0)
-             //   gl_FragData[0] = vec4(color,1.0);
+             //   gl_FragData[0] = vec4(color,1.0);            
         }
         else
             gl_FragColor = vec4(vec3(0.0), 1.0);      
@@ -411,7 +421,7 @@
     void main(void)
     {     
         vec3 depth = texture2D(u_Depthtex, fs_Texcoord).xyz;
-        vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
+        vec3 normal = normalize(texture2D(u_Normaltex, fs_Texcoord).xyz);
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
 
@@ -419,9 +429,14 @@
         float strength = u_Light.w;
 
         float ambient = 0.09;
-        float diffuse = max(0.0, dot(normalize(light),normal));
+        float diffuse = max(0.0, dot(normalize(light),(normal)));
+        if(diffuse == 0.0)
+            diffuse = dot(normalize(light),-(normal));
+       
         gl_FragColor = vec4(color*(strength*diffuse + ambient),1.0);
 
+        //gl_FragColor = vec4(color*diffuse,1.0);
+        
         //gl_FragData[0] = vec4(vec3(0.0), 1.0);
     }
 </script>
