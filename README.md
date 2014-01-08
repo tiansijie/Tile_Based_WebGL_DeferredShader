@@ -100,19 +100,19 @@ Please make sure your web browser support these WebGL extensions before you run 
 		
 *	Stroke rendering
 
-![Alt text](webglDeferredShader/results/stroke.JPG "Figure 2")	
+![Alt text](NPRChinesepainting/results/stroke.JPG "Figure 2")	
 
 *	Quantization Step
 
-![Alt text](webglDeferredShader/results/quantization.JPG "Figure 2")	
+![Alt text](NPRChinesepainting/results/quantization.JPG "Figure 2")	
 
 *	Spattering Step
 
-![Alt text](webglDeferredShader/results/spatter.JPG "Figure 2")
+![Alt text](NPRChinesepainting/results/spatter.JPG "Figure 2")
 
 *	Final Result Step
 	
-![Alt text](webglDeferredShader/results/bunny_stroke_diffustion.JPG "Figure 2")
+![Alt text](NPRChinesepainting/results/bunny_stroke_diffustion.JPG "Figure 2")
 
 
 ## Performance Evaluation ##
@@ -142,7 +142,7 @@ Chinese painting effect with and without stroke
 
 ![Alt text](screenshots/TileOnly.png "Figure")
 
-![Alt text](webglDeferredShader/results/inkdiffusion2.JPG "Figure")
+![Alt text](NPRChinesepainting/results/inkdiffusion2.JPG "Figure")
 
 ![Alt text](screenshots/bunny_diffustion2.png "Figure")
 
