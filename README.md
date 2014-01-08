@@ -22,6 +22,9 @@ Some of the rendered results:
 
 ![Alt text](screenshots/texture1.png "Figure 2")
 
+position, normal, color and depth textures
+![Alt text](screenshots/layout.png "position, normal, color and depth textures")
+
 
 
 ## Live Demo ##
@@ -149,16 +152,6 @@ Chinese painting effect with and without stroke
 ![Alt text](screenshots/conference_room.png "Figure")
 
 ![Alt text](screenshots/spi_ink_stroke2.png "Figure")
-
-![Alt text](screenshots/SilEdge2.png "Figure")
-
-![Alt text](screenshots/SilEdge3.png "Figure")
-
-![Alt text](screenshots/SilEdge4.png "Figure")
-
-![Alt text](screenshots/SilEdge5.png "Figure")
-
-
 
 
 
