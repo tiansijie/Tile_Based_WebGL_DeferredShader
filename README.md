@@ -18,6 +18,10 @@ Some of the rendered results:
 
 ![Alt text](screenshots/500lights2.png "Figure 2")
 
+![Alt text](screenshots/texture2.png "Figure 2")
+
+![Alt text](screenshots/texture1.png "Figure 2")
+
 
 
 ## Live Demo ##
@@ -38,13 +42,14 @@ Please make sure your web browser support these WebGL extensions before you run 
 - 6 tile based deferred shading
 - 7 non tile based deferred shading
 - 8 NPR with tile based deferred shading
+- 9 Debug view for Tile based lighting
 - Drag mouse to changed view direction
 - Use w,s,a,d to move forward, backward, left and right
 - Use q, e to move up and down.
 
 
 ## Video ##
-[http://youtu.be/od9kJC089BI](http://youtu.be/od9kJC089BI)
+[https://vimeo.com/83616115](https://vimeo.com/83616115)
 
 
 
