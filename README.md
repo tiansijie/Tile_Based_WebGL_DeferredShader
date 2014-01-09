@@ -182,4 +182,6 @@ Third Party Library
 -------------------------------------------------
 [Three.js](http://threejs.org/) for obj loader
 
+[Stats.js](https://github.com/mrdoob/stats.js/ "Stats FPS Tracker") FPS Tracker
+
 
