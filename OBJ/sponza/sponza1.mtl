@@ -1,0 +1,216 @@
+newmtl sp_00_luk_mal1
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_ST_KP.JPG
+map_Ka 01_ST_KP.JPG
+bump 01_St_kp-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_00_luk_mali
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd SP_LUK.JPG
+map_Ka SP_LUK.JPG
+bump sp_luk-bump.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_00_pod
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd KAMEN.JPG
+map_Ka KAMEN.JPG
+bump KAMEN-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_00_prozor
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd PROZOR1.JPG
+map_Ka PROZOR1.JPG
+bump PROZOR1.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_00_stup
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_STUB.JPG
+map_Ka 01_STUB.JPG
+bump 01_STUB-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_00_svod
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd KAMEN-stup.JPG
+map_Ka KAMEN-stup.JPG
+bump KAMEN-stup.jpg -bm 0
+Ni 1.50
+Ks 0.03 0.03 0.03
+Ns 1.00
+newmtl sp_00_vrata_kock
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd VRATA_KO.JPG
+map_Ka VRATA_KO.JPG
+bump VRATA_KO.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 20.00
+newmtl sp_00_vrata_krug
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd VRATA_KR.JPG
+map_Ka VRATA_KR.JPG
+bump VRATA_KR.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 20.00
+newmtl sp_00_zid
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd KAMEN.JPG
+map_Ka KAMEN.JPG
+bump KAMEN-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_luk_a
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd SP_LUK.JPG
+map_Ka SP_LUK.JPG
+bump sp_luk-bump.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_stub
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_STUB.JPG
+map_Ka 01_STUB.JPG
+bump 01_STUB-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_stub_baza
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_S_BA.JPG
+map_Ka 01_S_BA.JPG
+bump 01_S_BA.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_stub_baza_
+illum 4
+Kd 0.78 0.78 0.78
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 20.00
+newmtl sp_01_stub_kut
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_STUB.JPG
+map_Ka 01_STUB.JPG
+bump 01_STUB-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_stup
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd X01_ST.JPG
+map_Ka X01_ST.JPG
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_01_stup_baza
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 01_S_BA.JPG
+map_Ka 01_S_BA.JPG
+bump 01_S_BA.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_02_reljef
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd RELJEF.JPG
+map_Ka RELJEF.JPG
+bump reljef-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_svod_kapitel
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 00_SKAP.JPG
+map_Ka 00_SKAP.JPG
+bump 00_SKAP.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_vijenac
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 00_SKAP.JPG
+map_Ka 00_SKAP.JPG
+bump 00_SKAP.JPG -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00
+newmtl sp_zid_vani
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd KAMEN.JPG
+map_Ka KAMEN.JPG
+bump KAMEN-bump.jpg -bm 0
+Ni 1.50
+Ks 0.00 0.00 0.00
+Ns 50.00

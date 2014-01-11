@@ -70,3 +70,53 @@ var lightColorRadius = [];
 var lightGrid = [];
 var lightIndex = [];
 var lightNum = 100;//Light numbers
+
+
+var positionLocation;
+var normalLocation;
+var texCoordLocation;
+var textureLocation;
+
+var u_InvTransLocation;
+var u_ModelLocation;
+var u_ViewLocation;
+var u_PerspLocation;
+var u_CameraSpaceDirLightLocation;
+var u_ColorSamplerLocation;
+var u_Drawmode;
+
+var positionLocationdepth;
+var normalLocationdepth;
+var u_InvTransLocationdepth;
+var u_ModelLocationdepth;
+var u_ViewLocationdepth;
+var u_PerspLocationdepth;
+var u_CameraSpaceDirLightLocationdepth;
+var u_ColorSamplerLocationdepth;
+
+var u_DisplayTypeLocation;
+var u_NearLocation;
+var u_FarLocation;
+var u_DepthtexLocation;
+var u_NormaltexLocation;
+var u_PositiontexLocation;
+var u_ColortexLocation;
+
+var quad_positionLocation = 0;
+var quad_texCoordLocation = 1;
+
+var u_TileSizeLocation;
+var u_LightNumLocation;
+var u_WidthTileLocation;
+var u_HeightTileLocation;
+var u_MaxTileLightNumLocation;
+var u_LightGridtexLocation;
+var u_LightIndexImageSizeLocation;
+var u_FloatLightIndexSizeLocation;
+var u_LightIndextexLocation;
+var u_LightPositiontexLocation;
+var u_LightColorRadiustexLocation;
+
+
+
+

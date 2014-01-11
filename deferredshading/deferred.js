@@ -1,35 +1,4 @@
-var positionLocation;
-var normalLocation;
-var texCoordLocation;
-var u_InvTransLocation;
-var u_ModelLocation;
-var u_ViewLocation;
-var u_PerspLocation;
-var u_CameraSpaceDirLightLocation;
-var u_ColorSamplerLocation;
-var u_Drawmode;
 
-var positionLocationdepth;
-var normalLocationdepth;
-var u_InvTransLocationdepth;
-var u_ModelLocationdepth;
-var u_ViewLocationdepth;
-var u_PerspLocationdepth;
-var u_CameraSpaceDirLightLocationdepth;
-var u_ColorSamplerLocationdepth;
-
-var u_DisplayTypeLocation;
-var u_NearLocation;
-var u_FarLocation;
-var u_DepthtexLocation;
-var u_NormaltexLocation;
-var u_PositiontexLocation;
-var u_ColortexLocation;
-
-var quad_positionLocation = 0;
-var quad_texCoordLocation = 1;
-
-var siledge_positionLocation;
 
 //difererent shaders
 var pass_prog;
@@ -84,6 +53,9 @@ function initializeShader() {
         texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
         console.log("TextCor " , texCoordLocation);
 
+
+        textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
+
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
@@ -106,6 +78,7 @@ function initializeShader() {
         texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
         console.log("TextCor " , texCoordLocation);
 
+        textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
@@ -154,6 +127,19 @@ function initializeShader() {
     light_prog = createProgram(gl, vs, fs, message);
     gl.bindAttribLocation(diagnostic_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(diagnostic_prog, quad_texCoordLocation, "Texcoord");
+
+    u_TileSizeLocation = gl.getUniformLocation(light_prog, "u_TileSize");
+    u_LightNumLocation = gl.getUniformLocation(light_prog, "u_LightNum");
+    u_WidthTileLocation = gl.getUniformLocation(light_prog, "u_WidthTile");
+    u_HeightTileLocation = gl.getUniformLocation(light_prog, "u_HeightTile");
+    u_MaxTileLightNumLocation = gl.getUniformLocation(light_prog, "u_MaxTileLightNum");
+    u_LightGridtexLocation = gl.getUniformLocation(light_prog, "u_LightGridtex");
+    u_LightIndexImageSizeLocation = gl.getUniformLocation(light_prog, "u_LightIndexImageSize");
+    u_FloatLightIndexSizeLocation = gl.getUniformLocation(light_prog, "u_FloatLightIndexSize");
+    u_LightIndextexLocation = gl.getUniformLocation(light_prog, "u_LightIndextex");
+    u_LightPositiontexLocation = gl.getUniformLocation(light_prog, "u_LightPositiontex");
+    u_LightColorRadiustexLocation = gl.getUniformLocation(light_prog, "u_LightColorRadiustex");
+
 
     if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
         alert("Could not initialise light_fs");
@@ -616,17 +602,25 @@ var meshTextures = [];
 
 var isLoadingComplete = false;
 
+for(var i = 0; i < 38; i++){
+    var meshTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, meshTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255])); 
+    meshTextures.push(meshTex);
+}
+
 
 //texture loading code from http://learningwebgl.com/blog/?p=507
-function initTexture(url) {
-    var meshTex = gl.createTexture();
-    meshTex.image = new Image();
-    meshTex.image.onload = function() {
-        handleLoadedTexture(meshTex)
+function initTexture(url, index) {
+    // var meshTex = gl.createTexture();
+    meshTextures[index].image = new Image();
+    meshTextures[index].image.onload = function() {
+        handleLoadedTexture(meshTextures[index]);
     }
 
-    meshTex.image.src = url;
-    meshTextures.push(meshTex);
+    meshTextures[index].image.src = url;
+
+    //meshTextures.push(meshTex);
 }
 
 
@@ -634,9 +628,9 @@ function handleLoadedTexture(texture) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
     //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);//gl.REPEAT
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     gl.bindTexture(gl.TEXTURE_2D, null);
 }
@@ -692,11 +686,11 @@ function initMeshBuffers()
                         //console.log("hell "+child.material.map.image);
                         //var url = child.material.map.image.src;
                         //var url =  "http://127.0.0.1:8089/OBJ/sponza/KAMEN.JPG";                        
-                        initTexture(url);
+                        initTexture(url, tBuffers.length);
                     }
                     else
                     {                             
-                        initTexture(url);
+                        initTexture(url, tBuffers.length);
                     }
                     
 
@@ -1000,12 +994,12 @@ function drawmesh()
     			gl.enableVertexAttribArray(texCoordLocation);
 
 
-    			var colors = vec3.create([0.2,0.3,0.4]);            
-    			gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+    			// var colors = vec3.create([0.2,0.3,0.4]);            
+    			// gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
-                	gl.activeTexture(gl.TEXTURE0);
-               	 	gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
-                	gl.uniform1i(gl.getUniformLocation(pass_prog, "u_Texutre"),0);
+            	gl.activeTexture(gl.TEXTURE0);
+           	 	gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
+            	gl.uniform1i(textureLocation,0);
 
 
     			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
@@ -1016,8 +1010,8 @@ function drawmesh()
     			gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
 
-                	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
-                	gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+            	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
+            	gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
     			// gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
     			// gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
@@ -1038,7 +1032,7 @@ function drawmesh()
     }
 }
 
-
+var timetest = 0;
 //draw buffer extension is NOT supported
 function drawmeshNoExt(drawmode)
 {
@@ -1059,16 +1053,24 @@ function drawmeshNoExt(drawmode)
 
     			gl.enableVertexAttribArray(positionLocation);
     			gl.enableVertexAttribArray(normalLocation);
-                	gl.enableVertexAttribArray(texCoordLocation);
+                gl.enableVertexAttribArray(texCoordLocation);
 
-    			var colors = vec3.create([0.2,0.9,0.4]);
-    			gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+    			// var colors = vec3.create([0.2,0.9,0.4]);
+    			// gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
 
-               		if(drawmode == 1){                
-                    		gl.activeTexture(gl.TEXTURE0);
-                    		gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
-                    		gl.uniform1i(gl.getUniformLocation(pass_prog, "u_Texutre"),0);                
-                	}
+               
+           		if(drawmode == 1){       
+                    if(meshTextures[i].image.complete){         
+                    //if(meshTextures[i].powerOf2){
+                        if(meshTextures[i].image.height & (meshTextures[i].image.height-1) != 0){
+                            console.log("not power of 2")
+                        }
+                		gl.activeTexture(gl.TEXTURE0);
+                		gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
+                		gl.uniform1i(textureLocation,0);                
+                    }
+            	}
+               
 
     			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
     			gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
@@ -1077,8 +1079,8 @@ function drawmeshNoExt(drawmode)
     			gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
     			gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
-                	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
-                	gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
+                gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
 
 
     			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
@@ -1109,17 +1111,17 @@ var lightIndexWidth, lightIndexHeight;
 
 function lightQuad(program)
 {
-	gl.uniform1i(gl.getUniformLocation(program, "u_TileSize"), tileSize);
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightNum"), lightNum);
-	gl.uniform1f(gl.getUniformLocation(program, "u_WidthTile"), tileWidth);
-	gl.uniform1f(gl.getUniformLocation(program, "u_HeightTile"), tileHeight);
-    gl.uniform1i(gl.getUniformLocation(program, "u_MaxTileLightNum"), maxTileLightNum);
+	gl.uniform1i(u_TileSizeLocation, tileSize);
+	gl.uniform1i(u_LightNumLocation, lightNum);
+	gl.uniform1f(u_WidthTileLocation, tileWidth);
+	gl.uniform1f(u_HeightTileLocation, tileHeight);
+    gl.uniform1i(u_MaxTileLightNumLocation, maxTileLightNum);
     
 
 	gl.activeTexture(gl.TEXTURE4);
 	gl.bindTexture(gl.TEXTURE_2D, lightGridTex); 
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, tileWidth, tileHeight, 0, gl.RGB, gl.FLOAT, new Float32Array(lightGrid));       
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightGridtex"),4);    
+	gl.uniform1i(u_LightGridtexLocation,4);    
 
 
 	var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
@@ -1129,25 +1131,25 @@ function lightQuad(program)
 		lightIndex.push(-1);
 	}       
 
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightIndexImageSize"), lightIndexWidth);      
-	gl.uniform1f(gl.getUniformLocation(program, "u_FloatLightIndexSize"), lightIndexWidth);    
+	gl.uniform1i(u_LightIndexImageSizeLocation, lightIndexWidth);      
+	gl.uniform1f(u_FloatLightIndexSizeLocation, lightIndexWidth);    
 
 	gl.activeTexture(gl.TEXTURE5);
 	gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);   
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, lightIndexWidth, lightIndexWidth, 0, gl.LUMINANCE, gl.FLOAT, new Float32Array(lightIndex));       
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightIndextex"),5);
+	gl.uniform1i(u_LightIndextexLocation,5);
 
 
 	gl.activeTexture(gl.TEXTURE6);
 	gl.bindTexture(gl.TEXTURE_2D, lightPositionTex);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, lightPosition.length/3, 1.0, 0, gl.RGB, gl.FLOAT, new Float32Array(lightPosition));       
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightPositiontex"),6);
+	gl.uniform1i(u_LightPositiontexLocation,6);
 
 
 	gl.activeTexture(gl.TEXTURE7);
 	gl.bindTexture(gl.TEXTURE_2D, lightColorRadiusTex);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, lightColorRadius.length/4, 1.0, 0, gl.RGBA, gl.FLOAT, new Float32Array(lightColorRadius));
-	gl.uniform1i(gl.getUniformLocation(program, "u_LightColorRadiustex"),7);
+	gl.uniform1i(u_LightColorRadiustexLocation,7);
 }
 
 
@@ -1440,12 +1442,12 @@ function camera()
 }
 
 
+var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
+var lightdest = vec4.create();
 
 function animate() { 
 	camera();
-
-	var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
-	var lightdest = vec4.create();
+	
 	mat4.multiplyVec4(view, [lightPos[0], lightPos[1], lightPos[2], 0.0], lightdest);
 	lightdest[3] = 0.3;
 
@@ -1602,6 +1604,13 @@ function animate() {
 	stats.update();
 }
 
+function testt()
+{
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    drawmesh(); 
+    window.requestAnimFrame(testt); 
+    stats.update();
+}
 
 (function loadWebGL(){    
 
@@ -1616,5 +1625,6 @@ function animate() {
 	setUpLights();
 	initLightsFBO();      
 
+    //testt();
 	animate();
 })();
