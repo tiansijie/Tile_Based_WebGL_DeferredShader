@@ -773,8 +773,9 @@ function initMeshBuffers()
 
     // objxhr.send();
     //address for obj
-     loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
-    // loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
+    loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
+    // loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
+    //loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
     //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
     //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
 
@@ -1393,6 +1394,11 @@ function showValue(newValue)
 {
     document.getElementById("range").innerHTML=newValue;
     sliderBarActive = true;
+
+    lightNum =  $('#range').text();
+    initLights();
+    setUpLights();
+    initLightsFBO();     
 }
 
 var upKey = vec3.create();
@@ -1520,25 +1526,6 @@ function handleMouseUp(event) {
 	mouseLeftDown = false;
 	mouseRightDown = false;
 	mouseMiddleDown = false;
-    if(sliderBarActive == true)
-    {
-        lightNum =  $('#range').text();
-        console.log("light number: "+ lightNum);
-        cancelRequestAnimFrame(request);        
-        initLights();
-        setUpLights();
-        initLightsFBO(); 
-        animate();
-      //  isLoadingComplete = true;
-        // if(display_type == display_light || display_type == display_ink || display_type == display_debugtile || display_type == display_nontilelight)
-        // {
-        //     lightNum =  $('#range').text();
-        //     console.log("light number: "+ lightNum);
-        //     setUpLights();          
-        // }
-        sliderBarActive = false;
-    }
-
 }
 
 var MouseDowndeltaX = 0;

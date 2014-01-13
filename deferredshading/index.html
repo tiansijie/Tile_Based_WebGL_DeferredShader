@@ -35,7 +35,7 @@
     <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
     ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
     <p>
-        This demo includes 100 dynamic lights and 66450 triangles. Video deom is also on <a href = "https://vimeo.com/83616115">Vimeo</a>
+        This demo includes 100 dynamic lights and 66450 triangles. Also see the video on <a href = "https://vimeo.com/83616115">Vimeo</a>
     </p>
     <p>
     <h2>Instructions:</h2>
@@ -328,11 +328,11 @@
 
                               
 
-                                lightColor += quaColor * attenuation * lightColorRadius.xyz; //* ((lightColorRadius.w - distance(lightPos, position)) / lightColorRadius.w);// * lightColorRadius.xyz;
+                                lightColor += quaColor * attenuation * lightColorRadius.xyz * diffuse * color; //* ((lightColorRadius.w - distance(lightPos, position)) / lightColorRadius.w);// * lightColorRadius.xyz;
                             }
                             else
                             {
-                                lightColor += diffuse * lightColorRadius.xyz * attenuation;// * ((lightColorRadius.w - distance(lightPos, position)) /     lightColorRadius.w);
+                                lightColor += diffuse * lightColorRadius.xyz * attenuation* color;// * ((lightColorRadius.w - distance(lightPos, position)) /     lightColorRadius.w);
                             }                            
                             //lightColor += lightColorRadius.xyz;
                             //if(distoL > 0.0)

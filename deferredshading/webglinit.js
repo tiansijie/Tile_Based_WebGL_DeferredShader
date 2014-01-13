@@ -1,5 +1,6 @@
 var message = document.getElementById("message");
 var canvas = document.getElementById("canvas");
+//var context = canvas.getContext('2d');
 var gl = createWebGLContext(canvas, message);
 if (!gl) {
     alert("No WebGL Supported on Your Browser");

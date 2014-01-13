@@ -247,15 +247,20 @@ var maxZ=-1000;
 
 function initLights(){
 
+    lights = [];
+    lightPosition = [];
+    lightColorRadius = [];
+
+    var deltaX = maxX-minX;
+    var deltaY = maxY-minY;
+    var deltaZ = maxZ-minZ;
     //console.log("initLights");
     for(var i = 0; i < lightNum; i++){
         //var boundary = {left:0, right:0, top:0, bottom:0};
 
         var radius = 5.0;
 
-        var deltaX = maxX-minX;
-        var deltaY = maxY-minY;
-        var deltaZ = maxZ-minZ;
+       
 
         lights.push({position:vec3.create([ minX+deltaX * Math.random(), minY+deltaY * Math.random(), minZ+deltaZ*Math.random()]),
             color:vec3.create([Math.random(),Math.random(),Math.random()]),radius:radius});
