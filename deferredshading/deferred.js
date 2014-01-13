@@ -772,9 +772,10 @@ function initMeshBuffers()
     // };
 
     // objxhr.send();
+    loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
     //address for obj
     //loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
-     loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
+    // loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
     //loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
     //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
     //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {

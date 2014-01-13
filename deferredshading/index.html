@@ -16,10 +16,10 @@
     h2 { font: bold italic 17px/17px Arial; padding-top: 10px; }
     small { display: block; font-size: 11px; line-height: 15px; }
     canvas { position: absolute; top: 0; left: 0;}
-    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 400px; padding-right: 40px; overflow: auto; /*background-color: black;*/}
+    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; /*background-color: black;*/}
     #help .slider{width:300px; padding-left:10px;padding-top:5px;}
     #range{font-size:18px;font:Arial, sans-serif;}
-    #info { position: absolute; top: 650px; right: 0; bottom: 0; width: 400px; padding-right: 40px; overflow: auto; }
+    #info { position: absolute; top: 700px; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; }
     #loading {position:absolute; left:30%; top:50%; right:0; color:white; font-size: 30px;}
 </style>
 
@@ -231,6 +231,8 @@
         return  (2.0 * near) / (far + near -  exp_depth * (far - near)); 
     }
 
+
+
     void main(void)
     {
         vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
@@ -260,10 +262,12 @@
                         //float temp = (mod(float(offset+i), u_FloatLightIndexSize));
                         float temp = float(offset + i);
                         int addNext = 0;
+                                                
                         if(temp >= u_FloatLightIndexSize){
                             temp -= u_FloatLightIndexSize;
-                            addNext = 1;
-                        }
+                            addNext++;
+                        }           
+                           
 
                         //float temp = float(offset+i) - u_FloatLightIndexSize * floor(float(offset+i)/u_FloatLightIndexSize);
                         

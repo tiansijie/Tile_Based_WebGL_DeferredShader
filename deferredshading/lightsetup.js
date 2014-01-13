@@ -117,6 +117,7 @@ function resetLights()
 {
     lightGrid.length = 0;
     lightIndex.length = 0;
+    maxTileLightNum = 0;
 }
 
 
