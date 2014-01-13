@@ -773,8 +773,8 @@ function initMeshBuffers()
 
     // objxhr.send();
     //address for obj
-    // loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
-    loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
+     loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
+    // loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
     //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
     //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
 
@@ -1524,10 +1524,11 @@ function handleMouseUp(event) {
     {
         lightNum =  $('#range').text();
         console.log("light number: "+ lightNum);
-
-        // initLights();
-        // setUpLights();
-        // initLightsFBO(); 
+        cancelRequestAnimFrame(request);        
+        initLights();
+        setUpLights();
+        initLightsFBO(); 
+        animate();
       //  isLoadingComplete = true;
         // if(display_type == display_light || display_type == display_ink || display_type == display_debugtile || display_type == display_nontilelight)
         // {
@@ -1619,6 +1620,26 @@ function camera()
 	mat4.lookAt(eye, center, up, view);
 }
 
+window.cancelRequestAnimFrame = ( function() {
+    return window.cancelAnimationFrame          ||
+        window.webkitCancelRequestAnimationFrame    ||
+        window.mozCancelRequestAnimationFrame       ||
+        window.oCancelRequestAnimationFrame     ||
+        window.msCancelRequestAnimationFrame        ||
+        clearTimeout
+} )();
+
+window.requestAnimFrame = (function(){
+    return  window.requestAnimationFrame       || 
+        window.webkitRequestAnimationFrame || 
+        window.mozRequestAnimationFrame    || 
+        window.oRequestAnimationFrame      || 
+        window.msRequestAnimationFrame     || 
+        function(/* function */ callback, /* DOMElement */ element){
+            return window.setTimeout(callback, 1000 / 60);
+        };
+})();
+var request;
 
 var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
 var lightdest = vec4.create();
@@ -1781,8 +1802,8 @@ function animate() {
 	
     stats.update();    
 
-    window.requestAnimFrame(animate); 
-   
+    //window.requestAnimFrame(animate); 
+    request = requestAnimFrame(animate);
 
 	
     //window.setTimeout(animate, 1000 / 60);
