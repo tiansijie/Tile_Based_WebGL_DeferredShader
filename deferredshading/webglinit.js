@@ -29,7 +29,7 @@ var display_debugtile = 8;
 
 //var model;
 //var mv;
-var invTrans;
+var invTrans = mat4.create();
 
 var radius = 100.0;
 var azimuth = Math.PI;
@@ -116,6 +116,41 @@ var u_FloatLightIndexSizeLocation;
 var u_LightIndextexLocation;
 var u_LightPositiontexLocation;
 var u_LightColorRadiustexLocation;
+
+var nonLightLoc_Light;
+var nonLightLoc_LightColor;
+
+var ambientLoc_Light;
+
+var diagnosticLoc_Light;
+
+var diagnosticLocs = [];
+var ambientLocs = [];
+var lightLocs = [];
+var nonlightLocs = [];
+var edgeLocs = [];
+
+var edgeLoc_Light;
+var edgeLoc_Quatcolorsampler;
+
+var strokeLoc_Width;
+var strokeLoc_Height;
+var strokeLoc_SilColorSample;
+
+var strokeblurLoc_Width;
+var strokeblurLoc_Height;
+var strokeblurLoc_StrokeSample;
+
+var spatterLoc_Displaytype;
+var spatterLoc_Width;
+var spatterLoc_Height;
+var spatterLoc_QuatColorSampler;
+
+var postLoc_Displaytype;
+var postLoc_Width;
+var postLoc_Height;
+var postLoc_Possttex;
+var postLoc_StrokeBlurtex;
 
 
 

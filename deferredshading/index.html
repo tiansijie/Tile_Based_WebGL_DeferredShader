@@ -6,11 +6,52 @@
 <meta http-equiv="X-UA-Compatible" content="chrome=1">  <!-- Use Chrome Frame in IE --> 
 </head>
 
+<style type="text/css">
+    * { -webkit-user-select: none; -moz-user-select: none; cursor: default; }
+    body { font: 13px/18px Arial, sans-serif; background: white; color: black; overflow: hidden; }
+    a { color: inherit; cursor: pointer; }
+    img { display: none; }
+    ul { padding: 0 0 0 20px; }
+    h1 { font: bold italic 30px/30px Arial; text-align: center; }
+    h2 { font: bold italic 17px/17px Arial; padding-top: 10px; }
+    small { display: block; font-size: 11px; line-height: 15px; }
+    canvas { position: absolute; top: 0; left: 0; }
+    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 280px; padding-right: 20px; overflow: auto; }
+    #info { position: absolute; top: 600px; right: 0; bottom: 0; width: 280px; padding-right: 20px; overflow: auto; }
+    #loading { position: absolute; left: 0; top: 50%; right: 300px; text-align: center; margin-top: -8px; }
+</style>
+
 <body>
 <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
 <canvas id="canvas" style="border: none;" width="1024px" height="768px" tabindex="1"></canvas>
-<p class = "extension" style = "padding-left : 100px"> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
+
+<div id = "help">
+<h1>Tile Based Deferred Shading</h1>
+<p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
 ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
+<p>
+    This demo includes 100 dynamic lights and 66450 triangles. Video deom is also on <a href = "https://vimeo.com/83616115">Vimeo</a>
+</p>
+<p>
+<h2>Instructions:</h2>
+<p>
+    <li>Drag mouse to view around the scene</li>
+    <li>w,s,a,d to move the camera</li>
+    <li>1 depth texutre</li>
+    <li>2 normal texture</li>
+    <li>3 position texutre</li>
+    <li>4 color texture</li>
+    <li>5 ambient texture</li>
+    <li>6 tile based deferred shading</li>
+    <li>7 non tile based deferred shading</li>
+    <li>8 NPR with tile based deferred shading</li>
+    <li>9 debug view for tile based</li>
+</p>
+<h2> Source Code: </h2>
+<a href = "https://github.com/YuqinShao/Tile_Based_WebGL_DeferredShader">code</a>
+</P>
+</div>
+
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 
 
@@ -46,7 +87,7 @@
     #extension GL_EXT_draw_buffers : require
     precision highp float;
 
-    //uniform vec3 u_Color;
+    uniform vec3 u_Color;
     //uniform sampler2D u_ColorSampler;
 
     //in
@@ -125,8 +166,8 @@
 </script>
 
 
-<script id="light_fs" type="x-shader/x-fragment">
-    precision highp float;
+<script id="light_fs" type="x-shader/x-fragment">    
+    precision highp float;  
    
 
     #define DISPLAY_DEPTH 0
@@ -190,6 +231,7 @@
             vec3 gridInfo = texture2D(u_LightGridtex, gridIndex).xyz;
             int offset = int(gridInfo.x);
             int count = int(gridInfo.y);   
+            int offset2 = int(gridInfo.z);
 
             vec3 lightColor = vec3(0.0);
             int lightCount = 0;
@@ -198,7 +240,13 @@
                     if(i < count){
 
                         int lightId;    
-                        float temp = (mod(float(offset+i), u_FloatLightIndexSize));
+                        //float temp = (mod(float(offset+i), u_FloatLightIndexSize));
+                        float temp = float(offset + i);
+                        int addNext = 0;
+                        if(temp >= u_FloatLightIndexSize){
+                            temp -= u_FloatLightIndexSize;
+                            addNext = 1;
+                        }
 
                         //float temp = float(offset+i) - u_FloatLightIndexSize * floor(float(offset+i)/u_FloatLightIndexSize);
                         
@@ -219,8 +267,9 @@
                         float lightSize =  u_FloatLightIndexSize-1.0;
 
                         vec2 dataIndex = vec2(
-                             temp / lightSize,
-                            floor(float((offset+i) / (u_LightIndexImageSize))) / lightSize
+                            temp / lightSize,
+                            //floor(float((offset2+i) / (u_LightIndexImageSize))) / (lightSize)
+                            float(offset2 + addNext) / lightSize
                             );                          
                       
                         //vec2 dataIndex = vec2(float(offset+i) / float(u_LightIndexImageSize-1), 1.0);
@@ -327,9 +376,8 @@
         vec3 light = u_Light.xyz;
         float lightRadius = u_Light.w;
 
-
-         if( u_DisplayType == DISPLAY_NONTILE_LIGHTS )
-        {            
+        if( u_DisplayType == DISPLAY_NONTILE_LIGHTS )
+        {   
             if(distance(light, position) < lightRadius){
                 float dist = distance(light, position);
                 float lightR = lightRadius;
@@ -394,11 +442,11 @@
         //max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
-            gl_FragColor = vec4(vec3(lin_depth) * 10.0, 1.0);
+            gl_FragColor = vec4(vec3(lin_depth) * 30.0, 1.0);
         else if(u_DisplayType == DISPLAY_NORMAL)
             gl_FragColor = vec4(abs(normal), 1.0);
         else if(u_DisplayType == DISPLAY_POSITION)
-            gl_FragColor = vec4(abs(position)/u_Far * 15.0, 1.0);
+            gl_FragColor = vec4(abs(position)/u_Far * 120.0, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR){
             //gl_FragColor = vec4(color, 1.0);
             gl_FragColor = vec4(color, 1.0);

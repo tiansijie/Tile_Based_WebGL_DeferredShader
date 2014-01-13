@@ -1,5 +1,3 @@
-
-
 //difererent shaders
 var pass_prog;
 var depth_prog;
@@ -28,11 +26,11 @@ function initializeShader() {
         //alert("You need WebGL Draw Buffer Extension by turning on 'Enable WebGL Draft Extensions' on your web browser. Chrome keys in chrome://flags. Firefox keys in about:config.");
 
         //return window.location.href = "http://sijietian.com/WebGL/noMRTdeferredshading/index.html";
-        document.write("<p class = \"extension\" style = \"padding-left : 100px\"> Your browser is NOT using <a href = \"http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/\" >WEBGL_draw_buffers</a> extension.</p>");
+        document.write("<div id= \"info\"> <p> Your browser is NOT using <a href = \"http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/\" >WEBGL_draw_buffers</a> extension.</p></div>");
         console.log("No WEBGL_draw_buffers support -- this is legal");
         isExt = false;
     } else {
-        document.write("<p class = \"extension\" style = \"padding-left : 100px\"> Your browser is using <a href = \"http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/\" >WEBGL_draw_buffers</a> extension.</p>");
+        document.write("<div id= \"info\"> <p> Your browser is using <a href = \"http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/\" >WEBGL_draw_buffers</a> extension.</p></div>");
         console.log("Successfully enabled WEBGL_draw_buffers extension");
         isExt = true;
     }
@@ -95,6 +93,20 @@ function initializeShader() {
     gl.bindAttribLocation(diagnostic_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(diagnostic_prog, quad_texCoordLocation, "Texcoord");
 
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_DisplayType"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Near"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Far"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Width"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Height"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Depthtex"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Normaltex"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Positiontex"));
+    diagnosticLocs.push(gl.getUniformLocation(diagnostic_prog, "u_Colortex"));
+
+    diagnosticLoc_Light = gl.getUniformLocation(diagnostic_prog,"u_Light");
+
+    //u_Locations[0] = diagnosticLocs;
+
     if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
         alert("Could not initialise diagnostic_fs");
     }
@@ -106,6 +118,21 @@ function initializeShader() {
     gl.bindAttribLocation(ambient_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(ambient_prog, quad_texCoordLocation, "Texcoord");
 
+    
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_DisplayType"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Near"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Far"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Width"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Height"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Depthtex"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Normaltex"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Positiontex"));
+    ambientLocs.push(gl.getUniformLocation(ambient_prog, "u_Colortex"));
+
+    ambientLoc_Light = gl.getUniformLocation(ambient_prog,"u_Light");
+
+    //u_Locations.push(ambientLocs);
+
     if (!gl.getProgramParameter(ambient_prog, gl.LINK_STATUS)) {
         alert("Could not initialise ambient_fs");
     	}
@@ -116,6 +143,19 @@ function initializeShader() {
     edge_prog = createProgram(gl, vs, fs, message);
     gl.bindAttribLocation(edge_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(edge_prog, quad_texCoordLocation, "Texcoord");
+
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_DisplayType"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Near"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Far"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Width"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Height"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Depthtex"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Normaltex"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Positiontex"));
+    edgeLocs.push(gl.getUniformLocation(edge_prog, "u_Colortex"));
+
+    edgeLoc_Light = gl.getUniformLocation(edge_prog,"u_Light");
+    edgeLoc_Quatcolorsampler = gl.getUniformLocation(edge_prog, "u_QuatColorSampler");
 
     if (!gl.getProgramParameter(edge_prog, gl.LINK_STATUS)) {
         alert("Could not initialise edgefs");
@@ -139,6 +179,17 @@ function initializeShader() {
     u_LightIndextexLocation = gl.getUniformLocation(light_prog, "u_LightIndextex");
     u_LightPositiontexLocation = gl.getUniformLocation(light_prog, "u_LightPositiontex");
     u_LightColorRadiustexLocation = gl.getUniformLocation(light_prog, "u_LightColorRadiustex");
+    
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_DisplayType"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Near"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Far"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Width"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Height"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Depthtex"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Normaltex"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Positiontex"));
+    lightLocs.push(gl.getUniformLocation(light_prog, "u_Colortex"));
+
 
 
     if (!gl.getProgramParameter(diagnostic_prog, gl.LINK_STATUS)) {
@@ -151,6 +202,20 @@ function initializeShader() {
     nontilelight_prog = createProgram(gl, vs, fs, message);
     gl.bindAttribLocation(nontilelight_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(nontilelight_prog, quad_texCoordLocation, "Texcoord");
+    
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_DisplayType"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Near"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Far"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Width"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Height"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Depthtex"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Normaltex"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Positiontex"));
+    nonlightLocs.push(gl.getUniformLocation(nontilelight_prog, "u_Colortex"));
+
+    nonLightLoc_Light = gl.getUniformLocation(nontilelight_prog, "u_Light");
+    nonLightLoc_LightColor = gl.getUniformLocation(nontilelight_prog, "u_LightColor");
+
 
     if (!gl.getProgramParameter(nontilelight_prog, gl.LINK_STATUS)) {
         alert("Could not initialise nontilelight_fs");
@@ -164,6 +229,12 @@ function initializeShader() {
     gl.bindAttribLocation(post_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(post_prog, quad_texCoordLocation, "Texcoord");
 
+    postLoc_Displaytype = gl.getUniformLocation(post_prog, "u_DisplayType");
+    postLoc_Width = gl.getUniformLocation(post_prog, "u_Width");
+    postLoc_Height = gl.getUniformLocation(post_prog, "u_Height");
+    postLoc_Possttex = gl.getUniformLocation(post_prog, "u_Posttex");
+    postLoc_StrokeBlurtex = gl.getUniformLocation(post_prog, "u_StrokeBlurtex");
+
     if (!gl.getProgramParameter(post_prog, gl.LINK_STATUS)) {
         alert("Could not initialise post_fs");
     }
@@ -172,9 +243,15 @@ function initializeShader() {
     vs = getShaderSource(document.getElementById("post_vs"));
     fs = getShaderSource(document.getElementById("spatterfs"));
 
+
     spatter_prog = createProgram(gl, vs, fs, message);
     gl.bindAttribLocation(spatter_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(spatter_prog, quad_texCoordLocation, "Texcoord");
+
+    spatterLoc_Displaytype = gl.getUniformLocation(spatter_prog, "u_DisplayType");
+    spatterLoc_Width = gl.getUniformLocation(spatter_prog, "u_Width");
+    spatterLoc_Height = gl.getUniformLocation(spatter_prog, "u_Height");
+    spatterLoc_QuatColorSampler = gl.getUniformLocation(spatter_prog, "u_QuatColorSampler");
 
     if (!gl.getProgramParameter(spatter_prog, gl.LINK_STATUS)) {
         alert("Could not initialise spatter_prog");
@@ -219,6 +296,10 @@ function initializeShader() {
     gl.bindAttribLocation(stroke_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(stroke_prog, quad_texCoordLocation, "Texcoord");
 
+    strokeLoc_Width = gl.getUniformLocation(stroke_prog, "u_viewportWidth");
+    strokeLoc_Height = gl.getUniformLocation(stroke_prog, "u_viewportHeight");
+    strokeLoc_SilColorSample = gl.getUniformLocation(stroke_prog, "u_SilColorSampler");
+
     if (!gl.getProgramParameter(stroke_prog, gl.LINK_STATUS)) {
         alert("Could not initialise stroke_prog");
     }                  
@@ -231,6 +312,10 @@ function initializeShader() {
     strokeblur_prog = createProgram(gl, vs, fs, message);
     gl.bindAttribLocation(strokeblur_prog, quad_positionLocation, "Position");
     gl.bindAttribLocation(strokeblur_prog, quad_texCoordLocation, "Texcoord");
+
+    strokeblurLoc_Width = gl.getUniformLocation(strokeblur_prog, "u_viewportWidth");
+    strokeblurLoc_Height = gl.getUniformLocation(strokeblur_prog, "u_viewportHeight");
+    strokeblurLoc_StrokeSample = gl.getUniformLocation(strokeblur_prog, "u_StrokeSampler")
 
     if (!gl.getProgramParameter(strokeblur_prog, gl.LINK_STATUS)) {
         alert("Could not initialise stroke_prog");
@@ -635,6 +720,24 @@ function handleLoadedTexture(texture) {
     gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
+// Create the XHR object.
+function createCORSRequest(method, url) {
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr) {
+    // XHR for Chrome/Firefox/Opera/Safari.
+    xhr.open(method, url, true);
+  } else if (typeof XDomainRequest != "undefined") {
+    // XDomainRequest for IE.
+    xhr = new XDomainRequest();
+    xhr.open(method, url);
+  } else {
+    // CORS not supported.
+    xhr = null;
+  }
+  return xhr;
+}
+
+
 
 function initMeshBuffers()
 {
@@ -647,9 +750,32 @@ function initMeshBuffers()
     hashedges = {};
     var edgeidx = 0;
     
+    // var objurl = 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj';
+    // var mtlurl = 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl';
 
+    // var objxhr = createCORSRequest('GET', objurl);
+    // var mtlxhr = createCORSRequest('GET', mtlurl);
+
+    // var url1;
+    // if (!objxhr) {
+    //     alert('CORS not supported');
+    //     return;
+    // }
+
+    // objxhr.onload = function() {
+    //     url1 = objxhr.responseText;
+    //     console.log("fefefefefe"+url1);
+    // }
+
+    // objxhr.onerror = function() {
+    //     alert('Woops, there was an error making the request.');
+    // };
+
+    // objxhr.send();
     //address for obj
     loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
+    
+    //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
     //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
 
     //loader.load( 'http://127.0.0.1:8089/OBJ/crytek-sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/crytek-sponza/sponza.mtl', function ( event ) {
@@ -725,6 +851,16 @@ function initMeshBuffers()
                     	bufferVertices.push(meshVertices[indexc*3]);
                     	bufferVertices.push(meshVertices[indexc*3+1]);
                     	bufferVertices.push(meshVertices[indexc*3+2]);    
+
+
+                        minX = Math.min(minX, Math.min(meshVertices[indexa*3], Math.min(meshVertices[indexb*3], meshVertices[indexc*3])));
+                        minY = Math.min(minY, Math.min(meshVertices[indexa*3+1], Math.min(meshVertices[indexb*3+1], meshVertices[indexc*3+2])));
+                        minZ = Math.min(minZ, Math.min(meshVertices[indexa*3+2], Math.min(meshVertices[indexb*3+2], meshVertices[indexc*3+2])));
+
+                        maxX = Math.max(maxX, Math.max(meshVertices[indexa*3], Math.max(meshVertices[indexb*3], meshVertices[indexc*3])));
+                        maxY = Math.max(maxY, Math.max(meshVertices[indexa*3+1], Math.max(meshVertices[indexb*3+1], meshVertices[indexc*3+2])));
+                        maxZ = Math.max(maxZ, Math.max(meshVertices[indexa*3+2], Math.max(meshVertices[indexb*3+2], meshVertices[indexc*3+2])));
+
 
                         
                         var uv = UVs[i];
@@ -808,11 +944,11 @@ function initMeshBuffers()
                     	// 	meshNormals.numItems = meshNormals.length / 3;
                     	// 	nBuffers.push(normalBuffer);
 
-                        // textureBuffer = gl.createBuffer();
-                        // gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-                        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshUV), gl.STATIC_DRAW);
-                        // meshUV.numItems = meshUV.length / 2;
-                        // tBuffers.push(textureBuffer);
+                     //        textureBuffer = gl.createBuffer();
+                     //        gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+                     //        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshUV), gl.STATIC_DRAW);
+                     //        meshUV.numItems = meshUV.length / 2;
+                     //        tBuffers.push(textureBuffer);
 
                     	// 	indexBuffer = gl.createBuffer();
                     	// 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);      
@@ -910,6 +1046,12 @@ function initMeshBuffers()
         //updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);
         isLoadingComplete = true;
 
+        initLights();
+        setUpLights();
+        initLightsFBO(); 
+
+        animate();
+
     });
     
 } // end for initmesh function
@@ -973,7 +1115,8 @@ function setMatrixUniforms(models){
 	gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);    
 }
 
-
+var mv = mat4.create();
+var dragonColor = vec3.create([0.2,0.3,0.4]);
 function drawmesh()
 {
     if(isLoadingComplete){
@@ -981,10 +1124,10 @@ function drawmesh()
 
     	for(var idx = 0; idx < models.length; idx++){
     		for(var i = 0; i < vBuffers.length; i++){
-    			var mv = mat4.create();
+    			
     			mat4.multiply(view, models[idx], mv);
 
-    			invTrans = mat4.create();
+    			//invTrans = mat4.create();
     			mat4.identity(invTrans);
     			mat4.inverse(mv, invTrans);
     			mat4.transpose(invTrans);
@@ -993,9 +1136,8 @@ function drawmesh()
     			gl.enableVertexAttribArray(normalLocation);
     			gl.enableVertexAttribArray(texCoordLocation);
 
-
-    			// var colors = vec3.create([0.2,0.3,0.4]);            
-    			// gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
+ 			
+    			//gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),dragonColor);
 
             	gl.activeTexture(gl.TEXTURE0);
            	 	gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
@@ -1003,18 +1145,14 @@ function drawmesh()
 
 
     			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
-    			gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);            
-
+    			gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
     			gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
     			gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
-
             	gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
             	gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-    			// gl.bindBuffer(gl.ARRAY_BUFFER, meshes[mesh].textureBuffer);
-    			// gl.vertexAttribPointer(texCoordLocation,  meshes[mesh].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
+    			
     			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
 
     			setMatrixUniforms(models[idx]);
@@ -1043,10 +1181,10 @@ function drawmeshNoExt(drawmode)
 
     	for(var idx = 0; idx < models.length; idx++){
     		for(var i = 0; i < vBuffers.length; i++){
-    			var mv = mat4.create();
+    			//var mv = mat4.create();
     			mat4.multiply(view, models[idx], mv);
 
-    			invTrans = mat4.create();
+    			//invTrans = mat4.create();
     			mat4.identity(invTrans);
     			mat4.inverse(mv, invTrans);
     			mat4.transpose(invTrans);
@@ -1054,10 +1192,8 @@ function drawmeshNoExt(drawmode)
     			gl.enableVertexAttribArray(positionLocation);
     			gl.enableVertexAttribArray(normalLocation);
                 gl.enableVertexAttribArray(texCoordLocation);
-
-    			// var colors = vec3.create([0.2,0.9,0.4]);
-    			// gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),colors);
-
+    			
+    			//gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),dragonColor);
                
            		if(drawmode == 1){       
                     if(meshTextures[i].image.complete){         
@@ -1116,12 +1252,7 @@ function lightQuad(program)
 	gl.uniform1f(u_WidthTileLocation, tileWidth);
 	gl.uniform1f(u_HeightTileLocation, tileHeight);
     gl.uniform1i(u_MaxTileLightNumLocation, maxTileLightNum);
-    
 
-	gl.activeTexture(gl.TEXTURE4);
-	gl.bindTexture(gl.TEXTURE_2D, lightGridTex); 
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, tileWidth, tileHeight, 0, gl.RGB, gl.FLOAT, new Float32Array(lightGrid));       
-	gl.uniform1i(u_LightGridtexLocation,4);    
 
 
 	var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
@@ -1130,6 +1261,18 @@ function lightQuad(program)
 	{
 		lightIndex.push(-1);
 	}       
+
+    for(var i = 0; i < lightGrid.length; i+=3)
+    {
+        lightGrid[i+2] = lightGrid[i] / lightIndexWidth;
+        lightGrid[i] = lightGrid[i] % lightIndexWidth; 
+    }
+
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, lightGridTex); 
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, tileWidth, tileHeight, 0, gl.RGB, gl.FLOAT, new Float32Array(lightGrid));       
+    gl.uniform1i(u_LightGridtexLocation,4);  
+     
 
 	gl.uniform1i(u_LightIndexImageSizeLocation, lightIndexWidth);      
 	gl.uniform1f(u_FloatLightIndexSizeLocation, lightIndexWidth);    
@@ -1155,36 +1298,36 @@ function lightQuad(program)
 
 
 
-function setupQuad(program)
+function setupQuad(program, locs)
 {
 	gl.useProgram(program);
 	//gl.enable(gl.BLEND);
 
-	gl.uniform1i(gl.getUniformLocation(program, "u_DisplayType"), display_type);
+	gl.uniform1i(locs[0], display_type);
 
-	gl.uniform1f(gl.getUniformLocation(program, "u_Near"), near);
-	gl.uniform1f(gl.getUniformLocation(program, "u_Far"), far);
+	gl.uniform1f(locs[1], near);
+	gl.uniform1f(locs[2], far);
 
 
-	gl.uniform1f(gl.getUniformLocation(program, "u_Width"), canvas.width);
-	gl.uniform1f(gl.getUniformLocation(program, "u_Height"), canvas.height); 
+	gl.uniform1f(locs[3], canvas.width);
+	gl.uniform1f(locs[4], canvas.height); 
 
 
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-	gl.uniform1i(gl.getUniformLocation(program, "u_Depthtex"),0);
+	gl.uniform1i(locs[5],0);
 
 	gl.activeTexture(gl.TEXTURE1);
 	gl.bindTexture(gl.TEXTURE_2D, normalTexture);
-	gl.uniform1i(gl.getUniformLocation(program, "u_Normaltex"),1);
+	gl.uniform1i(locs[6],1);
 
 	gl.activeTexture(gl.TEXTURE2);
 	gl.bindTexture(gl.TEXTURE_2D, positionTexture);
-	gl.uniform1i(gl.getUniformLocation(program, "u_Positiontex"),2);
+	gl.uniform1i(locs[7],2);
 
 	gl.activeTexture(gl.TEXTURE3);
 	gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-	gl.uniform1i(gl.getUniformLocation(program, "u_Colortex"),3);
+	gl.uniform1i(locs[8],3);
 
 }
 
@@ -1245,14 +1388,17 @@ function setTextures() {
 
 
 
-
+var upKey = vec3.create();
+var right = vec3.create();
+var vec3Temp = vec3.create();
+var dir = vec3.create();
 function keyMove(type)
-{
-	var dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
-	var up = vec3.create([0,1,0]);
-	var right = vec3.create();
-	vec3.normalize(vec3.cross(dir,up, right));
-	vec3.normalize(vec3.cross(right,dir, up));     
+{	
+    vec3Temp[0] = center[0]-eye[0]; vec3Temp[1] = center[1]-eye[1]; vec3Temp[2] = center[2]-eye[2];
+    vec3.normalize(vec3Temp, dir);
+    upKey[0] = 0; upKey[1] = 1; upKey[2] = 0;	
+	vec3.normalize(vec3.cross(dir,upKey, right));
+	vec3.normalize(vec3.cross(right,dir, upKey));     
 
 	var scale = 0.1;
 
@@ -1291,8 +1437,6 @@ function keyMove(type)
 		center[1] -=  1 * scale;
 		center[2] -=  0 * scale;
 	}
-
-
 }
 
 
@@ -1396,20 +1540,29 @@ function handleMouseMove(event) {
 		MouseDowndeltaY = deltaY;
 		MouseDowndeltaX = deltaX;
 
-		var dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
-		var up = vec3.create([0,1,0]);
-		var right = vec3.create();
-		vec3.normalize(vec3.cross(dir,up, right));
-		vec3.normalize(vec3.cross(right,dir, up));         
+		// var dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
+		// var up = vec3.create([0,1,0]);
+		// var right = vec3.create();
+		// vec3.normalize(vec3.cross(dir,up, right));
+		// vec3.normalize(vec3.cross(right,dir, up));   
+        vec3Temp[0] = center[0]-eye[0]; vec3Temp[1] = center[1]-eye[1]; vec3Temp[2] = center[2]-eye[2];
+        vec3.normalize(vec3Temp, dir);
+        upKey[0] = 0; upKey[1] = 1; upKey[2] = 0;   
+        vec3.normalize(vec3.cross(dir,upKey, right));
+        vec3.normalize(vec3.cross(right,dir, upKey));       
 
 		center[0] += 0.01 * (MouseDowndeltaY * up[0] - MouseDowndeltaX * right[0]);
 		center[1] += 0.01 * (MouseDowndeltaY * up[1] - MouseDowndeltaX * right[1]);
 		center[2] += 0.01 * (MouseDowndeltaY * up[2] - MouseDowndeltaX * right[2]);      
 	}
-	else
+	else if(mouseRightDown)
 	{
-		radius -= 0.01 * deltaY;
-		radius = Math.min(Math.max(radius, 2.0), 15.0);
+        vec3Temp[0] = center[0]-eye[0]; vec3Temp[1] = center[1]-eye[1]; vec3Temp[2] = center[2]-eye[2];
+        vec3.normalize(vec3Temp, dir);
+        var sign = deltaX > 0?1:-1;
+        center[0] += 0.02*dir[0]*sign;
+        center[1] += 0.02*dir[1]*sign;
+        center[2] += 0.02*dir[2]*sign;        
 	}
 
 	lastMouseX = newX;
@@ -1444,6 +1597,7 @@ function camera()
 
 var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
 var lightdest = vec4.create();
+var inkLight = vec4.create([0.0, 0.0, 0.0, 0.3]);
 
 function animate() { 
 	camera();
@@ -1483,26 +1637,26 @@ function animate() {
 
 
 	if(display_type != display_depth && display_type != display_position && display_type != display_color && display_type != display_debugtile && display_type != display_normal){
-		setupQuad(ambient_prog);
-		gl.uniform4fv(gl.getUniformLocation(ambient_prog,"u_Light"), lightdest);
+		setupQuad(ambient_prog, ambientLocs);
+		gl.uniform4fv(ambientLoc_Light, lightdest);
 		drawQuad();
 	}
 
 	if(display_type == display_light || display_type == display_ink || display_type == display_debugtile){
 		setUpLights();
-		setupQuad(light_prog);
+		setupQuad(light_prog, lightLocs);
 		lightQuad(light_prog);
 		drawQuad();
 	}  
 	else if(display_type == display_nontilelight){
-		setupQuad(nontilelight_prog);
+		setupQuad(nontilelight_prog, nonlightLocs);
 		setUpLights();
 		gl.disable(gl.SCISSOR_TEST);
 	}
 	else
 	{
-		setupQuad(diagnostic_prog);
-		gl.uniform4fv(gl.getUniformLocation(diagnostic_prog,"u_Light"), lightdest);            
+		setupQuad(diagnostic_prog, diagnosticLocs);
+		gl.uniform4fv(diagnosticLoc_Light, lightdest);            
 		drawQuad();       
 	}
 	gl.disable(gl.BLEND);
@@ -1512,19 +1666,18 @@ function animate() {
 
 		setTextures();
 		bindFBO(7);
-		setupQuad(edge_prog);
-		gl.uniform4fv(gl.getUniformLocation(edge_prog,"u_Light"), vec4.create([0.0, 0.0, 0.0, 0.3]));
+		setupQuad(edge_prog, edgeLocs);
+		gl.uniform4fv(edgeLoc_Light, inkLight);
 		gl.activeTexture(gl.TEXTURE4);
 		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
-		gl.uniform1i(gl.getUniformLocation(edge_prog, "u_QuatColorSampler"),4);
+		gl.uniform1i(edgeLoc_Quatcolorsampler,4);
 		drawQuad();
 
 		setTextures();
 		bindFBO(5);
 		gl.useProgram(stroke_prog);
-
-		gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportWidth"), canvas.width);
-		gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_viewportHeight"), canvas.height);
+		gl.uniform1i(strokeLoc_Width, canvas.width);
+		gl.uniform1i(strokeLoc_Height, canvas.height);
 
 		// gl.activeTexture(gl.TEXTURE0);
 		// gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
@@ -1532,7 +1685,7 @@ function animate() {
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
-		gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
+		gl.uniform1i(strokeLoc_SilColorSample,0);
 
 		drawQuad();
 
@@ -1541,12 +1694,12 @@ function animate() {
 		bindFBO(6);
 		gl.useProgram(strokeblur_prog);
 
-		gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportWidth"), canvas.width);
-		gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_viewportHeight"), canvas.height);
+		gl.uniform1i(strokeblurLoc_Width, canvas.width);
+		gl.uniform1i(strokeblurLoc_Height, canvas.height);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
-		gl.uniform1i(gl.getUniformLocation(strokeblur_prog, "u_StrokeSampler"),0);
+		gl.uniform1i(strokeblurLoc_StrokeSample,0);
 
 		drawQuad();
 
@@ -1560,14 +1713,14 @@ function animate() {
 
 		gl.useProgram(spatter_prog);
 
-		gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_DisplayType"), display_type);
+		gl.uniform1i(spatterLoc_Displaytype, display_type);
 
-		gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Width"), canvas.width);
-		gl.uniform1f(gl.getUniformLocation(spatter_prog, "u_Height"), canvas.height);
+		gl.uniform1f(spatterLoc_Width, canvas.width);
+		gl.uniform1f(spatterLoc_Height, canvas.height);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
-		gl.uniform1i(gl.getUniformLocation(spatter_prog, "u_QuatColorSampler"),0);
+		gl.uniform1i(spatterLoc_QuatColorSampler,0);
 
 		drawQuad();
 		gl.disable(gl.BLEND);
@@ -1579,18 +1732,18 @@ function animate() {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		gl.uniform1i(gl.getUniformLocation(post_prog, "u_DisplayType"), display_type);
+		gl.uniform1i(postLoc_Displaytype, display_type);
 
-		gl.uniform1f(gl.getUniformLocation(post_prog, "u_Width"), canvas.width);
-		gl.uniform1f(gl.getUniformLocation(post_prog, "u_Height"), canvas.height); 
+		gl.uniform1f(postLoc_Width, canvas.width);
+		gl.uniform1f(postLoc_Height, canvas.height); 
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, postTexture);
-		gl.uniform1i(gl.getUniformLocation(post_prog, "u_Posttex"),0);
+		gl.uniform1i(postLoc_Possttex,0);
 
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
-		gl.uniform1i(gl.getUniformLocation(post_prog, "u_StrokeBlurtex"),1);
+		gl.uniform1i(postLoc_StrokeBlurtex,1);
 
 		drawQuad();
 	}
@@ -1600,8 +1753,10 @@ function animate() {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.bindTexture(gl.TEXTURE_2D,null);
 
-	window.requestAnimFrame(animate); 
+	
 	stats.update();
+    window.requestAnimFrame(animate); 
+    //window.setTimeout(animate, 1000 / 60);
 }
 
 function testt()
@@ -1621,10 +1776,10 @@ function testt()
 
 	initializeQuad();
 
-	initLights();
-	setUpLights();
-	initLightsFBO();      
+	// initLights();
+	// setUpLights();
+	// initLightsFBO();      
 
-    //testt();
-	animate();
+ //    //testt();
+	// animate();
 })();
