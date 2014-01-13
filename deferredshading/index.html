@@ -16,10 +16,10 @@
     h2 { font: bold italic 17px/17px Arial; padding-top: 10px; }
     small { display: block; font-size: 11px; line-height: 15px; }
     canvas { position: absolute; top: 0; left: 0;}
-    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 380px; padding-right: 20px; overflow: auto; /*background-color: black;*/}
+    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 400px; padding-right: 40px; overflow: auto; /*background-color: black;*/}
     #help .slider{width:300px; padding-left:10px;padding-top:5px;}
-    #range {font-size:18px;}
-    #info { position: absolute; top: 600px; right: 0; bottom: 0; width: 380px; padding-right: 20px; overflow: auto; }
+    #range{font-size:18px;font:Arial, sans-serif;}
+    #info { position: absolute; top: 650px; right: 0; bottom: 0; width: 400px; padding-right: 40px; overflow: auto; }
     #loading {position:absolute; left:30%; top:50%; right:0; color:white; font-size: 30px;}
 </style>
 
@@ -35,22 +35,25 @@
     <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
     ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
     <p>
-        This demo includes 100 dynamic lights and 66450 triangles. Also see the video on <a href = "https://vimeo.com/83616115">Vimeo</a>
+        This demo includes <span id ="helplightnum">100</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles.
+    </p>
+    <p>
+        This demo requires a decent graphics card and up-to-date drivers. If you can't run the demo, you can still see it on <a href = "https://vimeo.com/83616115">Vimeo</a>
     </p>
     <p>
     <h2>Instructions:</h2>
     <p>
         <li>Drag mouse to view around the scene</li>
         <li>w,s,a,d to move the camera</li>
-        <li>1 depth texutre</li>
-        <li>2 normal texture</li>
-        <li>3 position texutre</li>
-        <li>4 color texture</li>
-        <li>5 ambient texture</li>
-        <li>6 tile based deferred shading</li>
-        <li>7 non tile based deferred shading</li>
-        <li>8 NPR with tile based deferred shading</li>
-        <li>9 debug view for tile based</li>
+        <li>Press 1 to display depth texutre</li>
+        <li>Press 2 to display normal texture</li>
+        <li>Press 3 to display position texutre</li>
+        <li>Press 4 to display color texture</li>
+        <li>Press 5 to display ambient texture</li>
+        <li>Press 6 to display tile based deferred shading</li>
+        <li>Press 7 to display non tile based deferred shading</li>
+        <li>Press 8 to display NPR with tile based deferred shading</li>
+        <li>Press 9 to display debug view for tile based</li>
         <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>   
         <input class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
              
@@ -61,8 +64,8 @@
    
 
     <h2> Source Code: </h2>
-    <a href = "https://github.com/YuqinShao/Tile_Based_WebGL_DeferredShader">code</a>
-    </P>
+    <a href = "https://github.com/YuqinShao/Tile_Based_WebGL_DeferredShader">Code</a>
+
 </div>
 
 
