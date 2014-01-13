@@ -95,6 +95,7 @@ var tileLightId = new Array(numTile);
 
 function setLightOnTile(boundary, lightNum)
 {
+
     var leftTile = Math.max(Math.floor(boundary.left / tileSize), 0);
     var topTile = Math.min(Math.ceil(boundary.top / tileSize), canvas.height/tileSize);
     var rightTile = Math.min(Math.ceil(boundary.right / tileSize), canvas.width/tileSize);
@@ -150,9 +151,9 @@ var boundary = {left:0, right:0, top:0, bottom:0};
 var lightViewPos = vec4.create();
 
 function setUpLights(){
-
+    //console.log("setuplights");
     resetLights();   
-
+    //console.log("resetlights");
     //For tile base light setting
     
     mat4.multiply(persp, view, pv);   
@@ -168,7 +169,7 @@ function setUpLights(){
         moveTime = 0.0;
         lightMove = -lightMove;
     }
-
+    //console.log("lightnum:   " + lightNum);
     for(var i = 0; i < lightNum; i++){
         
 
@@ -246,6 +247,7 @@ var maxZ=-1000;
 
 function initLights(){
 
+    //console.log("initLights");
     for(var i = 0; i < lightNum; i++){
         //var boundary = {left:0, right:0, top:0, bottom:0};
 
@@ -285,7 +287,7 @@ function initLights(){
 
 function initLightsFBO()
 {
-    
+    //console.log("initlightsFBO");
     //gl.useProgram(light_prog);
      var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
      for(var i = lightIndex.length; i < lightIndexWidth*lightIndexWidth; i++)

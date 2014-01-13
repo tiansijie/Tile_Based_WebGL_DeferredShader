@@ -685,7 +685,7 @@ var meshNum = 0;
 
 var meshTextures = [];
 
-var isLoadingComplete = false;
+
 
 for(var i = 0; i < 38; i++){
     var meshTex = gl.createTexture();
@@ -773,8 +773,8 @@ function initMeshBuffers()
 
     // objxhr.send();
     //address for obj
-    loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
-    
+    // loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
+    loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
     //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
     //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
 
@@ -1044,8 +1044,10 @@ function initMeshBuffers()
         // meshNum ++;   
         console.log("mehsnormals len " + meshNormals.length / 3);
         //updateFaceInfo(meshfacenormals,models[0],meshisFrontFace,meshedgefaces,meshedges,meshVertices);
-        isLoadingComplete = true;
 
+        isLoadingComplete = true;
+       // document.write("<div id= \"loading\"> <p> </p></div>");
+        $("#loading p").text("");
         initLights();
         setUpLights();
         initLightsFBO(); 
@@ -1248,7 +1250,7 @@ var lightIndexWidth, lightIndexHeight;
 function lightQuad(program)
 {
 	gl.uniform1i(u_TileSizeLocation, tileSize);
-	gl.uniform1i(u_LightNumLocation, lightNum);
+	gl.uniform1i(u_LightNumLocation, lightNum);    
 	gl.uniform1f(u_WidthTileLocation, tileWidth);
 	gl.uniform1f(u_HeightTileLocation, tileHeight);
     gl.uniform1i(u_MaxTileLightNumLocation, maxTileLightNum);
@@ -1385,8 +1387,13 @@ function setTextures() {
 	gl.disable(gl.DEPTH_TEST);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 }
-
-
+var sliderBarActive = false;
+//////////////////user interface////////////////////////
+function showValue(newValue)
+{
+    document.getElementById("range").innerHTML=newValue;
+    sliderBarActive = true;
+}
 
 var upKey = vec3.create();
 var right = vec3.create();
@@ -1513,6 +1520,24 @@ function handleMouseUp(event) {
 	mouseLeftDown = false;
 	mouseRightDown = false;
 	mouseMiddleDown = false;
+    if(sliderBarActive == true)
+    {
+        lightNum =  $('#range').text();
+        console.log("light number: "+ lightNum);
+
+        // initLights();
+        // setUpLights();
+        // initLightsFBO(); 
+      //  isLoadingComplete = true;
+        // if(display_type == display_light || display_type == display_ink || display_type == display_debugtile || display_type == display_nontilelight)
+        // {
+        //     lightNum =  $('#range').text();
+        //     console.log("light number: "+ lightNum);
+        //     setUpLights();          
+        // }
+        sliderBarActive = false;
+    }
+
 }
 
 var MouseDowndeltaX = 0;
@@ -1598,7 +1623,7 @@ function camera()
 var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
 var lightdest = vec4.create();
 var inkLight = vec4.create([0.0, 0.0, 0.0, 0.3]);
-
+var time = 0;
 function animate() { 
 	camera();
 	
@@ -1754,8 +1779,12 @@ function animate() {
 	gl.bindTexture(gl.TEXTURE_2D,null);
 
 	
-	stats.update();
+    stats.update();    
+
     window.requestAnimFrame(animate); 
+   
+
+	
     //window.setTimeout(animate, 1000 / 60);
 }
 

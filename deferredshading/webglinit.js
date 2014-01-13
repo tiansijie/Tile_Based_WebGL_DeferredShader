@@ -69,7 +69,7 @@ var lightPosition = [];
 var lightColorRadius = [];
 var lightGrid = [];
 var lightIndex = [];
-var lightNum = 100;//Light numbers
+var lightNum =100;//Light numbers
 
 
 var positionLocation;
@@ -152,6 +152,7 @@ var postLoc_Height;
 var postLoc_Possttex;
 var postLoc_StrokeBlurtex;
 
+var isLoadingComplete = false;
 
 
 
