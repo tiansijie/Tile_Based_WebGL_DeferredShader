@@ -12,6 +12,7 @@ var silcull_prog;
 var stroke_prog;
 var strokeblur_prog;
 var edge_prog;
+var forward_prog;
 
 var ext = null;
 
@@ -48,11 +49,9 @@ function initializeShader() {
 
         positionLocation = gl.getAttribLocation(pass_prog, "Position");
         normalLocation = gl.getAttribLocation(pass_prog, "Normal");
-        texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
-        console.log("TextCor " , texCoordLocation);
+        texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");       
 
-
-        textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
+        u_textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
 
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
@@ -73,10 +72,9 @@ function initializeShader() {
 
         positionLocation = gl.getAttribLocation(pass_prog, "Position");
         normalLocation = gl.getAttribLocation(pass_prog, "Normal");
-        texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");
-        console.log("TextCor " , texCoordLocation);
+        texCoordLocation = gl.getAttribLocation(pass_prog, "Texcoord");        
 
-        textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
+        u_textureLocation = gl.getUniformLocation(pass_prog, "u_Texutre");
         u_ModelLocation = gl.getUniformLocation(pass_prog,"u_Model");
         u_ViewLocation = gl.getUniformLocation(pass_prog,"u_View");
         u_PerspLocation = gl.getUniformLocation(pass_prog,"u_Persp");
@@ -84,6 +82,34 @@ function initializeShader() {
         u_ColorSamplerLocation = gl.getUniformLocation(pass_prog,"u_ColorSampler");
         u_Drawmode = gl.getUniformLocation(pass_prog,"u_DrawMode");
     }
+
+
+    //Forwad shaders
+    vs = getShaderSource(document.getElementById("pass_vs"));
+    fs = getShaderSource(document.getElementById("forward_fs"));
+
+    forward_prog = createProgram(gl,vs, fs, message);
+
+    if (!gl.getProgramParameter(forward_prog, gl.LINK_STATUS)) {
+            alert("Could not initialise forward_prog");
+    }
+
+    f_positionLocation = gl.getAttribLocation(forward_prog, "Position");
+    f_normalLocation = gl.getAttribLocation(forward_prog, "Normal");
+    f_texCoordLocation = gl.getAttribLocation(forward_prog, "Texcoord");
+
+    u_f_textureLocation = gl.getUniformLocation(forward_prog, "u_Texutre");
+    u_f_ModelLocation = gl.getUniformLocation(forward_prog,"u_Model");
+    u_f_ViewLocation = gl.getUniformLocation(forward_prog,"u_View");
+    u_f_PerspLocation = gl.getUniformLocation(forward_prog,"u_Persp");
+    u_f_InvTransLocation = gl.getUniformLocation(forward_prog,"u_InvTrans");
+    u_f_ColorSamplerLocation = gl.getUniformLocation(forward_prog,"u_ColorSampler");
+    u_f_lightPos = gl.getUniformLocation(forward_prog, "light_pos");
+    u_f_lightColor = gl.getUniformLocation(forward_prog, "light_color");
+    u_f_lightRadius = gl.getUniformLocation(forward_prog, "light_radius");
+    u_f_ambientLightLoc = gl.getUniformLocation(forward_prog, "u_Light");
+    u_f_drawmodeLoc = gl.getUniformLocation(forward_prog, "drawmode");
+
 
     //Second shaders
     vs = getShaderSource(document.getElementById("shade_vs"));
@@ -772,9 +798,9 @@ function initMeshBuffers()
     // };
 
     // objxhr.send();
-    loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
+    //loader.load( 'http://sijietian.com/WebGL/OBJ/sponza/sponza.obj', 'http://sijietian.com/WebGL/OBJ/sponza/sponza.mtl', function ( event ) {
     //address for obj
-    //loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
+    loader.load( 'http://127.0.0.1:8089/OBJ/sponza/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza/sponza.mtl', function ( event ) {
     // loader.load( 'http://localhost/deferredShader/sponza.obj', 'http://localhost/deferredShader/sponza.mtl', function ( event ) {
     //loader.load( 'http://127.0.0.1:8089/OBJ/sponza.obj', 'http://127.0.0.1:8089/OBJ/sponza.mtl', function ( event ) {
     //loader.load( objxhr.responseText, mtlxhr.responseText, function ( event ) {
@@ -1119,6 +1145,14 @@ function setMatrixUniforms(models){
 	gl.uniformMatrix4fv(u_InvTransLocation,false,invTrans);    
 }
 
+function setMatrixUniforms_foward(models){
+    gl.uniformMatrix4fv(u_f_ModelLocation,false,models);
+    gl.uniformMatrix4fv(u_f_ViewLocation,false,view);
+    gl.uniformMatrix4fv(u_f_PerspLocation,false,persp);
+    gl.uniformMatrix4fv(u_f_InvTransLocation,false,invTrans);    
+}
+
+
 var mv = mat4.create();
 var dragonColor = vec3.create([0.2,0.3,0.4]);
 function drawmesh()
@@ -1145,7 +1179,7 @@ function drawmesh()
 
             	gl.activeTexture(gl.TEXTURE0);
            	 	gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
-            	gl.uniform1i(textureLocation,0);
+            	gl.uniform1i(u_textureLocation,0);
 
 
     			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
@@ -1176,7 +1210,7 @@ function drawmesh()
 
 var timetest = 0;
 //draw buffer extension is NOT supported
-function drawmeshNoExt(drawmode)
+function drawmesh_noextension(drawmode)
 {
     if(isLoadingComplete){
     	gl.useProgram(pass_prog);
@@ -1207,7 +1241,7 @@ function drawmeshNoExt(drawmode)
                         }
                 		gl.activeTexture(gl.TEXTURE0);
                 		gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
-                		gl.uniform1i(textureLocation,0);                
+                		gl.uniform1i(u_textureLocation,0);                
                     }
             	}
                
@@ -1239,6 +1273,65 @@ function drawmeshNoExt(drawmode)
     }
 }
 
+
+function drawmesh_forward(eachLightPos, eachLightColor, eachLightRadius, drawmode)
+{
+    if(isLoadingComplete){
+        gl.useProgram(forward_prog);   
+
+        for(var idx = 0; idx < models.length; idx++){
+            for(var i = 0; i < vBuffers.length; i++){
+                
+                mat4.multiply(view, models[idx], mv);
+
+                //invTrans = mat4.create();
+                mat4.identity(invTrans);
+                mat4.inverse(mv, invTrans);
+                mat4.transpose(invTrans);
+
+                gl.enableVertexAttribArray(f_positionLocation);
+                gl.enableVertexAttribArray(f_normalLocation);
+                gl.enableVertexAttribArray(f_texCoordLocation);
+
+            
+                //gl.uniform3fv(gl.getUniformLocation(pass_prog,"u_Color"),dragonColor);
+
+                gl.uniform3fv(u_f_lightPos, eachLightPos);
+                gl.uniform3fv(u_f_lightColor, eachLightColor);
+                gl.uniform1f(u_f_lightRadius, eachLightRadius);
+                gl.uniform1i(u_f_drawmodeLoc, drawmode);
+                gl.uniform4fv(u_f_ambientLightLoc, lightdest);
+
+
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, meshTextures[i]);
+                gl.uniform1i(u_f_textureLocation,0);
+
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, vBuffers[i]);
+                gl.vertexAttribPointer(f_positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, nBuffers[i]);
+                gl.vertexAttribPointer(f_normalLocation, 3, gl.FLOAT, false, 0, 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, tBuffers[i]);
+                gl.vertexAttribPointer(f_texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+                
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffers[i]);
+
+                setMatrixUniforms_foward(models[idx]);
+
+                gl.drawElements(gl.TRIANGLES, iBuffers[i].numItems, gl.UNSIGNED_SHORT, 0);
+            }
+        }
+
+        gl.disableVertexAttribArray(f_positionLocation);
+        gl.disableVertexAttribArray(f_normalLocation);
+        gl.disableVertexAttribArray(f_texCoordLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    }
+}
 
 var display_type = 5;
 
@@ -1395,12 +1488,42 @@ function showValue(newValue)
 {
     document.getElementById("range").innerHTML=newValue;
     document.getElementById("helplightnum").innerHTML = newValue;
+   
     sliderBarActive = true;
 
     lightNum =  $('#range').text();
     initLights();
     setUpLights();
     initLightsFBO();     
+}
+
+
+function showMode()
+{
+     if(isDeferredshading){
+        if(display_type == display_light)
+            document.getElementById("helpmode").innerHTML = "Tile Based Deferred Shading";
+        else if(display_type == display_nontilelight)
+            document.getElementById("helpmode").innerHTML = "Non Tile Based Deferred Shading";
+        else if(display_type == display_depth)
+            document.getElementById("helpmode").innerHTML = "Depth Texture";
+        else if(display_type == display_normal)
+            document.getElementById("helpmode").innerHTML = "Normal Texture";
+        else if(display_type == display_position)
+            document.getElementById("helpmode").innerHTML = "Position Texture";
+        else if(display_type == display_color)
+            document.getElementById("helpmode").innerHTML = "Color Texture";
+        else if(display_type == display_total)
+            document.getElementById("helpmode").innerHTML = "Ambient Texture";
+        else if(display_type == display_ink)
+            document.getElementById("helpmode").innerHTML = "Chinese Painting Shading";
+        else if(display_type == display_debugtile)
+            document.getElementById("helpmode").innerHTML = "Debug Tile Visualization";
+        else if(display_type == display_scissor)
+            document.getElementById("helpmode").innerHTML = "Scissor Test Visualization";
+    }
+    else
+        document.getElementById("helpmode").innerHTML = "Forward Shading";
 }
 
 var upKey = vec3.create();
@@ -1488,10 +1611,16 @@ function keyPress(e){
 	else if(keynum == 101){
 		keyMove(6);
 	}
+    else if(keynum == 102){
+        isDeferredshading = !isDeferredshading;
+    }
+    
+   
 
-
-	if(keynum-49>=0 && keynum-49 < 10)
-		display_type = keynum - 49;
+	if(keynum-48>=0 && keynum-49 <= 10){
+		display_type = keynum - 49;        
+    }
+    showMode()
 }
 
 document.onkeypress = keyPress;
@@ -1634,160 +1763,206 @@ var lightPos = vec4.create([0.0, 1.0, 0.0, 0.3]);
 var lightdest = vec4.create();
 var inkLight = vec4.create([0.0, 0.0, 0.0, 0.3]);
 var time = 0;
+
+var eachLightPos = vec3.create();
+var eachLightColor = vec3.create();
+var eachLightRadius;
+
 function animate() { 
 	camera();
 	
 	mat4.multiplyVec4(view, [lightPos[0], lightPos[1], lightPos[2], 0.0], lightdest);
 	lightdest[3] = 0.3;
 
-	if(ext)//draw buffer extension is supported
-	{
-		bindFBO(0);
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		drawmesh();       
-	}
-	else
-	{
-		for(var i = 0; i<4; ++i)
-		{
-			setTextures();
-			gl.bindTexture(gl.TEXTURE_2D, null);
-			gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
-			gl.enable(gl.DEPTH_TEST);
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);       
-			drawmeshNoExt(i);
-		}    
-	}
+    if(!isDeferredshading)
+    {       
+        setUpLights();
+        
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+             
+        gl.disable(gl.BLEND);
+       
+        gl.enable(gl.DEPTH_TEST);         
+        gl.depthFunc(gl.LESS);
+     
+      
+        drawmesh_forward(eachLightPos, eachLightColor, eachLightRadius,0);
+       
+        gl.depthFunc(gl.EQUAL);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.ONE, gl.ONE);      
+
+        for(var j = 0, i = 0; j < lights.length; j++, i+=3)
+        {
+            eachLightPos[0] = lightPosition[i];
+            eachLightPos[1] = lightPosition[i+1];
+            eachLightPos[2] = lightPosition[i+2];
+           
+            eachLightColor[0] = lights[j].color[0];
+            eachLightColor[1] = lights[j].color[1];
+            eachLightColor[2] = lights[j].color[2];
+
+            eachLightRadius = lights[j].radius;
+            
+            drawmesh_forward(eachLightPos, eachLightColor, eachLightRadius,1);      
+        }   
+
+        gl.disable(gl.BLEND);
+    }
+    else{
+
+        gl.enable(gl.DEPTH_TEST);         
+        gl.depthFunc(gl.LESS);
+
+    	if(ext)//draw buffer extension is supported
+    	{
+            setTextures();            
+    		bindFBO(0);
+    		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    		drawmesh();       
+    	}
+    	else
+    	{
+    		for(var i = 0; i<4; ++i)
+    		{
+    			setTextures();
+    			gl.bindTexture(gl.TEXTURE_2D, null);
+    			gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffers[i]);
+    			gl.enable(gl.DEPTH_TEST);
+    			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);       
+    			drawmesh_noextension(i);
+    		}    
+    	}
 
 
-	//2
-	setTextures();
-	if(display_type == display_ink)
-		bindFBO(1);
-	gl.enable(gl.BLEND);
-	gl.disable(gl.DEPTH_TEST);
-	gl.blendFunc(gl.ONE, gl.ONE);
-	gl.clear(gl.COLOR_BUFFER_BIT);
+    	//2
+    	setTextures();
+    	if(display_type == display_ink)
+    		bindFBO(1);
+    	gl.enable(gl.BLEND);
+    	gl.disable(gl.DEPTH_TEST);
+    	gl.blendFunc(gl.ONE, gl.ONE);
+    	gl.clear(gl.COLOR_BUFFER_BIT);
 
 
 
-	if(display_type != display_depth && display_type != display_position && display_type != display_color && display_type != display_debugtile && display_type != display_normal){
-		setupQuad(ambient_prog, ambientLocs);
-		gl.uniform4fv(ambientLoc_Light, lightdest);
-		drawQuad();
-	}
+    	if(display_type != display_depth && display_type != display_position && display_type != display_color && display_type != display_debugtile && display_type != display_normal){
+    		setupQuad(ambient_prog, ambientLocs);
+    		gl.uniform4fv(ambientLoc_Light, lightdest);
+    		drawQuad();
+    	}
 
-	if(display_type == display_light || display_type == display_ink || display_type == display_debugtile){
-		setUpLights();
-		setupQuad(light_prog, lightLocs);
-		lightQuad(light_prog);
-		drawQuad();
-	}  
-	else if(display_type == display_nontilelight){
-		setupQuad(nontilelight_prog, nonlightLocs);
-		setUpLights();
-		gl.disable(gl.SCISSOR_TEST);
-	}
-	else
-	{
-		setupQuad(diagnostic_prog, diagnosticLocs);
-		gl.uniform4fv(diagnosticLoc_Light, lightdest);            
-		drawQuad();       
-	}
-	gl.disable(gl.BLEND);
-
-
-	if(display_type == display_ink){// for stroke
-
-		setTextures();
-		bindFBO(7);
-		setupQuad(edge_prog, edgeLocs);
-		gl.uniform4fv(edgeLoc_Light, inkLight);
-		gl.activeTexture(gl.TEXTURE4);
-		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
-		gl.uniform1i(edgeLoc_Quatcolorsampler,4);
-		drawQuad();
-
-		setTextures();
-		bindFBO(5);
-		gl.useProgram(stroke_prog);
-		gl.uniform1i(strokeLoc_Width, canvas.width);
-		gl.uniform1i(strokeLoc_Height, canvas.height);
-
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
-		// gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
-		gl.uniform1i(strokeLoc_SilColorSample,0);
-
-		drawQuad();
+    	if(display_type == display_light || display_type == display_ink || display_type == display_debugtile){
+    		setUpLights();
+    		setupQuad(light_prog, lightLocs);
+    		lightQuad(light_prog);
+    		drawQuad();
+    	}  
+    	else if(display_type == display_nontilelight || display_type == display_scissor){
+    		setupQuad(nontilelight_prog, nonlightLocs);
+    		setUpLights();
+    		gl.disable(gl.SCISSOR_TEST);
+    	}
+    	else
+    	{
+    		setupQuad(diagnostic_prog, diagnosticLocs);
+    		gl.uniform4fv(diagnosticLoc_Light, lightdest);            
+    		drawQuad();       
+    	}
+    	gl.disable(gl.BLEND);
 
 
-		setTextures();
-		bindFBO(6);
-		gl.useProgram(strokeblur_prog);
+    	if(display_type == display_ink){// for stroke
 
-		gl.uniform1i(strokeblurLoc_Width, canvas.width);
-		gl.uniform1i(strokeblurLoc_Height, canvas.height);
+    		setTextures();
+    		bindFBO(7);
+    		setupQuad(edge_prog, edgeLocs);
+    		gl.uniform4fv(edgeLoc_Light, inkLight);
+    		gl.activeTexture(gl.TEXTURE4);
+    		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
+    		gl.uniform1i(edgeLoc_Quatcolorsampler,4);
+    		drawQuad();
 
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
-		gl.uniform1i(strokeblurLoc_StrokeSample,0);
+    		setTextures();
+    		bindFBO(5);
+    		gl.useProgram(stroke_prog);
+    		gl.uniform1i(strokeLoc_Width, canvas.width);
+    		gl.uniform1i(strokeLoc_Height, canvas.height);
 
-		drawQuad();
+    		// gl.activeTexture(gl.TEXTURE0);
+    		// gl.bindTexture(gl.TEXTURE_2D, silCullTexture);
+    		// gl.uniform1i(gl.getUniformLocation(stroke_prog, "u_SilColorSampler"),0);
 
-		//3
-		setTextures();
-		bindFBO(2);
-		gl.enable(gl.BLEND);
-		gl.disable(gl.DEPTH_TEST);
-		gl.blendFunc(gl.ONE, gl.ONE);
-		gl.clear(gl.COLOR_BUFFER_BIT);   
+    		gl.activeTexture(gl.TEXTURE0);
+    		gl.bindTexture(gl.TEXTURE_2D, edgeTexture);
+    		gl.uniform1i(strokeLoc_SilColorSample,0);
 
-		gl.useProgram(spatter_prog);
-
-		gl.uniform1i(spatterLoc_Displaytype, display_type);
-
-		gl.uniform1f(spatterLoc_Width, canvas.width);
-		gl.uniform1f(spatterLoc_Height, canvas.height);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
-		gl.uniform1i(spatterLoc_QuatColorSampler,0);
-
-		drawQuad();
-		gl.disable(gl.BLEND);
-
-		//4
-		setTextures();
-
-		gl.useProgram(post_prog);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-		gl.uniform1i(postLoc_Displaytype, display_type);
-
-		gl.uniform1f(postLoc_Width, canvas.width);
-		gl.uniform1f(postLoc_Height, canvas.height); 
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, postTexture);
-		gl.uniform1i(postLoc_Possttex,0);
-
-		gl.activeTexture(gl.TEXTURE1);
-		gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
-		gl.uniform1i(postLoc_StrokeBlurtex,1);
-
-		drawQuad();
-	}
+    		drawQuad();
 
 
-	//reset
-	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-	gl.bindTexture(gl.TEXTURE_2D,null);
+    		setTextures();
+    		bindFBO(6);
+    		gl.useProgram(strokeblur_prog);
 
+    		gl.uniform1i(strokeblurLoc_Width, canvas.width);
+    		gl.uniform1i(strokeblurLoc_Height, canvas.height);
+
+    		gl.activeTexture(gl.TEXTURE0);
+    		gl.bindTexture(gl.TEXTURE_2D, strokeTexture);
+    		gl.uniform1i(strokeblurLoc_StrokeSample,0);
+
+    		drawQuad();
+
+    		//3
+    		setTextures();
+    		bindFBO(2);
+    		gl.enable(gl.BLEND);
+    		gl.disable(gl.DEPTH_TEST);
+    		gl.blendFunc(gl.ONE, gl.ONE);
+    		gl.clear(gl.COLOR_BUFFER_BIT);   
+
+    		gl.useProgram(spatter_prog);
+
+    		gl.uniform1i(spatterLoc_Displaytype, display_type);
+
+    		gl.uniform1f(spatterLoc_Width, canvas.width);
+    		gl.uniform1f(spatterLoc_Height, canvas.height);
+
+    		gl.activeTexture(gl.TEXTURE0);
+    		gl.bindTexture(gl.TEXTURE_2D, spatterTexture);
+    		gl.uniform1i(spatterLoc_QuatColorSampler,0);
+
+    		drawQuad();
+    		gl.disable(gl.BLEND);
+
+    		//4
+    		setTextures();
+
+    		gl.useProgram(post_prog);
+    		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    		gl.uniform1i(postLoc_Displaytype, display_type);
+
+    		gl.uniform1f(postLoc_Width, canvas.width);
+    		gl.uniform1f(postLoc_Height, canvas.height); 
+
+    		gl.activeTexture(gl.TEXTURE0);
+    		gl.bindTexture(gl.TEXTURE_2D, postTexture);
+    		gl.uniform1i(postLoc_Possttex,0);
+
+    		gl.activeTexture(gl.TEXTURE1);
+    		gl.bindTexture(gl.TEXTURE_2D, strokeblurTexture);
+    		gl.uniform1i(postLoc_StrokeBlurtex,1);
+
+    		drawQuad();
+    	}       
+    }
+	
+    //reset
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D,null);
 	
     stats.update();    
 

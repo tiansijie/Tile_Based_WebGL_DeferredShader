@@ -151,8 +151,7 @@ var viewport = mat4.createFrom(
 var boundary = {left:0, right:0, top:0, bottom:0};
 var lightViewPos = vec4.create();
 
-function setUpLights(){
-    //console.log("setuplights");
+function setUpLights(){    
     resetLights();   
     //console.log("resetlights");
     //For tile base light setting
@@ -198,24 +197,20 @@ function setUpLights(){
         lightPosition[i*3+1] = lightViewPos[1];
         lightPosition[i*3+2] = lightViewPos[2];
 
-        getLightBoundingBox(lights[i].position, lights[i].radius, pv, viewport, boundary);
+        if(isDeferredshading){
+            getLightBoundingBox(lights[i].position, lights[i].radius, pv, viewport, boundary);
 
-
-        //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
-
-        // boundary.left = 0.0
-        // boundary.right = 800;
-        // boundary.bottom = 0;
-        // boundary.top = 600;
-      
-        if(display_type == display_light || display_type == 0 || display_type == display_ink || display_type == display_debugtile) 
-            setLightOnTile(boundary, i);
-        else if(display_type == display_nontilelight){
-            setNonTileLight(boundary, lightViewPos, lights[i].radius, lights[i].color);                
+            //console.log(boundary.left + " " + boundary.right + " " + boundary.bottom + " " + boundary.top);
+          
+            if(display_type == display_light || display_type == display_ink || display_type == display_debugtile)            
+                setLightOnTile(boundary, i);        
+            else if(display_type == display_nontilelight || display_type == display_scissor){
+                setNonTileLight(boundary, lightViewPos, lights[i].radius, lights[i].color);                
+            }
         }
     }
     
-    if(display_type == display_light || display_type == 0 || display_type == display_ink || display_type == display_debugtile){
+    if(display_type == display_light || display_type == display_ink || display_type == display_debugtile){
         var offset = 0;           
 
         for(var index = 0; index < numTile; index++)

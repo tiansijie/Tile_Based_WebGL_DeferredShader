@@ -19,7 +19,7 @@
     #help { position: absolute; top: 0; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; /*background-color: black;*/}
     #help .slider{width:300px; padding-left:10px;padding-top:5px;}
     #range{font-size:18px;font:Arial, sans-serif;}
-    #info { position: absolute; top: 700px; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; }
+    #info { position: absolute; top: 750px; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; }
     #loading {position:absolute; left:30%; top:50%; right:0; color:white; font-size: 30px;}
 </style>
 
@@ -35,7 +35,8 @@
     <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
     ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
     <p>
-        This demo includes <span id ="helplightnum">100</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles.
+        This demo includes <span id ="helplightnum">100</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
+        You are uisng <b><span id="helpmode">Tile Based Deferred Shading</span></b>.
     </p>
     <p>
         This demo requires a decent graphics card and up-to-date drivers. If you can't run the demo, you can still see it on <a href = "https://vimeo.com/83616115">Vimeo</a>
@@ -54,6 +55,8 @@
         <li>Press 7 to display non tile based deferred shading</li>
         <li>Press 8 to display NPR with tile based deferred shading</li>
         <li>Press 9 to display debug view for tile based</li>
+        <li>Press 0 to display scissor test visualization</li>
+        <li>Press f to switch between deferred shading and forward shading</li>
         <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>   
         <input class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
              
@@ -70,6 +73,8 @@
 
 
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+
+
 
 
 <script id="pass_vs" type="x-shader/x-vertex">    
@@ -99,6 +104,62 @@
         fs_Depth = ((gl_Position.z / gl_Position.w));
     }
 </script>
+
+<script id="forward_fs" type="x-shader/x-fragment">
+    precision highp float;
+
+    uniform vec3 u_Color;  
+    uniform vec3 light_pos;  
+    uniform vec3 light_color;
+    uniform float light_radius;
+    uniform int drawmode;
+    uniform vec4 u_Light;
+
+    //in
+    varying vec3 fs_Normal;
+    varying vec4 fs_Position;
+    varying vec2 fs_Texcoord;
+    varying float fs_Depth;
+
+    uniform sampler2D u_Texutre;
+
+    void main(void)
+    {
+
+        vec3 color = texture2D(u_Texutre, fs_Texcoord).xyz;
+        vec3 position = fs_Position.xyz;
+        vec3 normal = normalize(fs_Normal);
+
+        if(drawmode == 1){
+           if(distance(light_pos, position) < light_radius){
+
+                float dist = distance(light_pos, position);
+                float lightR = light_radius;
+                float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
+                attenuation = attenuation / lightR + 1.0;
+                attenuation = 1.0 / (attenuation * attenuation);   
+
+                float diffuse = abs(dot(normal, normalize(light_pos)));
+                gl_FragColor = vec4(diffuse * light_color * color * attenuation, 1.0);
+                
+                //gl_FragColor = vec4(light_color,1.0);     
+            }
+            else
+                gl_FragColor = vec4(vec3(0.0),1.0); 
+        }        
+        else
+        {
+            vec3 light = u_Light.xyz;
+            float strength = u_Light.w;
+
+            float ambient = 0.09;
+            float diffuse = abs(dot(normalize(light),(normal)));
+
+            gl_FragColor = vec4(color*(strength*diffuse + ambient),1.0);
+        }        
+    }
+</script>
+
 
 <script id="pass_fs" type="x-shader/x-fragment">
     #extension GL_EXT_draw_buffers : require
@@ -377,6 +438,7 @@
     #define DISPLAY_TOTAL 4
     #define DISPLAY_TILE_LIGHTS 5
     #define DISPLAY_NONTILE_LIGHTS 6
+    #define DISPLAY_SCISSOR -1
 
     uniform int u_DisplayType;
     uniform sampler2D u_Depthtex;
@@ -397,21 +459,22 @@
         vec3 light = u_Light.xyz;
         float lightRadius = u_Light.w;
 
-        if( u_DisplayType == DISPLAY_NONTILE_LIGHTS )
-        {   
-            if(distance(light, position) < lightRadius){
-                float dist = distance(light, position);
-                float lightR = lightRadius;
-                float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
-                attenuation = attenuation / lightR + 1.0;
-                attenuation = 1.0 / (attenuation * attenuation);   
+        if(distance(light, position) < lightRadius && u_DisplayType == DISPLAY_NONTILE_LIGHTS){
+            float dist = distance(light, position);
+            float lightR = lightRadius;
+            float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
+            attenuation = attenuation / lightR + 1.0;
+            attenuation = 1.0 / (attenuation * attenuation);   
 
-                float diffuse = abs(dot(normal, normalize(light - position)));
-                gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);// * ((lightRadius- distance(light, position)) / lightRadius), 0.0);
-            }
-            else
-                gl_FragColor = vec4(0.0,0.0,0.0, 0.0);   
+            float diffuse = abs(dot(normal, normalize(light - position)));
+            gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);// * ((lightRadius- distance(light, position)) / lightRadius), 0.0);
         }
+        else if(u_DisplayType == DISPLAY_SCISSOR){
+            float dis = distance(light, position) * 2.0;
+            gl_FragColor = vec4(1.0/dis,0.0,0.0, 1.0);
+        }  
+        else
+            gl_FragColor = vec4(0.0,0.0,0.0, 1.0);          
     }
 </script>
 

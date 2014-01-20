@@ -27,6 +27,7 @@ var display_light = 5;
 var display_nontilelight = 6;
 var display_ink = 7;
 var display_debugtile = 8;
+var display_scissor = -1;
 
 //var model;
 //var mv;
@@ -70,13 +71,13 @@ var lightPosition = [];
 var lightColorRadius = [];
 var lightGrid = [];
 var lightIndex = [];
-var lightNum =100;//Light numbers
+var lightNum = 100;//Light numbers
 
 
 var positionLocation;
 var normalLocation;
 var texCoordLocation;
-var textureLocation;
+var u_textureLocation;
 
 var u_InvTransLocation;
 var u_ModelLocation;
@@ -156,4 +157,23 @@ var postLoc_StrokeBlurtex;
 var isLoadingComplete = false;
 
 
+var isDeferredshading = true;
 
+
+var f_positionLocation;
+var f_normalLocation;
+var f_texCoordLocation;
+var u_f_textureLocation;
+var u_f_ModelLocation;
+var u_f_ViewLocation;
+var u_f_PerspLocation;
+var u_f_InvTransLocation;
+var u_f_ColorSamplerLocation;
+var u_f_lightPos;
+var u_f_lightColor;
+var u_f_lightRadius;
+var u_f_ambientLightLoc;
+var u_f_drawmodeLoc;
+
+
+ 
