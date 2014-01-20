@@ -459,15 +459,20 @@
         vec3 light = u_Light.xyz;
         float lightRadius = u_Light.w;
 
-        if(distance(light, position) < lightRadius && u_DisplayType == DISPLAY_NONTILE_LIGHTS){
-            float dist = distance(light, position);
-            float lightR = lightRadius;
-            float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
-            attenuation = attenuation / lightR + 1.0;
-            attenuation = 1.0 / (attenuation * attenuation);   
 
-            float diffuse = abs(dot(normal, normalize(light - position)));
-            gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);// * ((lightRadius- distance(light, position)) / lightRadius), 0.0);
+        if(u_DisplayType == DISPLAY_NONTILE_LIGHTS){
+            if(distance(light, position) < lightRadius){
+                float dist = distance(light, position);
+                float lightR = lightRadius;
+                float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
+                attenuation = attenuation / lightR + 1.0;
+                attenuation = 1.0 / (attenuation * attenuation);   
+
+                float diffuse = abs(dot(normal, normalize(light - position)));
+                gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);
+            }
+            else
+                gl_FragColor = vec4(0.0,0.0,0.0,1.0); 
         }
         else if(u_DisplayType == DISPLAY_SCISSOR){
             float dis = distance(light, position) * 2.0;
