@@ -3,7 +3,7 @@
 <head>
 <title>Chinese Painting Tile Based Deferred Shading</title>
 <meta charset ="utf-8">
-<meta http-equiv="X-UA-Compatible" content="chrome=1">  <!-- Use Chrome Frame in IE --> 
+<meta http-equiv="X-UA-Compatible" content="chrome=1">  <!-- Use Chrome Frame in IE -->
 </head>
 
 <style type="text/css">
@@ -57,14 +57,14 @@
         <li>Press 9 to display debug view for tile based</li>
         <li>Press 0 to display scissor test visualization</li>
         <li>Press f to switch between deferred shading and forward shading</li>
-        <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>   
+        <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>
         <input class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
-             
+
     </p>
     <!-- <p>Modify the number of lights in the scene:</p> -->
     <!-- <input type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/> -->
     <!-- <span id = "range">100</span> -->
-   
+
 
     <h2> Source Code: </h2>
     <a href = "https://github.com/YuqinShao/Tile_Based_WebGL_DeferredShader">Code</a>
@@ -77,7 +77,7 @@
 
 
 
-<script id="pass_vs" type="x-shader/x-vertex">    
+<script id="pass_vs" type="x-shader/x-vertex">
     precision highp float;
 
     uniform mat4 u_Model;
@@ -108,8 +108,8 @@
 <script id="forward_fs" type="x-shader/x-fragment">
     precision highp float;
 
-    uniform vec3 u_Color;  
-    uniform vec3 light_pos;  
+    uniform vec3 u_Color;
+    uniform vec3 light_pos;
     uniform vec3 light_color;
     uniform float light_radius;
     uniform int drawmode;
@@ -137,16 +137,14 @@
                 float lightR = light_radius;
                 float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
                 attenuation = attenuation / lightR + 1.0;
-                attenuation = 1.0 / (attenuation * attenuation);   
+                attenuation = 1.0 / (attenuation * attenuation);
 
                 float diffuse = abs(dot(normal, normalize(light_pos)));
                 gl_FragColor = vec4(diffuse * light_color * color * attenuation, 1.0);
-                
-                //gl_FragColor = vec4(light_color,1.0);     
             }
             else
-                gl_FragColor = vec4(vec3(0.0),1.0); 
-        }        
+                gl_FragColor = vec4(vec3(0.0),1.0);
+        }
         else
         {
             vec3 light = u_Light.xyz;
@@ -156,7 +154,7 @@
             float diffuse = abs(dot(normalize(light),(normal)));
 
             gl_FragColor = vec4(color*(strength*diffuse + ambient),1.0);
-        }        
+        }
     }
 </script>
 
@@ -166,8 +164,6 @@
     precision highp float;
 
     uniform vec3 u_Color;
-    //uniform sampler2D u_ColorSampler;
-
     //in
     varying vec3 fs_Normal;
     varying vec4 fs_Position;
@@ -182,17 +178,12 @@
         gl_FragData[0] = vec4(vec3(fs_Depth), 1.0);
         gl_FragData[1] = vec4(normalize(fs_Normal.xyz), 1.0);
         gl_FragData[2] = fs_Position;
-        //gl_FragData[3] = vec4(u_Color.x, u_Color.y, u_Color.z, 1.0);
         gl_FragData[3] = vec4(texture2D(u_Texutre, fs_Texcoord).xyz, 1.0);
     }
 </script>
 
 <script type="x-shader/x-fragment" id = "withoutdrawbufferfs">
     precision mediump float;
-
-    //uniform sampler2D u_ColorSampler;
-
-    //uniform vec3 u_Color;
 
     uniform int u_DrawMode;
 
@@ -205,20 +196,16 @@
 
 
     void main(void) {
-        //vec3 color = texture2D(u_ColorSampler,vTexcoord).rgb;
-        //vec3 color = u_Color;
         if(u_DrawMode == 0)
         {
-            gl_FragColor = vec4(normalize(fs_Normal),0.0);    
-            //gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+            gl_FragColor = vec4(normalize(fs_Normal),0.0);
             return;
         }
         else if(u_DrawMode == 1)
         {
             //diaplay color
             gl_FragColor = vec4(texture2D(u_Texutre, fs_Texcoord).xyz, 1.0);
-            //gl_FragColor = vec4(255.0,0.0,155.0,155.0);
-            return;         
+            return;
         }
         else if(u_DrawMode == 2)
         {
@@ -244,9 +231,9 @@
 </script>
 
 
-<script id="light_fs" type="x-shader/x-fragment">    
-    precision highp float;  
-   
+<script id="light_fs" type="x-shader/x-fragment">
+    precision highp float;
+
 
     #define DISPLAY_DEPTH 0
     #define DISPLAY_NORMAL 1
@@ -258,7 +245,7 @@
     #define DISPLAY_INK 7
     #define DISPLAY_DEBUGTILE 8
     #define MAXLIGHTNUM 1000
- 
+
 
     uniform sampler2D u_Depthtex;
     uniform sampler2D u_Normaltex;
@@ -280,7 +267,6 @@
     uniform int u_MaxTileLightNum;
 
     uniform int u_TileSize;
-    //uniform Light u_Lights[LIGHTNUM];
     uniform int u_LightIndexImageSize;
     uniform float u_FloatLightIndexSize;
     uniform float u_WidthTile;
@@ -289,7 +275,7 @@
     varying vec2 fs_Texcoord;
 
     float linearizeDepth(float exp_depth, float near, float far) {
-        return  (2.0 * near) / (far + near -  exp_depth * (far - near)); 
+        return  (2.0 * near) / (far + near -  exp_depth * (far - near));
     }
 
 
@@ -299,18 +285,14 @@
         vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
-        //vec3 depth = texture2D(u_Depthtex, fs_Texcoord).xyz;
 
-        //float exp_depth = texture2D(u_Depthtex, fs_Texcoord).r;
-        //float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
-
-        if(u_DisplayType == DISPLAY_LIGHTS || u_DisplayType == DISPLAY_INK || u_DisplayType == DISPLAY_DEBUGTILE){           
+        if(u_DisplayType == DISPLAY_LIGHTS || u_DisplayType == DISPLAY_INK || u_DisplayType == DISPLAY_DEBUGTILE){
             //get the grid data index
             vec2 gridIndex = vec2(((fs_Texcoord.x*u_Width) / float(u_TileSize)) / (u_WidthTile), ((fs_Texcoord.y*u_Height) / float(u_TileSize)) / (u_HeightTile));
             //x for offset, y for count
             vec3 gridInfo = texture2D(u_LightGridtex, gridIndex).xyz;
             int offset = int(gridInfo.x);
-            int count = int(gridInfo.y);   
+            int count = int(gridInfo.y);
             int offset2 = int(gridInfo.z);
 
             vec3 lightColor = vec3(0.0);
@@ -319,27 +301,14 @@
                 for(int i = 0; i < MAXLIGHTNUM; i++){
                     if(i < count){
 
-                        int lightId;    
-                        //float temp = (mod(float(offset+i), u_FloatLightIndexSize));
+                        int lightId;
                         float temp = float(offset + i);
                         int addNext = 0;
-                                                
+
                         if(temp >= u_FloatLightIndexSize){
                             temp -= u_FloatLightIndexSize;
                             addNext++;
-                        }           
-                           
-
-                        //float temp = float(offset+i) - u_FloatLightIndexSize * floor(float(offset+i)/u_FloatLightIndexSize);
-                        
-                        // float temp = float(offset + i);
-
-                        // for(int k = 0; k < 200; ++k)
-                        // {
-                        //     if(temp < u_FloatLightIndexSize)
-                        //         break;
-                        //     temp -= u_FloatLightIndexSize;
-                        // }
+                        }
 
 
                         //precision problem
@@ -350,11 +319,9 @@
 
                         vec2 dataIndex = vec2(
                             temp / lightSize,
-                            //floor(float((offset2+i) / (u_LightIndexImageSize))) / (lightSize)
                             float(offset2 + addNext) / lightSize
-                            );                          
-                      
-                        //vec2 dataIndex = vec2(float(offset+i) / float(u_LightIndexImageSize-1), 1.0);
+                            );
+
                         lightId = int((texture2D(u_LightIndextex, dataIndex).x));
 
                         vec3 lightPos = texture2D(u_LightPositiontex, vec2(float(lightId)/float(u_LightNum-1))).xyz;
@@ -362,18 +329,13 @@
 
                         if(distance(lightPos, position) < lightColorRadius.w){
 
-                            //float distoL = distance(lightPos, position);
-                            //distoL = max(lightColorRadius.w - distoL, 0.0);
                             float diffuse = abs(dot(normal, normalize(lightPos - position)));
-                            //max(dot(normal, normalize(lightPos - position)),0.0); 
-                            // if(diffuse == 0.0)
-                            //     diffuse = dot(-normal, normalize(lightPos - position));
 
                             float dist = distance(lightPos, position);
                             float lightR = lightColorRadius.w;
                             float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
                             attenuation = attenuation / lightR + 1.0;
-                            attenuation = 1.0 / (attenuation * attenuation);   
+                            attenuation = 1.0 / (attenuation * attenuation);
 
                             if(u_DisplayType == DISPLAY_INK){
                                 vec3 quaColor = vec3(0.0);
@@ -394,33 +356,29 @@
                                     quaColor = vec3(1.0,0.0,1.0);
                                 }
 
-                              
+
 
                                 lightColor += quaColor * attenuation * lightColorRadius.xyz * diffuse * color; //* ((lightColorRadius.w - distance(lightPos, position)) / lightColorRadius.w);// * lightColorRadius.xyz;
                             }
                             else
                             {
                                 lightColor += diffuse * lightColorRadius.xyz * attenuation* color;// * ((lightColorRadius.w - distance(lightPos, position)) /     lightColorRadius.w);
-                            }                            
-                            //lightColor += lightColorRadius.xyz;
-                            //if(distoL > 0.0)
+                            }
                             lightCount ++;
-                        }                         
+                        }
                     }
                     else
                         break;
-                }      
-                if(u_DisplayType == DISPLAY_DEBUGTILE){                   
-                   lightColor = vec3(float(count) / float(u_MaxTileLightNum)) ;                   
+                }
+                if(u_DisplayType == DISPLAY_DEBUGTILE){
+                   lightColor = vec3(float(count) / float(u_MaxTileLightNum)) ;
                 }
                 else
                     lightColor = mix(vec3(0.0), vec3(1.0), lightColor);
 
                 lightColor = clamp(lightColor, vec3(0.0), vec3(1.0));
-            }       
-            //gl_FragData[0] = vec4(vec3(float(count) / float(LIGHTNUM)),1.0);
+            }
             gl_FragColor = vec4(lightColor, 1.0);
-            // + vec4(color * 0.3,1.0);
         }
         else
             gl_FragColor = vec4(vec3(0.0), 1.0);
@@ -450,7 +408,7 @@
     uniform vec3 u_LightColor;
 
     varying vec2 fs_Texcoord;
-    
+
     void main()
     {
         vec3 normal = texture2D(u_Normaltex, fs_Texcoord).xyz;
@@ -466,20 +424,20 @@
                 float lightR = lightRadius;
                 float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
                 attenuation = attenuation / lightR + 1.0;
-                attenuation = 1.0 / (attenuation * attenuation);   
+                attenuation = 1.0 / (attenuation * attenuation);
 
                 float diffuse = abs(dot(normal, normalize(light - position)));
                 gl_FragColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);
             }
             else
-                gl_FragColor = vec4(0.0,0.0,0.0,1.0); 
+                gl_FragColor = vec4(0.0,0.0,0.0,1.0);
         }
         else if(u_DisplayType == DISPLAY_SCISSOR){
             float dis = distance(light, position) * 2.0;
             gl_FragColor = vec4(1.0/dis,0.0,0.0, 1.0);
-        }  
+        }
         else
-            gl_FragColor = vec4(0.0,0.0,0.0, 1.0);          
+            gl_FragColor = vec4(0.0,0.0,0.0, 1.0);
     }
 </script>
 
@@ -492,12 +450,12 @@
     #define DISPLAY_POSITION 2
     #define DISPLAY_COLOR 3
     #define DISPLAY_TOTAL 4
-    #define DISPLAY_LIGHTS 5    
+    #define DISPLAY_LIGHTS 5
 
     uniform sampler2D u_Depthtex;
     uniform sampler2D u_Normaltex;
     uniform sampler2D u_Positiontex;
-    uniform sampler2D u_Colortex;  
+    uniform sampler2D u_Colortex;
 
     uniform int u_DisplayType;
     uniform float u_Far;
@@ -505,14 +463,14 @@
     uniform float u_Width;
     uniform float u_Height;
 
-    uniform vec4 u_Light;  
+    uniform vec4 u_Light;
 
     varying vec2 fs_Texcoord;
 
     float linearizeDepth(float exp_depth, float near, float far) {
-        return  (2.0 * near) / (far + near -  exp_depth * (far - near)); 
-    }   
-    
+        return  (2.0 * near) / (far + near -  exp_depth * (far - near));
+    }
+
     void main(void)
     {
         vec3 depth = texture2D(u_Depthtex, fs_Texcoord).xyz;
@@ -523,12 +481,11 @@
         vec3 normal = normalize(texture2D(u_Normaltex, fs_Texcoord).xyz);
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
         vec3 color = texture2D(u_Colortex, fs_Texcoord).xyz;
-        
+
 
         vec3 light = u_Light.xyz;//.position.xyz;
         //u_Light.xyz;
         float diffuse = abs(dot(normal, normalize(light - position)));
-        //max(dot(normal, normalize(light - position)),0.0);
 
         if(u_DisplayType == DISPLAY_DEPTH)
             gl_FragColor = vec4(vec3(lin_depth) * 30.0, 1.0);
@@ -537,18 +494,14 @@
         else if(u_DisplayType == DISPLAY_POSITION)
             gl_FragColor = vec4(abs(position)/u_Far * 120.0, 1.0);
         else if(u_DisplayType == DISPLAY_COLOR){
-            //gl_FragColor = vec4(color, 1.0);
             gl_FragColor = vec4(color, 1.0);
         }
         else if(u_DisplayType == DISPLAY_TOTAL)
         {
-            // if(diffuse == 0.0)
-            //     diffuse = dot(-normal, normalize(light - position));
-
-            gl_FragColor = vec4(diffuse * color , 1.0);                          
+            gl_FragColor = vec4(diffuse * color , 1.0);
         }
         else
-            gl_FragColor = vec4(vec3(0.0), 1.0);   
+            gl_FragColor = vec4(vec3(0.0), 1.0);
     }
 </script>
 
@@ -568,7 +521,7 @@
     varying vec2 fs_Texcoord;
 
     void main(void)
-    {     
+    {
         vec3 depth = texture2D(u_Depthtex, fs_Texcoord).xyz;
         vec3 normal = normalize(texture2D(u_Normaltex, fs_Texcoord).xyz);
         vec3 position = texture2D(u_Positiontex, fs_Texcoord).xyz;
@@ -579,15 +532,8 @@
 
         float ambient = 0.09;
         float diffuse = abs(dot(normalize(light),(normal)));
-        // max(0.0, dot(normalize(light),(normal)));
-        // if(diffuse == 0.0)
-        //     diffuse = dot(normalize(light),-(normal));
-       
-        gl_FragColor = vec4(color*(strength*diffuse + ambient),1.0);
 
-        //gl_FragColor = vec4(color*diffuse,1.0);
-        
-        //gl_FragData[0] = vec4(vec3(0.0), 1.0);
+        gl_FragColor = vec4(color*(strength*diffuse + ambient),1.0);
     }
 </script>
 
@@ -608,7 +554,7 @@
 </script>
 
 
-<script id="post_fs" type="x-shader/x-fragment">    
+<script id="post_fs" type="x-shader/x-fragment">
     precision highp float;
 
     #define s2(a,b)     temp = a; a= min(a,b); b = max(temp,b);
@@ -619,7 +565,7 @@
     #define mnmx5(a, b, c, d, e)    s2(a, b); s2(c, d); mn3(a, c, e); mx3(b, d, e);           // 6 exchanges
     #define mnmx6(a, b, c, d, e, f) s2(a, d); s2(b, e); s2(c, f); mn3(a, b, c); mx3(d, e, f); // 7 exchanges
 
-  
+
     #define DISPLAY_DEPTH 0
     #define DISPLAY_NORMAL 1
     #define DISPLAY_POSITION 2
@@ -664,7 +610,7 @@
 
 
     vec3 colorEnhance(float min,float max,vec3 color)
-    {       
+    {
         if(color.r == 0.0)
         {
             return vec3(0.97,0.94,0.85);
@@ -687,12 +633,12 @@
 
     void main(void)
     {
-        if(u_DisplayType == DISPLAY_INK){            
+        if(u_DisplayType == DISPLAY_INK){
             vec3 spattercolor = MedianFilter(u_Posttex);
-            spattercolor = colorEnhance(0.2,0.98,spattercolor);    
+            spattercolor = colorEnhance(0.2,0.98,spattercolor);
 
-            vec3 strokecolor = texture2D(u_StrokeBlurtex,fs_Texcoord).rgb;  
-            
+            vec3 strokecolor = texture2D(u_StrokeBlurtex,fs_Texcoord).rgb;
+
             if(strokecolor.x != 1.0 || strokecolor.y != 1.0 || strokecolor.z != 1.0)
             //if(equal(strokecolor, vec3(1.0,1.0,1.0)) == false)
             {
@@ -701,7 +647,7 @@
             }
             else
             {
-                gl_FragColor = vec4(spattercolor,1.0);  
+                gl_FragColor = vec4(spattercolor,1.0);
             }
         }
         else
@@ -744,15 +690,13 @@
     void main(void)
     {
         if(u_DisplayType == DISPLAY_INK){
-            //vec4 quatilizedColor = texture2D(u_QuatColorSampler,fs_Texcoord); 
-            vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_Width) - 1.0),fs_Texcoord.y * (float(u_Height) - 1.0)); 
+            vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_Width) - 1.0),fs_Texcoord.y * (float(u_Height) - 1.0));
             float randnum = rand(fs_Texcoord,radius);
             pixelIndex += vec2(randnum,0.0);
             vec2 newTexcoord = vec2(pixelIndex.x/(float(u_Width)-1.0),pixelIndex.y / (float(u_Height)-1.0));
             float randnum2 = rand(newTexcoord,radius);
             pixelIndex += vec2(0,randnum2);
             newTexcoord = vec2(pixelIndex.x/(float(u_Width)-1.0),pixelIndex.y / (float(u_Height)-1.0));
-            //newTexcoord = newTexcoord * 0.5 + vec2(0.5);
             vec4 newColorSample = texture2D(u_QuatColorSampler,newTexcoord);
             newColorSample.w = 1.0;
             gl_FragColor = newColorSample;
@@ -760,9 +704,9 @@
         else
         {
             vec3 out_Color = texture2D(u_QuatColorSampler, fs_Texcoord).rgb;
-            gl_FragColor = vec4(out_Color, 1.0);    
+            gl_FragColor = vec4(out_Color, 1.0);
         }
-        
+
         return;
     }
 </script>
@@ -771,45 +715,38 @@
     uniform mat4 u_Model;
     uniform mat4 u_View;
     uniform mat4 u_Persp;
-    uniform mat4 u_Inverse; 
-    
+    uniform mat4 u_Inverse;
+
     attribute vec3 Position;
-    //attribute vec3 Color;
 
     varying vec4 vPosition;
-    //varying vec3 vColor;
     varying float vDepth;
 
     void main(void) {
         vec4 world = u_Model * vec4(Position,1.0);
-        vec4 camera = u_View * world;           
+        vec4 camera = u_View * world;
         vPosition = camera;
         gl_Position = u_Persp * camera;
         vDepth = gl_Position.z / gl_Position.w;
-        //vColor = Color;
     }
 </script>
 
 
 <script type="x-shader/x-fragment" id = "siledgefs">
     precision mediump float; // have to add this, dont' exactly know why
-    //#extension GL_EXT_draw_buffers : require   
-    //uniform int u_DrawMode;
     uniform vec3 u_Color;
 
     varying vec4 vPosition;
-    //varying vec3 vColor;
     varying float vDepth;
-    
+
     float linearizeDepth(float exp_depth, float near, float far) {
-        return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
+        return  (2.0* near) / (far + near -  exp_depth * (far - near));
     }
 
     void main(void) {
         float linDepth = linearizeDepth(vDepth,0.1,10.0);
 
         gl_FragData[0] = vec4(1.0,0.0,0.0,1.0);
-        //gl_FragData[1] = vec4(vec3(linDepth),1.0);
     }
 </script>
 
@@ -817,17 +754,17 @@
 <script type="x-shader/x-fragment" id = "silCullfs">
     precision mediump float;
 
-    uniform sampler2D u_DepthSampler;   
+    uniform sampler2D u_DepthSampler;
     uniform sampler2D u_SilColorSampler;
     uniform sampler2D u_SilDepthSampler;
     uniform sampler2D u_DepthSamplerFake;
 
     float linearizeDepth(float exp_depth, float near, float far) {
-        return  (2.0* near) / (far + near -  exp_depth * (far - near)); 
+        return  (2.0* near) / (far + near -  exp_depth * (far - near));
     }
-    
+
     varying vec2 fs_Texcoord;
-    
+
     void main(void)
     {
         float exp_depth = texture2D(u_DepthSampler,fs_Texcoord).r;
@@ -839,14 +776,11 @@
         float linDepth = linearizeDepth(depthColorfake,0.1, 10.0);
         float originDepth = linDepth;
 
-        // gl_FragColor = vec4(1.0,1.0,0.0,1.0);
-        // return;
-        //if(silDepth != 0.0 && abs(silDepth - originDepth) <= 0.005)           
         if(abs(silDepth - originDepth) <= 0.009)
         {
             gl_FragColor = vec4(0.0,0.0,0.0,1.0);//vec4(0.0,0.0,0.0,1.0)* sil;
-            return; 
-        }       
+            return;
+        }
         else
         {
             gl_FragColor = vec4(1.0);
@@ -871,9 +805,8 @@
         int hasPixel = 0;
         vec4 tempColor = vec4(0.0);
         if(color.x == 1.0 && color.y == 1.0 && color.z == 1.0 && color.w == 1.0)
-        //if(equal(color,vec4(1.0,1.0,1.0,1.0)) == true)
         {
-            vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth)),fs_Texcoord.y * (float(u_viewportHeight))); 
+            vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth)),fs_Texcoord.y * (float(u_viewportHeight)));
             for(int i = -2; i<=2 ;++i)
             {
                 for(int j = -2; j<=2; ++j)
@@ -886,21 +819,19 @@
                         vec4 newColor = texture2D(u_SilColorSampler,vec2(newpixelIdx.x / (float(u_viewportWidth)),
                                                             newpixelIdx.y / (float(u_viewportHeight))));
                         if(newColor.x == 0.0 && newColor.y == 0.0 && newColor.z == 0.0 && newColor.w == 1.0)
-                        //if(equal(newColor,vec4(0.0,0.0,0.0,1.0)) == true)
                         {
                           numofColoredPixel ++;
                         }
                     }
                 }
             }
-            // if(numofColoredPixel  == 0 && hasPixel == 1)
             if(numofColoredPixel  >= 1)
             {
                 color = vec4(0.0,0.0,0.0,1.0);
             }
 
         }
-    
+
         gl_FragColor = color;
         return;
     }
@@ -918,15 +849,13 @@
     {
 
         vec4 color = texture2D(u_StrokeSampler,fs_Texcoord);
-        
-        vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0)); 
+
+        vec2 pixelIndex = vec2(fs_Texcoord.x * (float(u_viewportWidth) - 1.0),fs_Texcoord.y * (float(u_viewportHeight) - 1.0));
         vec4 colorAccu = vec4(0.0,0.0,0.0,1.0);
         for(int i = -3; i<=3 ;++i)
         {
             for(int j = -3; j<=3; ++j)
             {
-                // if(i == 0 && j == 0)
-                //  continue;
                 vec2 newpixelIdx = pixelIndex + vec2(i,j);
                 vec4 newColor = texture2D(u_StrokeSampler,vec2(newpixelIdx.x / (float(u_viewportWidth)-1.0),
                                                     newpixelIdx.y / (float(u_viewportHeight)-1.0)));
@@ -948,12 +877,12 @@
     #define DISPLAY_POSITION 2
     #define DISPLAY_COLOR 3
     #define DISPLAY_TOTAL 4
-    #define DISPLAY_LIGHTS 5    
+    #define DISPLAY_LIGHTS 5
 
     uniform sampler2D u_Depthtex;
     uniform sampler2D u_Normaltex;
     uniform sampler2D u_Positiontex;
-    uniform sampler2D u_Colortex;  
+    uniform sampler2D u_Colortex;
     uniform sampler2D u_QuatColorSampler;
 
     uniform int u_DisplayType;
@@ -986,9 +915,6 @@
         GY[1] = vec3(2.0,0.0,-2.0);
         GY[2] = vec3(1.0,0.0,-1.0);
 
-        //float magX = 0.0;
-        //float magY = 0.0;
-
         vec3 magX = vec3(0.0);
         vec3 magY = vec3(0.0);
 
@@ -996,14 +922,14 @@
             for(int j = 0; j < 3; j++){
                 float mx = (float(j-1)) / float(u_Width);
                 float my = (float(i-1)) / float(u_Height);
-            
+
                 vec2 nearTexcoord = vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my);
-                
+
                 vec3 nearNrm = texture2D(u_Normaltex, nearTexcoord).xyz;
                 float nearDiffuse = max(0.0, dot(normalize(light),nearNrm));
                 vec3 nearColor = texture2D(u_QuatColorSampler, nearTexcoord).xyz;
                 nearColor = nearColor*(strength*nearDiffuse + ambient);
-               
+
                 float c = length(nearColor);
 
                 magX += vec3(GX[j][i]) * nearColor;

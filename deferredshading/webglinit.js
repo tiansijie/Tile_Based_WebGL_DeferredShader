@@ -1,6 +1,5 @@
 var message = document.getElementById("message");
 var canvas = document.getElementById("canvas");
-//var context = canvas.getContext('2d');
 var gl = createWebGLContext(canvas, message);
 if (!gl) {
     alert("No WebGL Supported on Your Browser");
@@ -9,8 +8,6 @@ if (!gl) {
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
 gl.enable(gl.DEPTH_TEST);
-
-console.log(canvas.width + " " + canvas.height);
 
 var near = 0.1;
 var far = 3000.0;
@@ -29,8 +26,6 @@ var display_ink = 7;
 var display_debugtile = 8;
 var display_scissor = -1;
 
-//var model;
-//var mv;
 var invTrans = mat4.create();
 
 var radius = 100.0;
@@ -50,7 +45,7 @@ function sphericalToCartesian( r, a, e ) {
 var eye = sphericalToCartesian(radius, azimuth, elevation);
 var center = [0.0, 3.0, 0.0];
 var eyedis = 1.0;
-var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));    
+var cam_dir = vec3.normalize(vec3.create([center[0]-eye[0], center[1]-eye[1], center[2]-eye[2]]));
 var up = [0.0, 1.0, 0.0];
 var view = mat4.create();
 mat4.lookAt(eye, center, up, view);
@@ -174,6 +169,3 @@ var u_f_lightColor;
 var u_f_lightRadius;
 var u_f_ambientLightLoc;
 var u_f_drawmodeLoc;
-
-
- 
