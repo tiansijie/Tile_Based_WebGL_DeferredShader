@@ -1044,7 +1044,8 @@ function initMeshBuffers() {
           if (lenFaces != 0) {
             if (child.material.map !== null
               && child.material.map.image !== null
-              && child.material.map.image.toDataURL !== null) {
+              && child.material.map.image.toDataURL !== null
+              && typeof child.material.map.image.toDataURL === "function") {
               url = child.material.map.image.toDataURL("image/jpeg", 1);
               initTexture(url, tBuffers.length);
             } else {
