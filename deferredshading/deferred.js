@@ -20,7 +20,7 @@ var isExt;
 
 function initializeShader() {
   //for extension
-  ext = gl.getExtension("WEBGL_draw_buffers");
+  ext = isWebGL2 ? gl : gl.getExtension("WEBGL_draw_buffers");
 
   if (!ext) {
     document.write(
@@ -32,14 +32,22 @@ function initializeShader() {
     document.write(
       '<div id= "info"> <p> Your browser is using <a href = "http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/" >WEBGL_draw_buffers</a> extension.</p></div>'
     );
-    console.log("Successfully enabled WEBGL_draw_buffers extension");
+    if (!isWebGL2) {
+      console.log("Successfully enabled WEBGL_draw_buffers extension");
+    }
+    else {
+      console.log("You are using WebGL2");
+    }
+
     isExt = true;
   }
 
   if (ext) {
     //First shader
-    var vs = getShaderSource(document.getElementById("pass_vs"));
-    var fs = getShaderSource(document.getElementById("pass_fs"));
+    const vertSrc = isWebGL2 ? "webgl2_pass_vs" : "pass_vs";
+    const fragSrc = isWebGL2 ? "webgl2_pass_fs" : "pass_fs";
+    var vs = getShaderSource(document.getElementById(vertSrc));
+    var fs = getShaderSource(document.getElementById(fragSrc));
 
     pass_prog = createProgram(gl, vs, fs, message);
 
@@ -400,16 +408,20 @@ var rttFramebuffers = [];
 
 function initializeFBO() {
   console.log("initFBO");
-  gl.getExtension("OES_texture_float");
+  gl.getExtension("EXT_color_buffer_float")
   gl.getExtension("OES_texture_float_linear");
-  var extDepth = gl.getExtension("WEBGL_depth_texture");
 
-  if (!extDepth) {
-    console.log("Extension Depth texture is not working");
-    alert(
-      ":( Sorry, Your browser doesn't support depth texture extension. Please browse to webglreport.com to see more information."
-    );
-    return;
+  if (!isWebGL2) {
+    gl.getExtension("OES_texture_float");
+    var extDepth = gl.getExtension("WEBGL_depth_texture");
+
+    if (!extDepth) {
+      console.log("Extension Depth texture is not working");
+      alert(
+        ":( Sorry, Your browser doesn't support depth texture extension. Please browse to webglreport.com to see more information."
+      );
+      return;
+    }
   }
 
   //Geometry Frame Buffer
@@ -421,7 +433,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.DEPTH_COMPONENT,
+    gl.DEPTH_COMPONENT16,
     canvas.width,
     canvas.height,
     0,
@@ -438,7 +450,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -455,7 +467,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -472,7 +484,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -489,7 +501,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -501,14 +513,24 @@ function initializeFBO() {
   if (ext)
     //Draw buffer is supported
     {
-      FBO[(0)] = gl.createFramebuffer();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(0)]);
+      FBO[0] = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[0]);
       var bufs = [];
-      bufs[(0)] = ext.COLOR_ATTACHMENT0_WEBGL;
-      bufs[(1)] = ext.COLOR_ATTACHMENT1_WEBGL;
-      bufs[(2)] = ext.COLOR_ATTACHMENT2_WEBGL;
-      bufs[(3)] = ext.COLOR_ATTACHMENT3_WEBGL;
-      ext.drawBuffersWEBGL(bufs);
+      if (isWebGL2) {
+        console.log("SUPPORTED");
+        bufs[0] = gl.COLOR_ATTACHMENT0;
+        bufs[1] = gl.COLOR_ATTACHMENT1;
+        bufs[2] = gl.COLOR_ATTACHMENT2;
+        bufs[3] = gl.COLOR_ATTACHMENT3;
+        gl.drawBuffers(bufs);
+      }
+      else {
+        bufs[0] = ext.COLOR_ATTACHMENT0_WEBGL;
+        bufs[1] = ext.COLOR_ATTACHMENT1_WEBGL;
+        bufs[2] = ext.COLOR_ATTACHMENT2_WEBGL;
+        bufs[3] = ext.COLOR_ATTACHMENT3_WEBGL;
+      	ext.drawBuffersWEBGL(bufs);
+      }
 
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
@@ -519,28 +541,28 @@ function initializeFBO() {
       );
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
-        bufs[(0)],
+        bufs[0],
         gl.TEXTURE_2D,
         depthRGBTexture,
         0
       );
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
-        bufs[(1)],
+        bufs[1],
         gl.TEXTURE_2D,
         normalTexture,
         0
       );
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
-        bufs[(2)],
+        bufs[2],
         gl.TEXTURE_2D,
         positionTexture,
         0
       );
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
-        bufs[(3)],
+        bufs[3],
         gl.TEXTURE_2D,
         colorTexture,
         0
@@ -631,7 +653,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -664,7 +686,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -697,7 +719,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -714,7 +736,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -747,7 +769,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -780,7 +802,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -812,7 +834,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -844,7 +866,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     canvas.width,
     canvas.height,
     0,
@@ -883,7 +905,6 @@ function setmodelMatrix() {
       for (var k = 0; k < 1; ++k) {
         var matrix = mat4.create();
         mat4.identity(matrix);
-        //mat4.scale(matrix,[1,1,1]);
         mat4.translate(matrix, [ i * 2, j * 2, k * 2 ]);
         models.push(matrix);
       }
@@ -953,7 +974,7 @@ for (var i = 0; i < 38; i++) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA8,
     1,
     1,
     0,
@@ -966,24 +987,21 @@ for (var i = 0; i < 38; i++) {
 
 //texture loading code from http://learningwebgl.com/blog/?p=507
 function initTexture(url, index) {
-  // var meshTex = gl.createTexture();
   meshTextures[index].image = new Image();
   meshTextures[index].image.onload = function() {
     handleLoadedTexture(meshTextures[index]);
   };
 
   meshTextures[index].image.src = url;
-  //meshTextures.push(meshTex);
 }
 
 function handleLoadedTexture(texture) {
   gl.bindTexture(gl.TEXTURE_2D, texture);
-  //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
-    gl.RGBA,
+    gl.RGB,
+    gl.RGB,
     gl.UNSIGNED_BYTE,
     texture.image
   );
@@ -1014,8 +1032,6 @@ function createCORSRequest(method, url) {
 
 function initMeshBuffers() {
   setmodelMatrix();
-
-  //var loader = new THREE.OBJLoader();
   var loader = new THREE.OBJMTLLoader();
 
   //ADD
@@ -1487,7 +1503,7 @@ function drawmesh_forward(
   }
 }
 
-var display_type = 5;
+var display_type = 6;
 
 var lightGridTex = gl.createTexture();
 var lightIndexTex = gl.createTexture();
@@ -1506,7 +1522,7 @@ function lightQuad(program) {
   var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
 
   for (var i = lightIndex.length; i < lightIndexWidth * lightIndexWidth; i++) {
-    lightIndex.push(-1);
+    lightIndex.push(1);
   }
 
   for (var i = 0; i < lightGrid.length; i += 3) {
@@ -1519,7 +1535,7 @@ function lightQuad(program) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGB,
+    gl.RGB16F,
     tileWidth,
     tileHeight,
     0,
@@ -1542,8 +1558,8 @@ function lightQuad(program) {
     lightIndexWidth,
     0,
     gl.LUMINANCE,
-    gl.FLOAT,
-    new Float32Array(lightIndex)
+    gl.UNSIGNED_BYTE,
+    new Uint8Array(lightIndex)
   );
   gl.uniform1i(u_LightIndextexLocation, 5);
 
@@ -1552,7 +1568,7 @@ function lightQuad(program) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGB,
+    gl.RGB32F,
     lightPosition.length / 3,
     1,
     0,
@@ -1567,7 +1583,7 @@ function lightQuad(program) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     lightColorRadius.length / 4,
     1,
     0,

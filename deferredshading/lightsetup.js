@@ -330,7 +330,7 @@ function initLights() {
 function initLightsFBO() {
   var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
   for (var i = lightIndex.length; i < lightIndexWidth * lightIndexWidth; i++) {
-    lightIndex.push(-1);
+    lightIndex.push(1);
   }
 
   gl.bindTexture(gl.TEXTURE_2D, lightGridTex);
@@ -342,7 +342,7 @@ function initLightsFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGB,
+    gl.RGB16F,
     tileWidth,
     tileHeight,
     0,
@@ -365,8 +365,8 @@ function initLightsFBO() {
     lightIndexWidth,
     0,
     gl.LUMINANCE,
-    gl.FLOAT,
-    new Float32Array(lightIndex)
+    gl.UNSIGNED_BYTE,
+    new Uint8Array(lightIndex)
   );
 
   gl.bindTexture(gl.TEXTURE_2D, lightPositionTex);
@@ -378,7 +378,7 @@ function initLightsFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGB,
+    gl.RGB16F,
     lightPosition.length / 3,
     1,
     0,
@@ -396,7 +396,7 @@ function initLightsFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA,
+    gl.RGBA16F,
     lightColorRadius.length / 4,
     1,
     0,

@@ -182,6 +182,59 @@
     }
 </script>
 
+
+
+<script id="webgl2_pass_vs" type="x-shader/x-vertex">#version 300 es
+    precision highp float;
+
+    uniform mat4 u_Model;
+    uniform mat4 u_View;
+    uniform mat4 u_Persp;
+    uniform mat4 u_InvTrans;
+
+    in vec3 Position;
+    in vec3 Normal;
+    in vec2 Texcoord;
+
+    out vec3 fs_Normal;
+    out vec4 fs_Position;
+    out vec2 fs_Texcoord;
+    out float fs_Depth;
+
+    void main(void) {
+        fs_Normal = ((u_InvTrans*vec4(Normal,0.0)).xyz);
+        vec4 world = u_Model * vec4(Position, 1.0);
+        vec4 camera = u_View * world;
+        fs_Position = camera;
+        gl_Position = u_Persp * camera;
+        fs_Texcoord = Texcoord;
+        fs_Depth = ((gl_Position.z / gl_Position.w));
+    }
+</script>
+
+<script id="webgl2_pass_fs" type="x-shader/x-fragment">#version 300 es
+    precision highp float;
+
+    uniform vec3 u_Color;
+    //in
+    in vec3 fs_Normal;
+    in vec4 fs_Position;
+    in vec2 fs_Texcoord;
+    in float fs_Depth;
+
+    uniform sampler2D u_Texutre;
+    out vec4 fragColor[4];
+
+    void main(void)
+    {
+        //normal, position, depth, color
+        fragColor[0] = vec4(vec3(fs_Depth), 1.0);
+        fragColor[1] = vec4(normalize(fs_Normal.xyz), 1.0);
+        fragColor[2] = fs_Position;
+        fragColor[3] = vec4(texture(u_Texutre, fs_Texcoord).xyz, 1.0);
+    }
+</script>
+
 <script type="x-shader/x-fragment" id = "withoutdrawbufferfs">
     precision mediump float;
 
@@ -640,10 +693,8 @@
             vec3 strokecolor = texture2D(u_StrokeBlurtex,fs_Texcoord).rgb;
 
             if(strokecolor.x != 1.0 || strokecolor.y != 1.0 || strokecolor.z != 1.0)
-            //if(equal(strokecolor, vec3(1.0,1.0,1.0)) == false)
             {
                gl_FragColor = vec4(min(spattercolor,strokecolor),1.0);
-               //gl_FragData[0] = vec4(spattercolor, 1.0);
             }
             else
             {
@@ -733,7 +784,7 @@
 
 
 <script type="x-shader/x-fragment" id = "siledgefs">
-    precision mediump float; // have to add this, dont' exactly know why
+    precision mediump float;
     uniform vec3 u_Color;
 
     varying vec4 vPosition;
