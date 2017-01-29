@@ -4,6 +4,7 @@ var gl = createWebGLContext(canvas, message);
 if (!gl) {
     alert("No WebGL Supported on Your Browser");
 }
+resizeCanvas(gl);
 
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.0, 0.0, 0.0, 1.0);

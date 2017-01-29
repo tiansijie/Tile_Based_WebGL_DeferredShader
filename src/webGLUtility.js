@@ -53,7 +53,6 @@
     if (!ctx && message) {
       message.innerText = "The browser supports WebGL, but initialization failed.";
     }
-
     return ctx;
   };
 
@@ -114,4 +113,19 @@
 
     return program;
   };
+
+  exports.resizeCanvas = function(gl) {
+    var displayWidth  = Math.floor(gl.canvas.clientWidth);
+    var displayHeight = Math.floor(gl.canvas.clientHeight);
+
+    // Check if the canvas is not the same size.
+    if (gl.canvas.width  !== displayWidth ||
+        gl.canvas.height !== displayHeight) {
+        console.log(displayWidth, displayHeight);
+
+      // Make the canvas the same size
+      gl.canvas.width  = displayWidth;
+      gl.canvas.height = displayHeight;
+    }
+  }
 })();
