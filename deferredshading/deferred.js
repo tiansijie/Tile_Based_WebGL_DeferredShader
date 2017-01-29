@@ -244,8 +244,8 @@ function initializeShader() {
     alert("Could not initialise light_fs");
   }
 
-  vs = getShaderSource(document.getElementById("shade_vs"));
-  fs = getShaderSource(document.getElementById("nontilelight_fs"));
+  vs = getShaderSource(document.getElementById("webgl2_shade_vs"));
+  fs = getShaderSource(document.getElementById("webgl2_nontilelight_fs"));
 
   nontilelight_prog = createProgram(gl, vs, fs, message);
   gl.bindAttribLocation(nontilelight_prog, quad_positionLocation, "Position");
@@ -1264,9 +1264,6 @@ function initMeshBuffers() {
       isLoadingComplete = true;
       $("#loading p").text("");
       initLights();
-      setUpLights();
-      initLightsFBO();
-
       animate();
     }
   );
@@ -2022,10 +2019,10 @@ function animate() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     if (
-      display_type != display_depth && display_type != display_position &&
-        display_type != display_color &&
-        display_type != display_debugtile &&
-        display_type != display_normal
+      display_type !== display_depth && display_type !== display_position &&
+        display_type !== display_color &&
+        display_type !== display_debugtile &&
+        display_type !== display_normal
     ) {
       setupQuad(ambient_prog, ambientLocs);
       gl.uniform4fv(ambientLoc_Light, lightdest);
@@ -2033,15 +2030,15 @@ function animate() {
     }
 
     if (
-      display_type == display_light || display_type == display_ink ||
-        display_type == display_debugtile
+      display_type === display_light || display_type === display_ink ||
+        display_type === display_debugtile
     ) {
       setUpLights();
       setupQuad(light_prog, lightLocs);
       lightQuad(light_prog);
       drawQuad();
     } else if (
-      display_type == display_nontilelight || display_type == display_scissor
+      display_type === display_nontilelight || display_type === display_scissor
     ) {
       setupQuad(nontilelight_prog, nonlightLocs);
       setUpLights();

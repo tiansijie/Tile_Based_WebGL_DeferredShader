@@ -269,6 +269,21 @@
     }
 </script>
 
+
+<script id="webgl2_shade_vs" type="x-shader/x-vertex">#version 300 es
+precision highp float;
+
+in vec3 Position;
+in vec2 Texcoord;
+
+out vec2 fs_Texcoord;
+
+void main() {
+		fs_Texcoord = Texcoord * 0.5 + vec2(0.5);
+		gl_Position = vec4(Position,1.0);
+}
+</script>
+
 <script id="shade_vs" type="x-shader/x-vertex">
     precision highp float;
 
@@ -438,6 +453,62 @@
     }
 </script>
 
+
+<script id="webgl2_nontilelight_fs" type="x-shader/x-fragment">#version 300 es
+    precision highp float;
+
+    #define DISPLAY_DEPTH 0
+    #define DISPLAY_NORMAL 1
+    #define DISPLAY_POSITION 2
+    #define DISPLAY_COLOR 3
+    #define DISPLAY_TOTAL 4
+    #define DISPLAY_TILE_LIGHTS 5
+    #define DISPLAY_NONTILE_LIGHTS 6
+    #define DISPLAY_SCISSOR -1
+
+    uniform int u_DisplayType;
+    uniform sampler2D u_Depthtex;
+    uniform sampler2D u_Normaltex;
+    uniform sampler2D u_Positiontex;
+    uniform sampler2D u_Colortex;
+
+    uniform vec4 u_Light;
+    uniform vec3 u_LightColor;
+
+    in vec2 fs_Texcoord;
+    out vec4 fragmentColor;
+
+    void main()
+    {
+        vec3 normal = texture(u_Normaltex, fs_Texcoord).xyz;
+        vec3 position = texture(u_Positiontex, fs_Texcoord).xyz;
+        vec3 color = texture(u_Colortex, fs_Texcoord).xyz;
+        vec3 light = u_Light.xyz;
+        float lightRadius = u_Light.w;
+
+
+        if(u_DisplayType == DISPLAY_NONTILE_LIGHTS){
+            if(distance(light, position) < lightRadius){
+                float dist = distance(light, position);
+                float lightR = lightRadius;
+                float attenuation = dist/(1.0 - (dist/lightR) * (dist/lightR));
+                attenuation = attenuation / lightR + 1.0;
+                attenuation = 1.0 / (attenuation * attenuation);
+
+                float diffuse = abs(dot(normal, normalize(light - position)));
+                fragmentColor = vec4(diffuse * u_LightColor * color * attenuation, 1.0);
+            }
+            else
+                fragmentColor = vec4(0.0,0.0,0.0,1.0);
+        }
+        else if(u_DisplayType == DISPLAY_SCISSOR){
+            float dis = distance(light, position) * 2.0;
+            fragmentColor = vec4(1.0/dis,0.0,0.0, 1.0);
+        }
+        else
+            fragmentColor = vec4(0.0,0.0,0.0, 1.0);
+    }
+</script>
 
 <script id="nontilelight_fs" type="x-shader/x-fragment">
     precision highp float;

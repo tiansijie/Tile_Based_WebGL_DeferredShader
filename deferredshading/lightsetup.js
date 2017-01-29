@@ -95,7 +95,6 @@ function setNonTileLight(boundary, light_pos, radius, color) {
   nontilelight[(2)] = light_pos[(2)];
   nontilelight[(3)] = radius;
 
-  //console.log("Color is " + color[0] + color[1] + color[2]);
   gl.uniform4fv(nonLightLoc_Light, nontilelight);
   gl.uniform3fv(nonLightLoc_LightColor, color);
 
@@ -246,12 +245,12 @@ function setUpLights() {
       );
 
       if (
-        display_type == display_light || display_type == display_ink ||
-          display_type == display_debugtile
+        display_type === display_light || display_type === display_ink ||
+          display_type === display_debugtile
       )
         setLightOnTile(boundary, i);
       else if (
-        display_type == display_nontilelight || display_type == display_scissor
+        display_type === display_nontilelight || display_type === display_scissor
       ) {
         setNonTileLight(
           boundary,
@@ -264,8 +263,8 @@ function setUpLights() {
   }
 
   if (
-    display_type == display_light || display_type == display_ink ||
-      display_type == display_debugtile
+    display_type === display_light || display_type === display_ink ||
+      display_type === display_debugtile
   ) {
     var offset = 0;
 
