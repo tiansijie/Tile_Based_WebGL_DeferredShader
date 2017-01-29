@@ -410,10 +410,12 @@ var rttFramebuffers = [];
 
 function initializeFBO() {
   console.log("initFBO");
-  gl.getExtension("EXT_color_buffer_float")
   gl.getExtension("OES_texture_float_linear");
 
-  if (!isWebGL2) {
+  if (isWebGL2) {
+    gl.getExtension("EXT_color_buffer_float")
+  }
+  else {
     gl.getExtension("OES_texture_float");
     var extDepth = gl.getExtension("WEBGL_depth_texture");
 
