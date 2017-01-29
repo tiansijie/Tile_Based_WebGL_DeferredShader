@@ -1262,7 +1262,9 @@ function initMeshBuffers() {
       console.log("mehsnormals len " + meshNormals.length / 3);
 
       isLoadingComplete = true;
-      $("#loading p").text("");
+
+      var loadingText = document.getElementById("loading-text");
+      loadingText.textContent = "";
       initLights();
       animate();
     }
@@ -1674,7 +1676,7 @@ function showValue(newValue) {
 
   sliderBarActive = true;
 
-  lightNum = $("#range").text();
+  lightNum = document.getElementById("light-number-range").value
   initLights();
   setUpLights();
   initLightsFBO();

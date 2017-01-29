@@ -28,7 +28,7 @@
 <canvas id="canvas" style="border: none;" width="1024px" height="768px" tabindex="1"></canvas>
 
 <div id = "loading">
-    <p>Initializing the awesome......</p>
+    <p id="loading-text">Initializing the awesome......</p>
 </div>
 <div id = "help">
     <h1>Tile Based Deferred Shading</h1>
@@ -58,7 +58,7 @@
         <li>Press 0 to display scissor test visualization</li>
         <li>Press f to switch between deferred shading and forward shading</li>
         <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>
-        <input class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
+        <input id="light-number-range" class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
 
     </p>
     <!-- <p>Modify the number of lights in the scene:</p> -->
@@ -72,7 +72,7 @@
 </div>
 
 
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+
 
 
 
