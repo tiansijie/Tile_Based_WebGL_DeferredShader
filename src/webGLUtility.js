@@ -1,6 +1,5 @@
 (function(exports) {
   "use strict";
-
   /*global window*/
   exports = exports || window;
 
@@ -43,6 +42,11 @@
       // try to fallback to webgl 1
       ctx = canvas.getContext("webgl") ||
         canvas.getContext("experimental-webgl");
+
+      ctx.RGBA16F = ctx.RGBA;
+      ctx.RGBA8 = ctx.RGBA;
+      ctx.RGB32F = ctx.RGB;
+      ctx.RGB16F = ctx.RGB;
     }
     window.isWebGL2 = isWebGL2;
 

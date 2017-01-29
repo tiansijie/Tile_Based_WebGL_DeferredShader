@@ -435,7 +435,7 @@ function initializeFBO() {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.DEPTH_COMPONENT16,
+    isWebGL2 ? gl.DEPTH_COMPONENT16 : gl.DEPTH_COMPONENT,
     canvas.width,
     canvas.height,
     0,

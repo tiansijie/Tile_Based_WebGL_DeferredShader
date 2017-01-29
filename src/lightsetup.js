@@ -64,7 +64,6 @@ function getLightBoundingBox(light_pos, radius, pv, viewport, boundary) {
   centerLight[(1)] /= centerLight[(3)];
   centerLight[(2)] /= centerLight[(3)];
   centerLight[(3)] /= centerLight[(3)];
-  //console.log("Left light " + leftLight[0] + ", " + leftLight[1] + ", " + leftLight[2]);
   leftLight = mat4.multiplyVec4(viewport, leftLight);
   upLight = mat4.multiplyVec4(viewport, upLight);
   centerLight = mat4.multiplyVec4(viewport, centerLight);
