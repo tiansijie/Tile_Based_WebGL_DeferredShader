@@ -1039,10 +1039,11 @@ function initMeshBuffers() {
   //ADD
   hashedges = {};
   var edgeidx = 0;
+  var pathName = window.location.pathname === "/" ? "" : window.location.pathname;
 
   loader.load(
-    "/OBJ/sponza/sponza.obj",
-    "/OBJ/sponza/sponza.mtl",
+    pathName + "OBJ/sponza/sponza.obj",
+    pathName + "OBJ/sponza/sponza.mtl",
     function(event) {
       var object = event;
 
