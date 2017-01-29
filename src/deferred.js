@@ -244,8 +244,10 @@ function initializeShader() {
     alert("Could not initialise light_fs");
   }
 
-  vs = getShaderSource(document.getElementById("webgl2_shade_vs"));
-  fs = getShaderSource(document.getElementById("webgl2_nontilelight_fs"));
+  var vertLight = isWebGL2 ? "webgl2_shade_vs" : "shade_vs";
+  var fragLight = isWebGL2 ? "webgl2_nontilelight_fs" : "nontilelight_fs";
+  vs = getShaderSource(document.getElementById(vertLight));
+  fs = getShaderSource(document.getElementById(fragLight));
 
   nontilelight_prog = createProgram(gl, vs, fs, message);
   gl.bindAttribLocation(nontilelight_prog, quad_positionLocation, "Position");
