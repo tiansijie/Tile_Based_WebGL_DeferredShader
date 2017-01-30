@@ -19,51 +19,51 @@ var vec4Center1 = vec4.create();
 var vec4Null = vec4.create([ 0, 0, 0, 0 ]);
 
 function getLightBoundingBox(light_pos, radius, pv, viewport, boundary) {
-  var lx = light_pos[(0)];
-  var ly = light_pos[(1)];
-  var lz = light_pos[(2)];
+  var lx = light_pos[0];
+  var ly = light_pos[1];
+  var lz = light_pos[2];
 
-  vec3Dir[(0)] = center[(0)] - eye[(0)];
-  vec3Dir[(1)] = center[(1)] - eye[(1)];
-  vec3Dir[(2)] = center[(2)] - eye[(2)];
+  vec3Dir[0] = center[0] - eye[0];
+  vec3Dir[1] = center[1] - eye[1];
+  vec3Dir[2] = center[2] - eye[2];
   cam_dir = vec3.normalize(vec3Dir);
 
-  vec3Up[(0)] = view[(4)];
-  vec3Up[(1)] = view[(5)];
-  vec3Up[(2)] = view[(6)];
+  vec3Up[0] = view[4];
+  vec3Up[1] = view[5];
+  vec3Up[2] = view[6];
   var camUp = vec3.normalize(vec3Up);
   var camLeft = vec3.normalize(vec3.cross(camUp, cam_dir));
 
-  vec4Left1[(0)] = lx + radius * camLeft[(0)];
-  vec4Left1[(1)] = ly + radius * camLeft[(1)];
-  vec4Left1[(2)] = lz + radius * camLeft[(2)];
-  vec4Left1[(3)] = 1;
+  vec4Left1[0] = lx + radius * camLeft[0];
+  vec4Left1[1] = ly + radius * camLeft[1];
+  vec4Left1[2] = lz + radius * camLeft[2];
+  vec4Left1[3] = 1;
   mat4.multiplyVec4(pv, vec4Left1, leftLight);
 
-  vec4Up1[(0)] = lx + radius * camUp[(0)];
-  vec4Up1[(1)] = ly + radius * camUp[(1)];
-  vec4Up1[(2)] = lz + radius * camUp[(2)];
-  vec4Up1[(3)] = 1;
+  vec4Up1[0] = lx + radius * camUp[0];
+  vec4Up1[1] = ly + radius * camUp[1];
+  vec4Up1[2] = lz + radius * camUp[2];
+  vec4Up1[3] = 1;
   mat4.multiplyVec4(pv, vec4Up1, upLight);
 
-  vec4Center1[(0)] = lx;
-  vec4Center1[(1)] = ly;
-  vec4Center1[(2)] = lz;
-  vec4Center1[(3)] = 1;
+  vec4Center1[0] = lx;
+  vec4Center1[1] = ly;
+  vec4Center1[2] = lz;
+  vec4Center1[3] = 1;
   mat4.multiplyVec4(pv, vec4Center1, centerLight);
 
-  leftLight[(0)] /= leftLight[(3)];
-  leftLight[(1)] /= leftLight[(3)];
-  leftLight[(2)] /= leftLight[(3)];
-  leftLight[(3)] /= leftLight[(3)];
-  upLight[(0)] /= upLight[(3)];
-  upLight[(1)] /= upLight[(3)];
-  upLight[(2)] /= upLight[(3)];
-  upLight[(3)] /= upLight[(3)];
-  centerLight[(0)] /= centerLight[(3)];
-  centerLight[(1)] /= centerLight[(3)];
-  centerLight[(2)] /= centerLight[(3)];
-  centerLight[(3)] /= centerLight[(3)];
+  leftLight[0] /= leftLight[3];
+  leftLight[1] /= leftLight[3];
+  leftLight[2] /= leftLight[3];
+  leftLight[3] /= leftLight[3];
+  upLight[0] /= upLight[3];
+  upLight[1] /= upLight[3];
+  upLight[2] /= upLight[3];
+  upLight[3] /= upLight[3];
+  centerLight[0] /= centerLight[3];
+  centerLight[1] /= centerLight[3];
+  centerLight[2] /= centerLight[3];
+  centerLight[3] /= centerLight[3];
   leftLight = mat4.multiplyVec4(viewport, leftLight);
   upLight = mat4.multiplyVec4(viewport, upLight);
   centerLight = mat4.multiplyVec4(viewport, centerLight);
@@ -74,10 +74,10 @@ function getLightBoundingBox(light_pos, radius, pv, viewport, boundary) {
   dh = vec4.subtract(upLight, centerLight, dh);
   var lenh = vec4.length(dh);
 
-  var leftx = centerLight[(0)] - lenw;
-  var bottomy = centerLight[(1)] - lenh;
-  var rightx = centerLight[(0)] + lenw;
-  var topy = centerLight[(1)] + lenh;
+  var leftx = centerLight[0] - lenw;
+  var bottomy = centerLight[1] - lenh;
+  var rightx = centerLight[0] + lenw;
+  var topy = centerLight[1] + lenh;
 
   boundary.left = leftx;
   boundary.right = rightx;
@@ -89,10 +89,10 @@ var nontilelight = vec4.create();
 function setNonTileLight(boundary, light_pos, radius, color) {
   gl.enable(gl.SCISSOR_TEST);
   //var nontilelight = vec4.create([light_pos[0], light_pos[1], light_pos[2], radius]);
-  nontilelight[(0)] = light_pos[(0)];
-  nontilelight[(1)] = light_pos[(1)];
-  nontilelight[(2)] = light_pos[(2)];
-  nontilelight[(3)] = radius;
+  nontilelight[0] = light_pos[0];
+  nontilelight[1] = light_pos[1];
+  nontilelight[2] = light_pos[2];
+  nontilelight[3] = radius;
 
   gl.uniform4fv(nonLightLoc_Light, nontilelight);
   gl.uniform3fv(nonLightLoc_LightColor, color);
@@ -214,25 +214,25 @@ function setUpLights() {
   }
   for (var i = 0; i < lightNum; i++) {
     if (i % 2 == 0) {
-      lights[i].position[(0)] += lightMove;
-      lights[i].position[(1)] += lightMove;
-      lights[i].position[(2)] += lightMove;
+      lights[i].position[0] += lightMove;
+      lights[i].position[1] += lightMove;
+      lights[i].position[2] += lightMove;
     } else {
-      lights[i].position[(0)] -= lightMove;
-      lights[i].position[(1)] -= lightMove;
-      lights[i].position[(2)] -= lightMove;
+      lights[i].position[0] -= lightMove;
+      lights[i].position[1] -= lightMove;
+      lights[i].position[2] -= lightMove;
     }
 
-    lightViewPos[(0)] = lights[i].position[(0)];
-    lightViewPos[(1)] = lights[i].position[(1)];
-    lightViewPos[(2)] = lights[i].position[(2)];
-    lightViewPos[(3)] = 1;
+    lightViewPos[0] = lights[i].position[0];
+    lightViewPos[1] = lights[i].position[1];
+    lightViewPos[2] = lights[i].position[2];
+    lightViewPos[3] = 1;
 
     lightViewPos = mat4.multiplyVec4(view, lightViewPos);
 
-    lightPosition[i * 3] = lightViewPos[(0)];
-    lightPosition[i * 3 + 1] = lightViewPos[(1)];
-    lightPosition[i * 3 + 2] = lightViewPos[(2)];
+    lightPosition[i * 3] = lightViewPos[0];
+    lightPosition[i * 3 + 1] = lightViewPos[1];
+    lightPosition[i * 3 + 2] = lightViewPos[2];
 
     if (isDeferredshading) {
       getLightBoundingBox(
@@ -313,9 +313,9 @@ function initLights() {
       radius: radius
     });
     //light position x y z
-    lightPosition.push(lights[i].position[(0)]);
-    lightPosition.push(lights[i].position[(1)]);
-    lightPosition.push(lights[i].position[(2)]);
+    lightPosition.push(lights[i].position[0]);
+    lightPosition.push(lights[i].position[1]);
+    lightPosition.push(lights[i].position[2]);
 
     lightColorRadius.push(Math.random());
     lightColorRadius.push(Math.random());

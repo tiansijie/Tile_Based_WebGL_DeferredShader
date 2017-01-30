@@ -674,8 +674,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(1)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(1)]);
+  FBO[1] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[1]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -707,8 +707,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(2)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(2)]);
+  FBO[2] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[2]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -757,8 +757,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(3)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(3)]);
+  FBO[3] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[3]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -790,8 +790,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(4)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(4)]);
+  FBO[4] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[4]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -823,8 +823,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(5)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(5)]);
+  FBO[5] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[5]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -855,8 +855,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(6)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(6)]);
+  FBO[6] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[6]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -887,8 +887,8 @@ function initializeFBO() {
     null
   );
 
-  FBO[(7)] = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[(7)]);
+  FBO[7] = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, FBO[7]);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -1068,7 +1068,7 @@ function initMeshBuffers() {
         if (child instanceof THREE.Mesh) {
           var lenVertices = child.geometry.vertices.length;
           var lenFaces = child.geometry.faces.length;
-          var lenUV = child.geometry.faceVertexUvs[(0)].length;
+          var lenUV = child.geometry.faceVertexUvs[0].length;
 
           if (lenFaces != 0) {
             if (child.material.map !== null
@@ -1092,7 +1092,7 @@ function initMeshBuffers() {
               meshVertices.push(child.geometry.vertices[i].z);
             }
 
-            var UVs = child.geometry.faceVertexUvs[(0)];
+            var UVs = child.geometry.faceVertexUvs[0];
 
             for (var i = 0; i < lenFaces; i++) {
               var indexa = child.geometry.faces[i].a;
@@ -1192,7 +1192,7 @@ function initMeshBuffers() {
               es.push([ indexc, indexa ]);
 
               for (var idx = 0; idx < 3; idx++) {
-                var inverses = [ es[idx][(1)], es[idx][(0)] ];
+                var inverses = [ es[idx][1], es[idx][0] ];
                 if (es[idx] in hashedges || inverses in hashedges) {
                   if (es[idx] in hashedges) {
                     meshedgefaces[hashedges[es[idx]]].push(i);
@@ -1609,29 +1609,29 @@ function lightQuad(program) {
 function setupQuad(program, locs) {
   gl.useProgram(program);
 
-  gl.uniform1i(locs[(0)], display_type);
+  gl.uniform1i(locs[0], display_type);
 
-  gl.uniform1f(locs[(1)], near);
-  gl.uniform1f(locs[(2)], far);
+  gl.uniform1f(locs[1], near);
+  gl.uniform1f(locs[2], far);
 
-  gl.uniform1f(locs[(3)], canvas.width);
-  gl.uniform1f(locs[(4)], canvas.height);
+  gl.uniform1f(locs[3], canvas.width);
+  gl.uniform1f(locs[4], canvas.height);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-  gl.uniform1i(locs[(5)], 0);
+  gl.uniform1i(locs[5], 0);
 
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, normalTexture);
-  gl.uniform1i(locs[(6)], 1);
+  gl.uniform1i(locs[6], 1);
 
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, positionTexture);
-  gl.uniform1i(locs[(7)], 2);
+  gl.uniform1i(locs[7], 2);
 
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-  gl.uniform1i(locs[(8)], 3);
+  gl.uniform1i(locs[8], 3);
 }
 
 function setupInk(program) {
@@ -1736,42 +1736,42 @@ var right = vec3.create();
 var vec3Temp = vec3.create();
 var dir = vec3.create();
 function keyMove(type) {
-  vec3Temp[(0)] = center[(0)] - eye[(0)];
-  vec3Temp[(1)] = center[(1)] - eye[(1)];
-  vec3Temp[(2)] = center[(2)] - eye[(2)];
+  vec3Temp[0] = center[0] - eye[0];
+  vec3Temp[1] = center[1] - eye[1];
+  vec3Temp[2] = center[2] - eye[2];
   vec3.normalize(vec3Temp, dir);
-  upKey[(0)] = 0;
-  upKey[(1)] = 1;
-  upKey[(2)] = 0;
+  upKey[0] = 0;
+  upKey[1] = 1;
+  upKey[2] = 0;
   vec3.normalize(vec3.cross(dir, upKey, right));
   vec3.normalize(vec3.cross(right, dir, upKey));
 
   var scale = 0.1;
 
   if (type == 1) {
-    center[(0)] += dir[(0)] * scale;
-    center[(1)] += dir[(1)] * scale;
-    center[(2)] += dir[(2)] * scale;
+    center[0] += dir[0] * scale;
+    center[1] += dir[1] * scale;
+    center[2] += dir[2] * scale;
   } else if (type == 2) {
-    center[(0)] -= dir[(0)] * scale;
-    center[(1)] -= dir[(1)] * scale;
-    center[(2)] -= dir[(2)] * scale;
+    center[0] -= dir[0] * scale;
+    center[1] -= dir[1] * scale;
+    center[2] -= dir[2] * scale;
   } else if (type == 3) {
-    center[(0)] -= right[(0)] * scale;
-    center[(1)] -= right[(1)] * scale;
-    center[(2)] -= right[(2)] * scale;
+    center[0] -= right[0] * scale;
+    center[1] -= right[1] * scale;
+    center[2] -= right[2] * scale;
   } else if (type == 4) {
-    center[(0)] += right[(0)] * scale;
-    center[(1)] += right[(1)] * scale;
-    center[(2)] += right[(2)] * scale;
+    center[0] += right[0] * scale;
+    center[1] += right[1] * scale;
+    center[2] += right[2] * scale;
   } else if (type == 5) {
-    center[(0)] += 0 * scale;
-    center[(1)] += 1 * scale;
-    center[(2)] += 0 * scale;
+    center[0] += 0 * scale;
+    center[1] += 1 * scale;
+    center[2] += 0 * scale;
   } else if (type == 6) {
-    center[(0)] -= 0 * scale;
-    center[(1)] -= 1 * scale;
-    center[(2)] -= 0 * scale;
+    center[0] -= 0 * scale;
+    center[1] -= 1 * scale;
+    center[2] -= 0 * scale;
   }
 }
 
@@ -1872,31 +1872,31 @@ function handleMouseMove(event) {
     MouseDowndeltaY = deltaY;
     MouseDowndeltaX = deltaX;
 
-    vec3Temp[(0)] = center[(0)] - eye[(0)];
-    vec3Temp[(1)] = center[(1)] - eye[(1)];
-    vec3Temp[(2)] = center[(2)] - eye[(2)];
+    vec3Temp[0] = center[0] - eye[0];
+    vec3Temp[1] = center[1] - eye[1];
+    vec3Temp[2] = center[2] - eye[2];
     vec3.normalize(vec3Temp, dir);
-    upKey[(0)] = 0;
-    upKey[(1)] = 1;
-    upKey[(2)] = 0;
+    upKey[0] = 0;
+    upKey[1] = 1;
+    upKey[2] = 0;
     vec3.normalize(vec3.cross(dir, upKey, right));
     vec3.normalize(vec3.cross(right, dir, upKey));
 
-    center[(0)] += 0.01 *
-      (MouseDowndeltaY * up[(0)] - MouseDowndeltaX * right[(0)]);
-    center[(1)] += 0.01 *
-      (MouseDowndeltaY * up[(1)] - MouseDowndeltaX * right[(1)]);
-    center[(2)] += 0.01 *
-      (MouseDowndeltaY * up[(2)] - MouseDowndeltaX * right[(2)]);
+    center[0] += 0.01 *
+      (MouseDowndeltaY * up[0] - MouseDowndeltaX * right[0]);
+    center[1] += 0.01 *
+      (MouseDowndeltaY * up[1] - MouseDowndeltaX * right[1]);
+    center[2] += 0.01 *
+      (MouseDowndeltaY * up[2] - MouseDowndeltaX * right[2]);
   } else if (mouseRightDown) {
-    vec3Temp[(0)] = center[(0)] - eye[(0)];
-    vec3Temp[(1)] = center[(1)] - eye[(1)];
-    vec3Temp[(2)] = center[(2)] - eye[(2)];
+    vec3Temp[0] = center[0] - eye[0];
+    vec3Temp[1] = center[1] - eye[1];
+    vec3Temp[2] = center[2] - eye[2];
     vec3.normalize(vec3Temp, dir);
     var sign = deltaX > 0 ? 1 : -1;
-    center[(0)] += 0.02 * dir[(0)] * sign;
-    center[(1)] += 0.02 * dir[(1)] * sign;
-    center[(2)] += 0.02 * dir[(2)] * sign;
+    center[0] += 0.02 * dir[0] * sign;
+    center[1] += 0.02 * dir[1] * sign;
+    center[2] += 0.02 * dir[2] * sign;
   }
 
   lastMouseX = newX;
@@ -1918,9 +1918,9 @@ stats.domElement.style.top = "0px";
 document.body.appendChild(stats.domElement);
 
 function camera() {
-  eye[(0)] = center[(0)] + eyedis * Math.cos(azimuth) * Math.cos(elevation);
-  eye[(1)] = center[(1)] + eyedis * Math.sin(elevation);
-  eye[(2)] = center[(2)] + eyedis * Math.cos(elevation) * Math.sin(azimuth);
+  eye[0] = center[0] + eyedis * Math.cos(azimuth) * Math.cos(elevation);
+  eye[1] = center[1] + eyedis * Math.sin(elevation);
+  eye[2] = center[2] + eyedis * Math.cos(elevation) * Math.sin(azimuth);
 
   mat4.lookAt(eye, center, up, view);
 }
@@ -1964,10 +1964,10 @@ function animate() {
 
   mat4.multiplyVec4(
     view,
-    [ lightPos[(0)], lightPos[(1)], lightPos[(2)], 0 ],
+    [ lightPos[0], lightPos[1], lightPos[2], 0 ],
     lightdest
   );
-  lightdest[(3)] = 0.3;
+  lightdest[3] = 0.3;
 
   if (!isDeferredshading) {
     setUpLights();
@@ -1987,13 +1987,13 @@ function animate() {
     gl.blendFunc(gl.ONE, gl.ONE);
 
     for (var j = 0, i = 0; j < lights.length; j++, i += 3) {
-      eachLightPos[(0)] = lightPosition[i];
-      eachLightPos[(1)] = lightPosition[i + 1];
-      eachLightPos[(2)] = lightPosition[i + 2];
+      eachLightPos[0] = lightPosition[i];
+      eachLightPos[1] = lightPosition[i + 1];
+      eachLightPos[2] = lightPosition[i + 2];
 
-      eachLightColor[(0)] = lights[j].color[(0)];
-      eachLightColor[(1)] = lights[j].color[(1)];
-      eachLightColor[(2)] = lights[j].color[(2)];
+      eachLightColor[0] = lights[j].color[0];
+      eachLightColor[1] = lights[j].color[1];
+      eachLightColor[2] = lights[j].color[2];
 
       eachLightRadius = lights[j].radius;
 
