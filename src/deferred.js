@@ -22,6 +22,14 @@ function initializeShader() {
   //for extension
   ext = isWebGL2 ? gl : gl.getExtension("WEBGL_draw_buffers");
 
+  if (isWebGL2) {
+    document.getElementById("title-webgl2").textContent = "WebGL 2 ";
+    document.getElementById("is-webgl2").textContent = "WebGL 2 ";
+  }
+  else {
+    document.getElementById("title-webgl2").textContent = "WebGL 1 ";
+    document.getElementById("is-webgl2").textContent = "WebGL 1 ";
+  }
   if (!ext) {
     document.write(
       '<div id= "info"> <p> Your browser is NOT using <a href = "http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/" >WEBGL_draw_buffers</a> extension.</p></div>'

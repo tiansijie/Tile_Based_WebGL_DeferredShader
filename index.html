@@ -16,7 +16,7 @@
     h2 { font: bold italic 17px/17px Arial; padding-top: 10px; }
     small { display: block; font-size: 11px; line-height: 15px; }
     canvas { position: absolute; top: 0; left: 0;}
-	#help { position: absolute; top: 0; right: 0; bottom: 0; width: 20%; padding-right: 30px; overflow: auto; padding-bottom: 30px;/*background-color: black;*/}
+    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 20%; padding-right: 30px; overflow: auto; padding-bottom: 30px;/*background-color: black;*/}
     #help .slider{width: 90%; padding-left:10px;padding-top:5px;}
     #range{font-size:18px;font:Arial, sans-serif;}
     #info { position: absolute; top: 750px; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; }
@@ -31,12 +31,12 @@
     <p id="loading-text" style="color: black">Initializing the awesome......</p>
 </div>
 <div id = "help">
-    <h1>WebGL2 - Tile Based Deferred Shading</h1>
+    <h1><span id="title-webgl2"></span> - Tile Based Deferred Shading</h1>
     <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
     ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
     <p>
         This demo includes <span id ="helplightnum">100</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
-        You are uisng <b><span id="helpmode">Deferred Shading</span></b>.
+        You are uisng <b><span id="is-webgl2"></span><span id="helpmode">Deferred Shading</span></b>.
     </p>
     <p>
         This demo requires a decent graphics card and up-to-date drivers. If you can't run the demo, you can still see it on <a href = "https://vimeo.com/83616115">Vimeo</a>
@@ -61,13 +61,9 @@
         <input id="light-number-range" class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
 
     </p>
-    <!-- <p>Modify the number of lights in the scene:</p> -->
-    <!-- <input type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/> -->
-    <!-- <span id = "range">100</span> -->
-
 
     <h2> Source Code: </h2>
-    <a href = "https://github.com/YuqinShao/Tile_Based_WebGL_DeferredShader">Code</a>
+    <a href = "https://github.com/tiansijie/Tile_Based_WebGL_DeferredShader">Code</a>
 
 </div>
 
