@@ -201,8 +201,10 @@ function initializeShader() {
     alert("Could not initialise edgefs");
   }
 
-  vs = getShaderSource(document.getElementById("shade_vs"));
-  fs = getShaderSource(document.getElementById("light_fs"));
+  var vertLight = isWebGL2 ? "webgl2_shade_vs" : "shade_vs";
+  var ligthfs = isWebGL2 ? "webgl2_light_fs" : "light_fs";
+  vs = getShaderSource(document.getElementById(vertLight));
+  fs = getShaderSource(document.getElementById(ligthfs));
 
   light_prog = createProgram(gl, vs, fs, message);
   gl.bindAttribLocation(diagnostic_prog, quad_positionLocation, "Position");
@@ -1279,6 +1281,7 @@ function initMeshBuffers() {
       var loadingText = document.getElementById("loading-text");
       loadingText.textContent = "";
       initLights();
+      initLightsFBO();
       animate();
     }
   );
@@ -1515,7 +1518,7 @@ function drawmesh_forward(
   }
 }
 
-var display_type = 6;
+var display_type = 5;
 
 var lightGridTex = gl.createTexture();
 var lightIndexTex = gl.createTexture();
@@ -1534,7 +1537,7 @@ function lightQuad(program) {
   var lightIndexWidth = Math.ceil(Math.sqrt(lightIndex.length));
 
   for (var i = lightIndex.length; i < lightIndexWidth * lightIndexWidth; i++) {
-    lightIndex.push(1);
+    lightIndex.push(-1);
   }
 
   for (var i = 0; i < lightGrid.length; i += 3) {
@@ -1547,7 +1550,7 @@ function lightQuad(program) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGB16F,
+    gl.RGB32F,
     tileWidth,
     tileHeight,
     0,
@@ -1560,18 +1563,24 @@ function lightQuad(program) {
   gl.uniform1i(u_LightIndexImageSizeLocation, lightIndexWidth);
   gl.uniform1f(u_FloatLightIndexSizeLocation, lightIndexWidth);
 
+  let lightIndexThree = [];
+  for(let i = 0; i < lightIndex.length; ++i) {
+    lightIndexThree[i * 3] = lightIndex[i];
+    lightIndexThree[i * 3 + 1] = 0;
+    lightIndexThree[i * 3 + 2] = 0;
+  }
   gl.activeTexture(gl.TEXTURE5);
   gl.bindTexture(gl.TEXTURE_2D, lightIndexTex);
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.LUMINANCE,
+    gl.RGB32F,
     lightIndexWidth,
     lightIndexWidth,
     0,
-    gl.LUMINANCE,
-    gl.UNSIGNED_BYTE,
-    new Uint8Array(lightIndex)
+    gl.RGB,
+    gl.FLOAT,
+    new Float32Array(lightIndexThree)
   );
   gl.uniform1i(u_LightIndextexLocation, 5);
 
@@ -1595,7 +1604,7 @@ function lightQuad(program) {
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
-    gl.RGBA16F,
+    gl.RGBA32F,
     lightColorRadius.length / 4,
     1,
     0,
