@@ -1706,33 +1706,33 @@ function showValue(newValue) {
 
 function showMode() {
   if (isDeferredshading) {
-    if (display_type == display_light)
+    if (display_type === display_light)
       document.getElementById(
         "helpmode"
       ).innerHTML = "Tile Based Deferred Shading";
-    else if (display_type == display_nontilelight)
+    else if (display_type === display_nontilelight)
       document.getElementById(
         "helpmode"
       ).innerHTML = "Non Tile Based Deferred Shading";
-    else if (display_type == display_depth)
+    else if (display_type === display_depth)
       document.getElementById("helpmode").innerHTML = "Depth Texture";
-    else if (display_type == display_normal)
+    else if (display_type === display_normal)
       document.getElementById("helpmode").innerHTML = "Normal Texture";
-    else if (display_type == display_position)
+    else if (display_type === display_position)
       document.getElementById("helpmode").innerHTML = "Position Texture";
-    else if (display_type == display_color)
+    else if (display_type === display_color)
       document.getElementById("helpmode").innerHTML = "Color Texture";
-    else if (display_type == display_total)
+    else if (display_type === display_total)
       document.getElementById("helpmode").innerHTML = "Ambient Texture";
-    else if (display_type == display_ink)
+    else if (display_type === display_ink)
       document.getElementById(
         "helpmode"
       ).innerHTML = "Chinese Painting Shading";
-    else if (display_type == display_debugtile)
+    else if (display_type === display_debugtile)
       document.getElementById(
         "helpmode"
       ).innerHTML = "Debug Tile Visualization";
-    else if (display_type == display_scissor)
+    else if (display_type === display_scissor)
       document.getElementById(
         "helpmode"
       ).innerHTML = "Scissor Test Visualization";

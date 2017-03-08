@@ -67,7 +67,10 @@ var lightPosition = [];
 var lightColorRadius = [];
 var lightGrid = [];
 var lightIndex = [];
-var lightNum = 100;//Light numbers
+var lightNum = 240;//Light numbers
+document.getElementById(
+  "helpmode"
+).innerHTML = "Tile Based Deferred Shading";
 
 
 var positionLocation;

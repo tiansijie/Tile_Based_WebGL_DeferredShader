@@ -35,7 +35,7 @@
     <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
     ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
     <p>
-        This demo includes <span id ="helplightnum">100</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
+        This demo includes <span id ="helplightnum">240</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
         You are uisng <b><span id="is-webgl2"></span><span id="helpmode">Deferred Shading</span></b>.
     </p>
     <p>
@@ -44,6 +44,8 @@
     <p>
     <h2>Instructions:</h2>
     <p>
+        <li>Modify number of lights in the scene:<span id = "range">240</span> lights</li>
+        <input id="light-number-range" class = "slider" type="range" min="0" max="1000" value="240" step="5" width = "200px" onchange="showValue(this.value)"/>
         <li>Drag mouse to view around the scene</li>
         <li>w,s,a,d to move the camera</li>
         <li>Press 1 to display depth texutre</li>
@@ -57,9 +59,6 @@
         <li>Press 9 to display debug view for tile based</li>
         <li>Press 0 to display scissor test visualization</li>
         <li>Press f to switch between deferred shading and forward shading</li>
-        <li>Modify number of lights in the scene:<span id = "range">100</span> lights</li>
-        <input id="light-number-range" class = "slider" type="range" min="0" max="1000" value="100" step="5" width = "200px" onchange="showValue(this.value)"/>
-
     </p>
 
     <h2> Source Code: </h2>

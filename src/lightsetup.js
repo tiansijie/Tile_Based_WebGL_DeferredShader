@@ -208,20 +208,22 @@ function setUpLights() {
     tileLightId[i] = [];
 
   moveTime++;
-  if (moveTime >= 20) {
+  if (moveTime >= 25) {
     moveTime = 0;
     lightMove = -lightMove;
   }
   for (var i = 0; i < lightNum; i++) {
     if (i % 2 == 0) {
-      lights[i].position[0] += lightMove;
-      lights[i].position[1] += lightMove;
-      lights[i].position[2] += lightMove;
+      lights[i].position[1] += lightMove * Math.random() * 2;
     } else {
-      lights[i].position[0] -= lightMove;
-      lights[i].position[1] -= lightMove;
-      lights[i].position[2] -= lightMove;
+      lights[i].position[1] -= lightMove * Math.random() * 2;
     }
+    var xx = lights[i].position[0];
+    var zz = lights[i].position[2];
+    var rr = Math.sqrt(xx * xx + zz * zz);
+    var deg = Math.atan2(zz, xx);
+    lights[i].position[0] = rr * Math.cos(deg + 0.05);
+    lights[i].position[2] = rr * Math.sin(deg + 0.05);
 
     lightViewPos[0] = lights[i].position[0];
     lightViewPos[1] = lights[i].position[1];
