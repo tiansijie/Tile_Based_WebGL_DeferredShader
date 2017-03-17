@@ -1838,6 +1838,7 @@ var lastMouseX = null;
 var lastMouseY = null;
 
 function handleMouseDown(event) {
+  event.preventDefault();
   if (event.button == 2) {
     mouseLeftDown = false;
     mouseMiddleDown = false;
@@ -1852,8 +1853,17 @@ function handleMouseDown(event) {
     mouseMiddleDown = true;
   }
 
-  lastMouseX = event.clientX;
-  lastMouseY = event.clientY;
+  if (event.type === "touchstart") {
+    mouseLeftDown = true;
+    mouseRightDown = false;
+    mouseMiddleDown = false;
+    lastMouseX = event.changedTouches[0].clientX;
+    lastMouseY = event.changedTouches[0].clientY;
+  }
+  else {
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+  }
 }
 
 function handleMouseUp(event) {
@@ -1868,8 +1878,13 @@ function handleMouseMove(event) {
   if (!(mouseLeftDown || mouseRightDown || mouseMiddleDown)) {
     return;
   }
+
   var newX = event.clientX;
   var newY = event.clientY;
+  if (event.type === "touchmove") {
+    newX = event.changedTouches[0].clientX;
+    newY = event.changedTouches[0].clientY;
+  }
 
   var deltaX = newX - lastMouseX;
   var deltaY = newY - lastMouseY;
@@ -1915,6 +1930,10 @@ function handleMouseMove(event) {
 canvas.onmousedown = handleMouseDown;
 document.onmouseup = handleMouseUp;
 document.onmousemove = handleMouseMove;
+
+canvas.addEventListener("touchstart", handleMouseDown);
+canvas.addEventListener("touchend", handleMouseUp);
+canvas.addEventListener("touchmove", handleMouseMove);
 
 var stats = new Stats();
 stats.setMode(0);
