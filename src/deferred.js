@@ -21,7 +21,6 @@ var isExt;
 function initializeShader() {
   //for extension
   ext = isWebGL2 ? gl : gl.getExtension("WEBGL_draw_buffers");
-
   if (isWebGL2) {
     document.getElementById("title-webgl2").textContent = "WebGL 2 ";
     document.getElementById("is-webgl2").textContent = "WebGL 2 ";
@@ -427,6 +426,12 @@ function initializeFBO() {
   }
   else {
     gl.getExtension("OES_texture_float");
+    gl.getExtension("OES_texture_half_float");
+    gl.getExtension("OES_texture_half_float_linear");
+    var md = new MobileDetect(window.navigator.userAgent);
+    if (md.mobile()) {
+        gl.getExtension("WEBGL_color_buffer_float");
+    }
     var extDepth = gl.getExtension("WEBGL_depth_texture");
 
     if (!extDepth) {
@@ -593,9 +598,9 @@ function initializeFBO() {
       for (var i = 0; i < 4; ++i) {
         var fbo = gl.createFramebuffer();
         rttFramebuffers.push(fbo);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
         fbo.width = canvas.width;
         fbo.height = canvas.height;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
 
         var texture;
         if (i == 0)
@@ -608,13 +613,6 @@ function initializeFBO() {
           texture = depthTexture;
 
         if (i == 3) {
-          gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,
-            gl.COLOR_ATTACHMENT0,
-            gl.TEXTURE_2D,
-            depthRGBTexture,
-            0
-          );
           gl.framebufferTexture2D(
             gl.FRAMEBUFFER,
             gl.DEPTH_ATTACHMENT,
@@ -647,9 +645,22 @@ function initializeFBO() {
         }
 
         var FBOstatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-        if (FBOstatus != gl.FRAMEBUFFER_COMPLETE) {
+        if (FBOstatus !== gl.FRAMEBUFFER_COMPLETE) {
           console.log("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO " + i);
+          if (FBOstatus === gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+            console.log("gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT " + i);
+          }
+          else if (FBOstatus === gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+            console.log("gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT " + i);
+          }
+          else if (FBOstatus === gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
+            console.log("gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS " + i);
+          }
+          else if (FBOstatus === gl.FRAMEBUFFER_UNSUPPORTED) {
+            console.log("gl.FRAMEBUFFER_UNSUPPORTED" + i);
+          }
         }
+
 
         //set texture, renderbuffer, and framebuffer back to their defaults
         gl.bindTexture(gl.TEXTURE_2D, null);
