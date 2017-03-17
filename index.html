@@ -24,48 +24,60 @@
 </style>
 
 <body>
-<div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
-<canvas id="canvas" style="border: none; width: 100%; height: 100%" tabindex="1"></canvas>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/mobile-detect/1.3.5/mobile-detect.min.js"></script>
+    <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
+    <canvas id="canvas" style="border: none; width: 100%; height: 100%" tabindex="1"></canvas>
 
-<div id = "loading">
-    <p id="loading-text" style="color: white">Initializing the awesome......</p>
-</div>
-<div id = "help">
-    <h1><span id="title-webgl2"></span> - Tile Based Deferred Shading</h1>
-    <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
-    ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
-    <p>
-        This demo includes <span id ="helplightnum">240</span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
-        You are uisng <b><span id="is-webgl2"></span><span id="helpmode">Deferred Shading</span></b>.
-    </p>
-    <p>
-        This demo requires a decent graphics card and up-to-date drivers. If you can't run the demo, you can still see it on <a href = "https://vimeo.com/83616115">Vimeo</a>
-    </p>
-    <p>
-    <h2>Instructions:</h2>
-    <p>
-        <li>Modify number of lights in the scene:<span id = "range">240</span> lights</li>
-        <input id="light-number-range" class = "slider" type="range" min="0" max="1000" value="240" step="5" width = "200px" onchange="showValue(this.value)"/>
-        <li>Drag mouse to view around the scene</li>
-        <li>w,s,a,d to move the camera</li>
-        <li>Press 1 to display depth texutre</li>
-        <li>Press 2 to display normal texture</li>
-        <li>Press 3 to display position texutre</li>
-        <li>Press 4 to display color texture</li>
-        <li>Press 5 to display ambient texture</li>
-        <li>Press 6 to display tile based deferred shading</li>
-        <li>Press 7 to display non tile based deferred shading</li>
-        <li>Press 8 to display NPR with tile based deferred shading</li>
-        <li>Press 9 to display debug view for tile based</li>
-        <li>Press 0 to display scissor test visualization</li>
-        <li>Press f to switch between deferred shading and forward shading</li>
-    </p>
+    <div id = "loading">
+        <p id="loading-text" style="color: white">Initializing the awesome......</p>
+    </div>
+    <div id = "help">
+        <h1><span id="title-webgl2"></span> - Tile Based Deferred Shading</h1>
+        <p> Developed by <br> Sijie Tian <a href = "https://twitter.com/sijietian">twitter</a> <a href = "https://github.com/tiansijie">github</a> <br> Yuqin Shao <a href = "https://twitter.com/YuqinShao
+        ">twitter</a> <a href = "https://github.com/yuqinshao">github</a> </p>
+        <p>
+            This demo includes <span id ="helplightnum"></span> dynamic lights and <span id ="trianglenum">66450  </span>triangles. <br>
+            You are uisng <b><span id="is-webgl2"></span><span id="helpmode">Deferred Shading</span></b>.
+        </p>
+        <p>
+            This demo requires a decent graphics card and up-to-date drivers. If you can't run the demo, you can still see it on <a href = "https://vimeo.com/83616115">Vimeo</a>
+        </p>
+        <p>
+        <h2>Instructions:</h2>
+        <p>
+            <li>Modify number of lights in the scene:<span id = "range"></span> lights</li>
+            <input id="light-number-range" class = "slider" type="range" min="0" max="1000" step="5" width = "200px" onchange="showValue(this.value)"/>
+            <li>Drag mouse to view around the scene</li>
+            <li>w,s,a,d to move the camera</li>
+            <li>Press 1 to display depth texutre</li>
+            <li>Press 2 to display normal texture</li>
+            <li>Press 3 to display position texutre</li>
+            <li>Press 4 to display color texture</li>
+            <li>Press 5 to display ambient texture</li>
+            <li>Press 6 to display tile based deferred shading</li>
+            <li>Press 7 to display non tile based deferred shading</li>
+            <li>Press 8 to display NPR with tile based deferred shading</li>
+            <li>Press 9 to display debug view for tile based</li>
+            <li>Press 0 to display scissor test visualization</li>
+            <li>Press f to switch between deferred shading and forward shading</li>
+        </p>
 
-    <h2> Source Code: </h2>
-    <a href = "https://github.com/tiansijie/Tile_Based_WebGL_DeferredShader">Code</a>
+        <h2> Source Code: </h2>
+        <a href = "https://github.com/tiansijie/Tile_Based_WebGL_DeferredShader">Code</a>
 
-</div>
-
+    </div>
+    <script>
+        var md = new MobileDetect(window.navigator.userAgent);
+        if (md.mobile()) {
+            window.lightNum = 60;
+        }
+        else {
+            window.lightNum = 240;
+        }
+        document.getElementById("range").innerHTML = window.lightNum;
+        document.getElementById("helplightnum").innerHTML = window.lightNum;
+        document.getElementById("light-number-range").value = window.lightNum;
+    </script>
 
 <script id="pass_vs" type="x-shader/x-vertex">
     precision highp float;

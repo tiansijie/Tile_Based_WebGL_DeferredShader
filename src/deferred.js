@@ -1529,7 +1529,7 @@ var lightIndexWidth, lightIndexHeight;
 
 function lightQuad(program) {
   gl.uniform1i(u_TileSizeLocation, tileSize);
-  gl.uniform1i(u_LightNumLocation, lightNum);
+  gl.uniform1i(u_LightNumLocation, window.lightNum);
   gl.uniform1f(u_WidthTileLocation, tileWidth);
   gl.uniform1f(u_HeightTileLocation, tileHeight);
   gl.uniform1i(u_MaxTileLightNumLocation, maxTileLightNum);
@@ -1695,10 +1695,10 @@ var sliderBarActive = false;
 function showValue(newValue) {
   document.getElementById("range").innerHTML = newValue;
   document.getElementById("helplightnum").innerHTML = newValue;
+  window.lightNum = newValue;
 
   sliderBarActive = true;
 
-  lightNum = document.getElementById("light-number-range").value
   initLights();
   setUpLights();
   initLightsFBO();

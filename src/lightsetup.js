@@ -212,7 +212,7 @@ function setUpLights() {
     moveTime = 0;
     lightMove = -lightMove;
   }
-  for (var i = 0; i < lightNum; i++) {
+  for (var i = 0; i < window.lightNum; i++) {
     if (i % 2 == 0) {
       lights[i].position[1] += lightMove * Math.random() * 2;
     } else {
@@ -302,7 +302,7 @@ function initLights() {
   var deltaX = maxX - minX;
   var deltaY = maxY - minY;
   var deltaZ = maxZ - minZ;
-  for (var i = 0; i < lightNum; i++) {
+  for (var i = 0; i < window.lightNum; i++) {
     var radius = 5;
 
     lights.push({
