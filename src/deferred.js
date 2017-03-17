@@ -1563,8 +1563,8 @@ function lightQuad(program) {
   gl.uniform1i(u_LightIndexImageSizeLocation, lightIndexWidth);
   gl.uniform1f(u_FloatLightIndexSizeLocation, lightIndexWidth);
 
-  let lightIndexThree = [];
-  for(let i = 0; i < lightIndex.length; ++i) {
+  var lightIndexThree = [];
+  for(var i = 0; i < lightIndex.length; ++i) {
     lightIndexThree[i * 3] = lightIndex[i];
     lightIndexThree[i * 3 + 1] = 0;
     lightIndexThree[i * 3 + 2] = 0;
