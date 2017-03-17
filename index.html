@@ -8,7 +8,7 @@
 
 <style type="text/css">
     * { -webkit-user-select: none; -moz-user-select: none; cursor: default; }
-    body { font: 13px/18px Arial, sans-serif; background: white; color: black; overflow: hidden; }
+    body { font: 13px/18px Arial, sans-serif; background: black; overflow: hidden; }
     a { color: inherit; cursor: pointer; }
     img { display: none; }
     ul { padding: 0 0 0 20px; }
@@ -16,7 +16,7 @@
     h2 { font: bold italic 17px/17px Arial; padding-top: 10px; }
     small { display: block; font-size: 11px; line-height: 15px; }
     canvas { position: absolute; top: 0; left: 0;}
-    #help { position: absolute; top: 0; right: 0; bottom: 0; width: 20%; padding-right: 30px; overflow: auto; padding-bottom: 30px;/*background-color: black;*/}
+#help { color: white; position: absolute; top: 0; right: 0; bottom: 0; width: 20%; padding-right: 8px; overflow: auto; padding-bottom: 30px;/*background-color: black;*/}
     #help .slider{width: 90%; padding-left:10px;padding-top:5px;}
     #range{font-size:18px;font:Arial, sans-serif;}
     #info { position: absolute; top: 750px; right: 0; bottom: 0; width: 300px; padding-right: 30px; overflow: auto; }
@@ -25,10 +25,10 @@
 
 <body>
 <div id="message" style="position:absolute;top:100px"></div> <!-- Pixel offset to avoid FPS counter -->
-<canvas id="canvas" style="border: none; width: 75%; height: 100%" tabindex="1"></canvas>
+<canvas id="canvas" style="border: none; width: 100%; height: 100%" tabindex="1"></canvas>
 
 <div id = "loading">
-    <p id="loading-text" style="color: black">Initializing the awesome......</p>
+    <p id="loading-text" style="color: white">Initializing the awesome......</p>
 </div>
 <div id = "help">
     <h1><span id="title-webgl2"></span> - Tile Based Deferred Shading</h1>
