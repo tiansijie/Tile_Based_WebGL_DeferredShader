@@ -1292,6 +1292,7 @@ function initMeshBuffers() {
       var loadingText = document.getElementById("loading-text");
       loadingText.textContent = "";
       initLights();
+      setUpLights();
       initLightsFBO();
       animate();
     }
@@ -1890,19 +1891,21 @@ function handleMouseMove(event) {
     return;
   }
 
+  var moveSpeed = 0.01;
   var newX = event.clientX;
   var newY = event.clientY;
   if (event.type === "touchmove") {
     newX = event.changedTouches[0].clientX;
     newY = event.changedTouches[0].clientY;
+    moveSpeed = 0.002;
   }
 
   var deltaX = newX - lastMouseX;
   var deltaY = newY - lastMouseY;
 
   if (mouseLeftDown) {
-    azimuth += 0.01 * deltaX;
-    elevation += 0.01 * deltaY;
+    azimuth += moveSpeed * deltaX;
+    elevation += moveSpeed * deltaY;
   } else if (mouseMiddleDown) {
     MouseDowndeltaY = deltaY;
     MouseDowndeltaX = deltaX;

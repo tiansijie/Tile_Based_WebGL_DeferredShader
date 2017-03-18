@@ -332,7 +332,6 @@ function initLightsFBO() {
   for (var i = lightIndex.length; i < lightIndexWidth * lightIndexWidth; i++) {
     lightIndex.push(-1);
   }
-
   gl.bindTexture(gl.TEXTURE_2D, lightGridTex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
