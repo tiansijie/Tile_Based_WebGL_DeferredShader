@@ -18,6 +18,8 @@ var vec4Center1 = vec4.create();
 
 var vec4Null = vec4.create([0, 0, 0, 0]);
 
+var tileLightId = [];
+
 function getLightBoundingBox(light_pos, radius, pv, viewport, boundary) {
     var lx = light_pos[0];
     var ly = light_pos[1];
@@ -104,8 +106,6 @@ function setNonTileLight(boundary, light_pos, radius, color) {
     drawQuad();
 }
 
-var tileLightId = new Array(numTile);
-
 function setLightOnTile(boundary, lightNum) {
     var leftTile = Math.max(Math.floor(boundary.left / tileSize), 0);
     var topTile = Math.min(
@@ -129,8 +129,8 @@ function setLightOnTile(boundary, lightNum) {
 }
 
 function resetLights() {
-    lightGrid.length = 0;
-    lightIndex.length = 0;
+    lightGrid = [];
+    lightIndex = [];
     maxTileLightNum = 0;
 }
 
@@ -202,10 +202,11 @@ var lightViewPos = vec4.create();
 
 function setUpLights() {
     resetLights();
+    for (var i = 0; i < numTile; i++) {
+        tileLightId[i] = [];
+    }
     //For tile base light setting
     mat4.multiply(persp, view, pv);
-    for (var i = 0; i < numTile; i++)
-        tileLightId[i] = [];
 
     moveTime++;
     if (moveTime >= 25) {
